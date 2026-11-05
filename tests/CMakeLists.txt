@@ -26,12 +26,3 @@ add_subdirectory(app)
 add_subdirectory(canvas)
 add_subdirectory(sketchbook)
 add_subdirectory(style)
-
-# Smoke test of the real executable: starts, parses the command line, reports its version.
-add_test(NAME app.version COMMAND app --version)
-string(REPLACE "." "\\." _version_regex "${PROJECT_VERSION}")
-set_tests_properties(app.version PROPERTIES
-    PASS_REGULAR_EXPRESSION "${PROJECT_NAME} ${_version_regex}"
-    # A Windows GUI app would otherwise show --version in a message box and block the test.
-    ENVIRONMENT QT_COMMAND_LINE_PARSER_NO_GUI_MESSAGE_BOXES=1
-)

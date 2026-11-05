@@ -6,18 +6,11 @@ CompileFlags:
   # Show warnings as warnings while typing; the build still treats them as errors.
   Remove: [-Werror]
 
-Diagnostics:
-  UnusedIncludes: Strict
-
 Index:
   StandardLibrary: true
-  Background: Build
 
 Hover:
   ShowAKA: true
-
-Completion:
-  AllScopes: true
 
 Documentation:
   CommentFormat: Markdown

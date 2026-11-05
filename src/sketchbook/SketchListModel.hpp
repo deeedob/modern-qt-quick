@@ -20,7 +20,6 @@ public:
         ModifiedRole,
         StrokeCountRole,
     };
-    Q_ENUM(Role)
 
     using QAbstractListModel::QAbstractListModel;
 

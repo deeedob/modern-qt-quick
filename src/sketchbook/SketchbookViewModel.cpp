@@ -20,11 +20,6 @@ SketchListModel *SketchbookViewModel::model()
     return &m_model;
 }
 
-const SketchListModel *SketchbookViewModel::model() const
-{
-    return &m_model;
-}
-
 QString SketchbookViewModel::openName() const
 {
     const int row = m_model.rowOf(m_openId);

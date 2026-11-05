@@ -113,16 +113,14 @@ Page {
             nameField.forceActiveFocus();
         }
 
-        anchors.centerIn: Overlay.overlay
+        width: 360
         title: qsTr("Rename sketch")
-        modal: true
         standardButtons: Dialog.Ok | Dialog.Cancel
         onAccepted: root.viewModel.rename(row, nameField.text)
 
-        TextField {
+        contentItem: TextField {
             id: nameField
 
-            width: 280
             onAccepted: renameDialog.accept()
         }
     }

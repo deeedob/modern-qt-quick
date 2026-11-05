@@ -16,7 +16,7 @@ ApplicationWindow {
     width: 960
     height: 680
     visible: true
-    title: AppController.displayName
+    title: Application.displayName
 
     header: ToolBar {
         RowLayout {
@@ -34,7 +34,7 @@ ApplicationWindow {
             Label {
                 Layout.fillWidth: true
                 Layout.leftMargin: Theme.spacing / 2
-                text: stack.depth > 1 ? window.sketchbook.openName : AppController.displayName
+                text: stack.depth > 1 ? window.sketchbook.openName : Application.displayName
                 font.pixelSize: 16
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight

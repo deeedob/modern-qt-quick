@@ -21,16 +21,6 @@ AppController::AppController(QString logFilePath, QObject *parent)
     setLanguage(QLocale::system().language() == QLocale::German ? "de"_L1 : "en"_L1);
 }
 
-QString AppController::displayName() const
-{
-    return buildInfo().displayName.toString();
-}
-
-QString AppController::version() const
-{
-    return buildInfo().version.toString();
-}
-
 QString AppController::buildDetails() const
 {
     const auto &info = buildInfo();

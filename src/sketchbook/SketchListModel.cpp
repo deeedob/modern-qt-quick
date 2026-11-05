@@ -15,7 +15,6 @@ QVariant SketchListModel::data(const QModelIndex &index, int role) const
         return {};
     const auto &e = entry(index.row());
     switch (role) {
-    case Qt::DisplayRole:
     case NameRole:
         return e.name;
     case ModifiedRole:

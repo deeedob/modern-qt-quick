@@ -10,6 +10,8 @@ qt_add_qml_module(app_style
     QML_FILES
         ApplicationWindow.qml
         Button.qml
+        Dialog.qml
+        DialogButtonBox.qml
         ItemDelegate.qml
         TextField.qml
         Theme.qml

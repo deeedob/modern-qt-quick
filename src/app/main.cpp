@@ -2,21 +2,18 @@
 
 #include "AppController.hpp"
 #include "BuildInfo.hpp"
-#include "CrashHandler.hpp"
 #include "Logging.hpp"
 
 #include <CanvasStore.hpp>
 #include <SketchStorage.hpp>
 #include <SketchbookViewModel.hpp>
 
-#include <QtCore/QCommandLineParser>
 #include <QtCore/QStandardPaths>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QSurfaceFormat>
 #include <QtQml/QQmlApplicationEngine>
 
 #include <cstdlib>
-#include <stdexcept>
 
 using namespace Qt::StringLiterals;
 
@@ -34,22 +31,8 @@ int main(int argc, char *argv[])
 
     const QGuiApplication application(argc, argv);
 
-    QCommandLineParser parser;
-    parser.addHelpOption();
-    parser.addVersionOption();
-    QCommandLineOption crashTest("crash-test"_L1,
-        "Throw an uncaught exception to test crash logging."_L1);
-    crashTest.setFlags(QCommandLineOption::HiddenFromHelp);
-    parser.addOption(crashTest);
-    parser.process(application);
-
-    app::installCrashHandler();
     const auto dataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     const auto logFile = app::installLogging(dataDir + "/logs"_L1);
-    app::logStartupInfo();
-    // Escapes main() on purpose: the crash handler logs it with a stack trace.
-    if (parser.isSet(crashTest))
-        throw std::runtime_error("crash test requested with --crash-test");
 
     // Declared before the engine, so they outlive it: QML only holds non-owning references.
     app::sketchbook::SketchStorage storage(dataDir + "/sketches"_L1);

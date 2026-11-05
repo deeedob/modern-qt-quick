@@ -26,7 +26,7 @@ QList<QPointF> zigzag()
     };
 }
 
-QVariant data(const SketchbookViewModel &viewModel, int row, SketchListModel::Role role)
+QVariant data(SketchbookViewModel &viewModel, int row, SketchListModel::Role role)
 {
     return viewModel.model()->index(row).data(role);
 }

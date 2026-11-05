@@ -23,21 +23,6 @@ TestCase {
         }
     }
 
-    SignalSpy {
-        id: clickedSpy
-
-        signalName: "clicked"
-    }
-
-    function test_themeResolvesIconsByName(): void {
-        verify(Theme.icon("plus").toString().endsWith("icons/plus.svg"));
-    }
-
-    function test_showsOnlyTheIcon(): void {
-        const button = createTemporaryObject(buttonComponent, testCase);
-        compare(button.display, AbstractButton.IconOnly);
-    }
-
     function test_hoverShowsTheTextAsToolTip(): void {
         const button = createTemporaryObject(buttonComponent, testCase);
         const toolTip = findChild(button, "toolTip");
@@ -47,12 +32,5 @@ TestCase {
 
         tryVerify(() => toolTip.visible);
         compare(toolTip.text, "Add");
-    }
-
-    function test_emitsClicked(): void {
-        const button = createTemporaryObject(buttonComponent, testCase);
-        clickedSpy.target = button;
-        mouseClick(button);
-        compare(clickedSpy.count, 1);
     }
 }

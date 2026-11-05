@@ -133,6 +133,8 @@ void StrokeItem::mousePressEvent(QMouseEvent *event)
     m_live = {
         { .x = position.x(), .y = position.y() }
     };
+    // A drag draws: a surrounding Flickable must not take it over to scroll.
+    setKeepMouseGrab(true);
     update();
 }
 
@@ -154,6 +156,13 @@ void StrokeItem::mouseReleaseEvent(QMouseEvent *)
     m_live.clear();
     update();
     Q_EMIT strokeFinished(points);
+}
+
+// Another handler took over, for example a two-finger pinch: drop the unfinished stroke.
+void StrokeItem::mouseUngrabEvent()
+{
+    m_live.clear();
+    update();
 }
 
 QSGNode *StrokeItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)

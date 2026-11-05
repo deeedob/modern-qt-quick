@@ -1,7 +1,6 @@
 #include "Logging.hpp"
 
 #include "BuildInfo.hpp"
-#include "CrashHandler.hpp"
 
 #include <QtCore/QDateTime>
 #include <QtCore/QDir>
@@ -11,15 +10,48 @@
 #include <QtCore/QMutex>
 #include <QtCore/QSysInfo>
 
-#include <algorithm>
+#include <cpptrace/cpptrace.hpp>
+
+#include <cstdlib>
+#include <exception>
 
 using namespace Qt::StringLiterals;
 
 Q_STATIC_LOGGING_CATEGORY(lcStartup, "app.startup")
+Q_STATIC_LOGGING_CATEGORY(lcCrash, "app.crash")
 
 namespace app {
 
 namespace {
+
+    QString stackTrace()
+    {
+        return QString::fromStdString(cpptrace::generate_trace(1).to_string());
+    }
+
+    // Uncaught exceptions end here. Segfaults are left to the OS crash reporter: tracing
+    // safely from a signal handler is only possible on Linux.
+    [[noreturn]] void onTerminate() noexcept
+    {
+        // Logging allocates; if that throws, std::terminate re-enters this handler.
+        static bool terminating = false;
+        if (terminating)
+            std::abort();
+        terminating = true;
+
+        QString reason = "std::terminate called without an active exception"_L1;
+        if (const auto exception = std::current_exception()) {
+            try {
+                std::rethrow_exception(exception);
+            } catch (const std::exception &e) {
+                reason = "Uncaught exception: %1"_L1.arg(QString::fromUtf8(e.what()));
+            } catch (...) {
+                reason = "Uncaught exception of unknown type"_L1;
+            }
+        }
+        qCCritical(lcCrash).noquote() << reason << '\n' << stackTrace();
+        std::abort();
+    }
 
     struct LogSink
     {
@@ -43,7 +75,7 @@ namespace {
             if (s.file.isOpen()) {
                 auto line = qFormatLogMessage(type, context, message);
                 if (type == QtFatalMsg)
-                    line += '\n'_L1 + QString::fromStdString(stackTrace());
+                    line += '\n'_L1 + stackTrace();
                 s.file.write(line.toUtf8().append('\n'));
                 s.file.flush();
             }
@@ -60,11 +92,26 @@ namespace {
             directory.remove(logs.at(i));
     }
 
+    // With these lines, a log file from a user is enough to reproduce their setup.
+    void logStartupInfo()
+    {
+        const auto &info = buildInfo();
+        qCInfo(lcStartup).noquote().nospace()
+            << info.name << ' ' << info.version << " (" << info.gitSha << ", " << info.buildType
+            << ", built " << info.buildTimestamp << ')';
+        qCInfo(lcStartup).noquote().nospace()
+            << "Compiler " << info.compiler << ", target " << info.system;
+        qCInfo(lcStartup).noquote() << QLibraryInfo::build();
+        qCInfo(lcStartup).noquote()
+            << "System" << QSysInfo::prettyProductName() << QSysInfo::currentCpuArchitecture();
+    }
+
 } // namespace
 
 QString installLogging(const QString &directory, qsizetype keepSessions)
 {
     Q_ASSERT(keepSessions > 0);
+    std::set_terminate(onTerminate);
     qSetMessagePattern(
         "%{time yyyy-MM-ddTHH:mm:ss.zzz} "
         "%{if-debug}D%{endif}%{if-info}I%{endif}%{if-warning}W%{endif}"
@@ -73,7 +120,7 @@ QString installLogging(const QString &directory, qsizetype keepSessions)
     const QDir dir(directory);
     dir.mkpath("."_L1);
     // Make room for the session that is about to start.
-    removeOldSessions(dir, std::max<qsizetype>(keepSessions, 1) - 1);
+    removeOldSessions(dir, keepSessions - 1);
 
     const auto fileName = QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss"_L1) + ".log"_L1;
     auto &s = sink();
@@ -90,20 +137,8 @@ QString installLogging(const QString &directory, qsizetype keepSessions)
     // Outside the lock: the warning itself passes through handleMessage.
     if (!opened)
         qWarning("Cannot open log file %ls", qUtf16Printable(s.file.fileName()));
+    logStartupInfo();
     return s.file.fileName();
-}
-
-void logStartupInfo()
-{
-    const auto &info = buildInfo();
-    qCInfo(lcStartup).noquote().nospace()
-        << info.name << ' ' << info.version << " (" << info.gitSha << ", " << info.buildType
-        << ", built " << info.buildTimestamp << ')';
-    qCInfo(lcStartup).noquote().nospace()
-        << "Compiler " << info.compiler << ", target " << info.system;
-    qCInfo(lcStartup).noquote() << QLibraryInfo::build();
-    qCInfo(lcStartup).noquote()
-        << "System" << QSysInfo::prettyProductName() << QSysInfo::currentCpuArchitecture();
 }
 
 } // namespace app

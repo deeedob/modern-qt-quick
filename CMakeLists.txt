@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.31)
 
-include(cmake/PreventInSourceBuilds.cmake)
-
 project(QtAppTemplate
     VERSION 0.1.0
     DESCRIPTION "A sketchbook that recognizes shapes: a modern Qt Quick application template"
@@ -44,8 +42,6 @@ find_package(glaze CONFIG REQUIRED)
 
 if(BUILD_TESTING)
     enable_testing()
-    find_package(Catch2 3 CONFIG REQUIRED)
-    include(Catch)
 endif()
 
 add_subdirectory(libs/shapes)

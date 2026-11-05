@@ -1,7 +1,6 @@
 # Logging, crash handling and build info, as a library so tests can link them.
 qt_add_library(app_support STATIC
     BuildInfo.hpp
-    CrashHandler.cpp CrashHandler.hpp
     Logging.cpp Logging.hpp
 )
 app_add_build_info(app_support)
@@ -17,7 +16,9 @@ if(APPLE)
     target_sources(app PRIVATE app.icns)
     set_source_files_properties(app.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 elseif(WIN32)
-    target_sources(app PRIVATE app.rc)
+    # Windows takes the executable's icon from a resource script.
+    file(CONFIGURE OUTPUT app.rc CONTENT "IDI_ICON1 ICON \"${CMAKE_CURRENT_SOURCE_DIR}/app.ico\"\n")
+    target_sources(app PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/app.rc")
 endif()
 set_target_properties(app PROPERTIES
     OUTPUT_NAME "${PROJECT_NAME}"
@@ -71,7 +72,6 @@ app_add_notice(qt-lgpl-3.0 "${PROJECT_SOURCE_DIR}/3rdparty/qt/LGPL-3.0-only.txt"
 app_add_notice(qt-gpl-3.0 "${PROJECT_SOURCE_DIR}/3rdparty/qt/GPL-3.0-only.txt")
 
 # Qt's deploy tool makes the installed app self-contained. It runs last, after every file is in place.
-include(GNUInstallDirs)
 install(TARGETS app
     BUNDLE DESTINATION .
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"

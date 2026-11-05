@@ -1,23 +1,11 @@
-pragma ComponentBehavior: Bound
-
 import QtQuick
 import QtQuick.Layouts
 import AppStyle
 
 Dialog {
-    id: root
-
-    anchors.centerIn: Overlay.overlay
-    width: Math.min(360, (parent?.width ?? 360) - Theme.spacing * 4)
-    modal: true
+    width: 360
     padding: Theme.spacing * 2
-
-    background: Rectangle {
-        color: Theme.surface
-        radius: 16
-        border.width: 1
-        border.color: Theme.border
-    }
+    standardButtons: Dialog.Close
 
     contentItem: ColumnLayout {
         spacing: Theme.spacing
@@ -30,7 +18,7 @@ Dialog {
 
         Label {
             Layout.fillWidth: true
-            text: AppController.displayName
+            text: Application.displayName
             font.pixelSize: 22
             font.weight: Font.DemiBold
             horizontalAlignment: Text.AlignHCenter
@@ -38,7 +26,7 @@ Dialog {
 
         Label {
             Layout.fillWidth: true
-            text: qsTr("Version %1").arg(AppController.version)
+            text: qsTr("Version %1").arg(Application.version)
             horizontalAlignment: Text.AlignHCenter
         }
 
@@ -64,25 +52,11 @@ Dialog {
             horizontalAlignment: Text.AlignHCenter
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.topMargin: Theme.spacing / 2
-
-            Button {
-                text: qsTr("Open log folder")
-                flat: true
-                onClicked: AppController.openLogDirectory()
-            }
-
-            Item {
-                Layout.fillWidth: true
-            }
-
-            Button {
-                text: qsTr("Close")
-                highlighted: true
-                onClicked: root.close()
-            }
+        Button {
+            Layout.alignment: Qt.AlignHCenter
+            text: qsTr("Open log folder")
+            flat: true
+            onClicked: AppController.openLogDirectory()
         }
     }
 }

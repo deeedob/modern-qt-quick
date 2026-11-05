@@ -115,6 +115,21 @@ The item reads the store but never writes to it. Pointer input becomes a `stroke
 signal, and `CanvasPage.qml` turns that into an action. The item stays a reusable drawing
 surface.
 
+The paper has a fixed size and sits in a `Flickable`, so a small window scrolls instead of
+cutting the drawing off. Mouse drags and single touches draw: `StrokeItem` calls
+`setKeepMouseGrab(true)` on press, which stops the `Flickable` from taking over the drag to
+scroll. The wheel, the trackpad and the scroll bars scroll. A `PinchHandler` zooms with a
+trackpad pinch or two fingers, and also pans on a touch screen; a `WheelHandler` zooms with
+Ctrl and the wheel. Zooming keeps the paper point under the fingers in place and clamps the
+scroll position directly, because `Flickable.returnToBounds()` would animate on every pinch
+step. The zoom factor is a property of `CanvasPage`, not of the store: it changes the view, not
+the sketch, so it is neither undoable nor saved. If a pinch takes the pointer from a stroke in
+progress, `mouseUngrabEvent()` drops the unfinished stroke.
+
+`tests/canvas/tst_CanvasPage.cpp` sends trackpad pinches as native gesture events through
+`QWindowSystemInterface`, as Qt's own tests do, and checks after every step that the paper
+under the fingers stays put.
+
 The alternatives, and why the template does not use them:
 
 - `QQuickPaintedItem` draws with `QPainter` into a texture. It is simpler but rasterizes the
@@ -130,14 +145,16 @@ Controls style built the way the [Qt documentation recommends](https://doc.qt.io
 
 - Each customized control is a QML file whose root is the control's template, for example
   `T.Button` from `QtQuick.Templates`. The style defines only the controls the app uses:
-  `ApplicationWindow`, `Button`, `ToolButton`, `TextField`, `ItemDelegate` and `ToolTip`.
+  `ApplicationWindow`, `Button`, `Dialog`, `DialogButtonBox`, `ItemDelegate`, `TextField`,
+  `ToolButton` and `ToolTip`. `DialogButtonBox` matters even though it looks plain: its
+  delegate creates the dialog's buttons, and Basic's version would create Basic buttons.
 - Every other control comes from the Basic style, through `IMPORTS QtQuick.Controls.Basic` in
   the module. Basic is the style meant to be customized; the native macOS and Windows styles
   are not.
 - `Theme.qml` holds the design tokens: colors, spacing, radius, font and icons. It follows the
   system's light or dark mode through `Application.styleHints.colorScheme`.
 - `ApplicationWindow.qml` sets the window's `palette` from the tokens. The palette reaches
-  every control, so the controls taken from Basic (`Dialog`, `Switch`, `Label`) match too.
+  every control, so the controls taken from Basic (`Switch`, `Label`, `ScrollBar`) match too.
 
 Importing the style module directly selects the style at compile time, so the QML compiler
 compiles bindings on controls to C++ and qmllint knows every type. Runtime style selection
