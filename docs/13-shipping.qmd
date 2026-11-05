@@ -1,0 +1,146 @@
+# Shipping {#sec-shipping}
+
+An app that only runs on your machine is not done. This chapter turns a build into
+something a user can download, with everything it needs and every license it owes.
+
+## Install, then deploy {#sec-deploy}
+
+Shipping starts with two steps. `install()` copies your app into a clean folder. Qt's deploy
+script then copies everything your app needs from Qt next to it: libraries, plugins and QML
+modules.
+
+```{.cmake filename="src/app/CMakeLists.txt"}
+install(TARGETS app
+    BUNDLE DESTINATION .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+qt_generate_deploy_qml_app_script(TARGET app OUTPUT_SCRIPT deploy_script)
+install(SCRIPT ${deploy_script})
+```
+
+```sh
+cmake --install build/release --prefix dist
+```
+
+`dist/` now runs on a machine without Qt: a self-contained `.app` bundle on macOS, a folder
+with the executable and its DLLs on Windows, a `bin/` and `lib/` tree on Linux.
+
+::: {.callout-warning}
+## "Could not find or load the Qt platform plugin"
+The most famous Qt error means the deploy step did not run, or ran without the plugins.
+Qt loads plugins at run time, so a build that starts on your machine can still fail on
+another one.
+:::
+
+On Windows, the deploy script knows Qt's DLLs but not those of your other dependencies.
+Install them too, with `install(FILES $<TARGET_RUNTIME_DLLS:app> ...)`.
+
+::: {.more}
+**Template:** `src/app/CMakeLists.txt` ·
+**Read more:** [Deploying Qt applications with CMake](https://doc.qt.io/qt-6/cmake-deployment.html)
+:::
+
+## One package per platform {#sec-packages}
+
+CPack, part of CMake, turns the installed app into the format each platform expects:
+
+| Platform | Format | CPack generator |
+|---|---|---|
+| macOS | disk image (`.dmg`) | `DragNDrop` |
+| Windows | archive or installer | `ZIP`, `NSIS`, `WIX` |
+| Linux | archive or package | `TGZ`, `DEB`, `RPM` |
+
+```{.cmake filename="cmake/Packaging.cmake"}
+set(CPACK_PACKAGE_FILE_NAME
+    "${PROJECT_NAME}-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}")
+if(APPLE)
+    set(CPACK_GENERATOR DragNDrop)
+elseif(WIN32)
+    set(CPACK_GENERATOR ZIP)
+else()
+    set(CPACK_GENERATOR TGZ)
+endif()
+include(CPack)
+```
+
+With a package preset, `cmake --workflow --preset release` configures, builds, tests and
+packages in one go. Before you hand the package to users, sign it (@sec-distribution).
+
+::: {.more}
+**Template:** `cmake/Packaging.cmake` ·
+**Read more:** [CPack](https://cmake.org/cmake/help/latest/module/CPack.html)
+:::
+
+## Licenses are part of the product {#sec-licenses}
+
+Every library and asset you ship comes with a license, and most licenses ask for something
+in return.
+
+**Qt** is available under the LGPLv3 (and a commercial license). For an app you distribute,
+the LGPL asks you to:
+
+- let users replace Qt with their own build; linking Qt dynamically is the simple way;
+- ship Qt's license texts and say that your app uses Qt;
+- provide Qt's source code, or a written offer for it;
+- avoid the Qt modules that are available only under the GPL.
+
+**Every other dependency and asset** needs its license shipped as well: libraries, but also
+fonts and icons. Put one text file per component into a `licenses/` folder of the package.
+
+**Your own repository** should say clearly what is yours and under which terms. The
+[REUSE](https://reuse.software/) convention does that in one file:
+
+```{.toml filename="REUSE.toml"}
+version = 1
+
+[[annotations]]
+path = "**"
+SPDX-FileCopyrightText = "2026 Your Name"
+SPDX-License-Identifier = "MIT-0"
+
+[[annotations]]
+path = "src/style/fonts/**"
+SPDX-FileCopyrightText = "2016 The Inter Project Authors"
+SPDX-License-Identifier = "OFL-1.1"
+```
+
+`reuse lint` then checks that every file in the repository is covered.
+
+This is a summary of obligations, not legal advice.
+
+::: {.more}
+**Template:** `REUSE.toml`, `app_add_notice()` in `cmake/Packaging.cmake`, and the About dialog ·
+**Read more:** [Qt licensing](https://doc.qt.io/qt-6/licensing.html)
+:::
+
+## CI builds what you ship {#sec-ci}
+
+Every change should build, test and package on every platform you support, on a machine that
+is not yours. Use the same preset command that developers run:
+
+```{.yaml filename=".github/workflows/ci.yml"}
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.12.0"
+          cache: true
+      - run: cmake --workflow --preset release
+```
+
+A complete workflow also sets up the compiler environment on Windows. Cache the dependency
+builds between runs (vcpkg's binary cache fits here), or every run
+rebuilds them from scratch. Upload the packages as build artifacts, so every change produces
+something you can download and try.
+
+::: {.more}
+**Template:** `.github/workflows/ci.yml`
+:::

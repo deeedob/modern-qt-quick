@@ -1,0 +1,101 @@
+# Signing and distribution {#sec-distribution}
+
+A package is ready to ship when the user's operating system trusts it. On macOS and Windows,
+that trust comes from a signature.
+
+## Why sign {#sec-why-sign}
+
+macOS and Windows check where downloaded software comes from. An unsigned app gets a stern
+warning on Windows (SmartScreen) and is blocked outright on macOS (Gatekeeper) until the
+user overrides it.
+
+A signature proves two things: **who** published the app, and that **nobody changed it**
+since. Unsigned builds are fine for development and a course project. Anything you hand to
+users should be signed.
+
+## macOS: Developer ID and notarization {#sec-sign-macos}
+
+Apps distributed outside the Mac App Store need three things:
+
+1. **A Developer ID certificate**, from the Apple Developer Program.
+2. **A signature on every binary**, made with the *hardened runtime* and a secure timestamp.
+3. **Notarization**: you upload the app to Apple, Apple scans it and issues a ticket, and you
+   *staple* the ticket to the app so Gatekeeper accepts it even offline.
+
+Qt's deploy tool signs the bundle for you when you pass it an identity. Use the
+certificate's SHA-1 hash, which `security find-identity -v -p codesigning` lists: the deploy
+script would split a name with spaces into several arguments.
+
+```{.cmake filename="src/app/CMakeLists.txt"}
+qt_generate_deploy_qml_app_script(TARGET app OUTPUT_SCRIPT deploy_script
+    DEPLOY_TOOL_OPTIONS "-sign-for-notarization=${APP_SIGNING_IDENTITY}"
+)
+```
+
+Then sign the disk image, notarize it and staple the ticket:
+
+```sh
+codesign --sign "Developer ID Application: Your Name (TEAMID)" \
+    --timestamp Sketchbook.dmg
+xcrun notarytool submit Sketchbook.dmg --keychain-profile notary --wait
+xcrun stapler staple Sketchbook.dmg
+```
+
+::: {.more}
+**Read more:** [Qt for macOS: deployment](https://doc.qt.io/qt-6/macos-deployment.html),
+[Apple: notarizing macOS software](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
+:::
+
+## Windows: Authenticode {#sec-sign-windows}
+
+Windows signatures are called Authenticode. You sign the executable and the installer with
+`signtool` from the Windows SDK:
+
+```powershell
+signtool sign /fd SHA256 /td SHA256 /a `
+    /tr http://timestamp.digicert.com Sketchbook.exe
+signtool verify /pa Sketchbook.exe
+```
+
+The certificate comes from a certificate authority or from a cloud signing service, such as
+Microsoft's. Always add a timestamp (`/tr`): it keeps the signature valid after the
+certificate expires. SmartScreen builds trust in a publisher over time, as more users install
+its signed releases.
+
+::: {.more}
+**Read more:** [Microsoft: code signing options](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options),
+[SignTool](https://learn.microsoft.com/en-us/windows/win32/seccrypto/signtool)
+:::
+
+## Signing in the pipeline {#sec-sign-pipeline}
+
+The order matters:
+
+```{mermaid}
+%%| fig-width: 6.5
+flowchart LR
+    B[Build] --> T[Test] --> D[Deploy] --> S1[Sign app]
+    S1 --> P[Package] --> S2[Sign package] --> N["Notarize<br/>(macOS)"]
+```
+
+- **Sign after deploying.** The deploy tool still changes binaries, and any change breaks a
+  signature.
+- **Sign inside out.** Libraries and plugins first, then the app, then the disk image or
+  installer that contains it.
+- **Treat certificates as secrets.** They live in your CI's secret store, never in the
+  repository, and only release builds use them.
+
+## App stores {#sec-stores}
+
+App stores take over trust and updates, in exchange for their rules: a sandbox, a review, a
+store package format.
+
+| Store | Platform | Notes |
+|---|---|---|
+| Mac App Store | macOS | App Sandbox required |
+| Microsoft Store | Windows | MSIX packages; `windeployqt --appx` prepares one (Qt 6.11+) |
+| Google Play, App Store | Android, iOS | the normal way to ship mobile apps (@sec-mobile) |
+
+::: {.more}
+**Read more:** [Microsoft Store deployment with windeployqt](https://www.qt.io/blog/windows-store-deployment-with-windeployqt)
+:::

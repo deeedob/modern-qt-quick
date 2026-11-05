@@ -53,6 +53,7 @@ src/
 tests/              tests for src/, mirroring its folders
 cmake/              build policy: warnings, hardening, sanitizers, checks, packaging
 i18n/               translations (.ts)
+docs/               the guide, a Quarto book
 3rdparty/           vcpkg as a git submodule, and Qt's license texts
 ```
 
@@ -63,17 +64,21 @@ i18n/               translations (.ts)
    (`project()`, `APP_DISPLAY_NAME`, `APP_BUNDLE_ID`), and your copyright and license in
    `LICENSE` and the first entry of `REUSE.toml`.
 3. Optionally rename the `App` QML prefix and the `app` namespace, see
-   [docs/how-to.md](docs/how-to.md#rename-the-template).
-4. Replace the demo features, see [docs/how-to.md](docs/how-to.md#remove-the-demo).
+   [Rename the template](docs/template.qmd#rename).
+4. Replace the demo features, see [Remove the demo](docs/template.qmd#remove-demo).
 
 ## Documentation
 
-- [Architecture](docs/architecture.md): the layout, separable libraries, and threads.
-- [QML and C++](docs/qml-integration.md): dependency injection, MVVM, Flux, the custom item, and the style.
-- [Build and dependencies](docs/build-and-dependencies.md): presets, vcpkg, and where Qt comes from.
-- [Code quality](docs/quality.md): warnings, hardening, sanitizers, linters, and tests.
-- [Packaging and licensing](docs/packaging-and-licensing.md): packages, REUSE, and license notices.
-- [How-to guides](docs/how-to.md): add a library, feature, dependency, notice or language.
+`docs/` holds a guide to the concepts behind the template: the shape of a Qt Quick app, the
+build, QML and C++, testing, and shipping. It is a [Quarto](https://quarto.org) book:
+
+```sh
+quarto preview docs      # opens the guide in your browser
+quarto render docs       # writes the website and the PDF to docs/_book/
+```
+
+Recipes for common changes, such as adding a feature or a language, are in its appendix,
+[Working with the template](docs/template.qmd).
 
 ## License
 

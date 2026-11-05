@@ -1,0 +1,115 @@
+# Quality gates {#sec-quality}
+
+Compilers and tools find whole classes of bugs before any user does, if you let them. Set
+these gates up on day one; adding them to a grown codebase means fixing hundreds of findings
+at once.
+
+## Warnings are errors, for your code {#sec-warnings}
+
+Turn on a strict warning set for your own targets:
+
+```{.cmake filename="CMakeLists.txt"}
+if(MSVC)
+    target_compile_options(core PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(core PRIVATE
+        -Wall -Wextra -Wpedantic -Wshadow -Wconversion)
+endif()
+```
+
+Then make every warning an error, in the preset rather than in `CMakeLists.txt`, so you can
+switch it off locally when you need to:
+
+```{.json filename="CMakePresets.json (excerpt)"}
+"cacheVariables": { "CMAKE_COMPILE_WARNING_AS_ERROR": true }
+```
+
+Apply the warnings to your code only. Headers of imported targets, such as Qt and your
+vcpkg libraries, count as system headers, so their warnings stay out of your build.
+
+::: {.more}
+**Template:** `cmake/AppTargetDefaults.cmake`, which applies warnings, hardening and
+sanitizers to every first-party target with one call
+:::
+
+## Sanitizers {#sec-sanitizers}
+
+Sanitizers make the compiler add checks to your program. When a check fails, the program
+stops and points at the bug, instead of corrupting memory silently and crashing hours later.
+
+| Sanitizer | Finds |
+|---|---|
+| AddressSanitizer (ASan) | use after free, buffer overflows, leaks (on Linux) |
+| UndefinedBehaviorSanitizer (UBSan) | signed overflow, invalid casts, misaligned access |
+| ThreadSanitizer (TSan) | data races between threads |
+
+Give them their own preset and run the whole test suite under it regularly:
+
+```{.json filename="CMakePresets.json (excerpt)"}
+{
+  "name": "asan",
+  "inherits": "dev",
+  "cacheVariables": {
+    "CMAKE_CXX_FLAGS": "-fsanitize=address,undefined -fno-omit-frame-pointer"
+  }
+}
+```
+
+A report names the bug and the line:
+
+```default
+==4711==ERROR: AddressSanitizer: heap-use-after-free on address 0x602000001a30
+READ of size 8 at 0x602000001a30 thread T0
+    #0 0x104a1c3f8 in StrokeItem::updatePaintNode(...) StrokeItem.cpp:118
+```
+
+ThreadSanitizer needs a build of its own; it cannot be combined with ASan. MSVC supports
+AddressSanitizer only.
+
+::: {.more}
+**Template:** `cmake --workflow --preset asan` ·
+**Read more:** [AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html)
+:::
+
+## Hardening {#sec-hardening}
+
+Sanitizers are too slow for releases. Hardening is their cheap cousin: checks that stay on
+in the shipped app and turn silent memory corruption into a clean crash.
+
+- Standard library assertions: `_GLIBCXX_ASSERTIONS` (libstdc++),
+  `_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST` (libc++)
+- Buffer checks: `_FORTIFY_SOURCE=3`
+- Stack protection: `-fstack-protector-strong`
+- On MSVC: `/sdl`, and `/guard:cf` for both the compiler and the linker
+
+::: {.more}
+**Template:** `cmake/AppTargetDefaults.cmake` ·
+**Read more:** [OpenSSF compiler hardening guide](https://best.openssf.org/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.html)
+:::
+
+## Linters and formatters, one check {#sec-linters}
+
+Each tool gets one configuration file in the repository. Your editor, the build and CI all
+read the same file, so they never disagree.
+
+| Tool | Checks | Configuration |
+|---|---|---|
+| clang-format | C++ formatting | `.clang-format` |
+| clang-tidy | C++ bug patterns and modern idioms | `.clang-tidy` |
+| qmllint | QML types, names and bindings | `.qmllint.ini` |
+| qmlformat | QML formatting | `.qmlformat.ini` |
+
+Wrap the checks in one build target, so "is my code clean?" is a single command, locally
+and in CI. A second target runs the formatters and fixes the files in place:
+
+```sh
+# clang-format, clang-tidy, qmllint and REUSE
+cmake --build --preset dev --target check
+
+# clang-format and qmlformat, fixing the files in place
+cmake --build --preset dev --target format
+```
+
+::: {.more}
+**Template:** `cmake/Checks.cmake`, which also checks licensing with REUSE (@sec-licenses)
+:::

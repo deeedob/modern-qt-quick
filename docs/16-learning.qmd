@@ -1,0 +1,94 @@
+# Learning Qt, and working with AI {#sec-learning}
+
+Qt is large, it changes every release, and most of what the internet knows about it is out of
+date. This last chapter is about learning it efficiently and about using AI assistants
+without being misled by them.
+
+## Concepts you own, details you look up {#sec-own-concepts}
+
+Some things you must understand yourself: what a binding does, why the event loop must not
+block, who owns an object. Without them you cannot tell a good answer from a plausible one,
+whether it comes from a colleague, a forum or an AI.
+
+Other things nobody memorizes: the argument order of a function, the name of an option. Look
+them up, every time. This guide teaches the first kind and links to the second.
+
+## Read in the right order {#sec-reading}
+
+When you meet a new Qt module, spend fifteen minutes in this order:
+
+1. The module's overview page: what problem it solves, which classes matter.
+2. One example, end to end.
+3. The reference pages of the two or three classes that example used.
+4. Now write your own code.
+
+Qt's own examples and tests show current, working usage. When the documentation leaves a
+question open, the test suite of that class often answers it.
+
+## Recognize stale Qt {#sec-stale-qt}
+
+Most Qt code online, and in the data AI models learned from, is Qt 5. It often still
+compiles, but it is not how Qt 6 works. Learn its tells:
+
+| Qt 5 | Qt 6 |
+|---|---|
+| `qmake` and `.pro` files | CMake with `qt_add_qml_module()` |
+| `qmlRegisterType<T>("Uri", 1, 0, "T")` | `QML_ELEMENT` in the class |
+| `setContextProperty("name", &object)` | required properties (@sec-required) |
+| `connect(a, SIGNAL(x()), b, SLOT(y()))` | `connect(a, &A::x, b, &B::y)` |
+| `import QtQuick 2.15` | `import QtQuick` |
+| `onClicked: ...` inside `Connections` | `function onClicked() { ... }` inside `Connections` |
+
+When an answer contains one of these, check it against the Qt 6 documentation before you use
+it.
+
+## Give the AI current Qt knowledge {#sec-agent-skills}
+
+A coding agent repeats what it learned unless it gets better context. The Qt Company
+publishes **agent skills** for the common AI coding tools. They correct the known mistakes
+and add Qt-specific workflows:
+
+| Skill | What it does |
+|---|---|
+| `qt-qml` | QML best practices; corrects typical mistakes with bindings, scoping, modules and types |
+| `qt-cmake-project` | Qt 6 CMake projects; corrects qmake habits and old `qt5_*` macros |
+| `qt-qml-review`, `qt-cpp-review` | code review with linters plus deeper analysis |
+| `qt-qml-test` | writes Qt Quick Test cases for a component |
+| `qt-ui-design` | layout, navigation and UX review |
+
+The same repository provides a **Qt documentation server** (an MCP server) that lets the
+agent look up the current API instead of guessing it.
+
+::: {.more}
+**Read more:** [Qt agent skills](https://github.com/TheQtCompanyRnD/agent-skills)
+:::
+
+## Let the tools judge the result {#sec-tools-judge}
+
+An agent is only as good as the feedback it gets. Compiler warnings, qmllint, tests and
+sanitizers give it ground truth instead of its own confidence. A project where one command
+runs every check is a project an agent can work in:
+
+```sh
+cmake --workflow --preset dev                 # build and run every test
+cmake --build --preset dev --target check     # every linter
+```
+
+The quality gates of @sec-quality and the tests of @sec-testing are the same gates you want
+for human contributors. For UI work, a live preview (Qt offers one as an MCP tool) lets the
+agent see a change instead of describing it.
+
+::: {.more}
+**Read more:** [QML Live Preview MCP tool](https://www.qt.io/blog/introducing-the-qml-live-preview-mcp-tool-for-agentic-development-of-embedded-devices)
+:::
+
+## Own what you ship {#sec-own}
+
+Review generated code the way you would review a colleague's: read every line, run it, test
+it. Keep only what you can explain.
+
+::: {.callout-tip}
+## Rule of thumb
+If you could not rewrite it from scratch with an hour and the documentation, you do not
+understand it yet. Go back to the concept.
+:::

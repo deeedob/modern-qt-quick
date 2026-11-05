@@ -1,0 +1,138 @@
+# Build essentials {#sec-build}
+
+This chapter is not a CMake course. It covers the four ideas you need to read and extend a
+modern Qt build; the CMake and Qt documentation covers the rest.
+
+## Targets and usage requirements {#sec-targets}
+
+A **target** is something CMake builds: a library or an executable. It carries its sources,
+its include paths and its dependencies. When one target links another, it inherits the
+other's **usage requirements**, and the keyword decides how far they travel.
+
+```{.cmake filename="CMakeLists.txt"}
+add_library(shapes STATIC src/Recognizer.cpp)
+target_include_directories(shapes PUBLIC include)
+
+add_library(storage STATIC Storage.cpp)
+target_link_libraries(storage
+    PUBLIC shapes         # <1>
+    PRIVATE glaze::glaze  # <2>
+)
+
+add_executable(app main.cpp)
+target_link_libraries(app PRIVATE storage)  # <3>
+```
+1. `storage`'s own headers use `shapes` types, so its users need `shapes` too.
+2. JSON handling is an implementation detail; `storage`'s users never see glaze.
+3. `app` gets `storage` and, through it, `shapes`, but not glaze's headers.
+
+The rule of thumb: **PUBLIC** if the dependency appears in your headers, **PRIVATE** if it
+appears only in your `.cpp` files. Set everything on targets, never through global
+variables, and the build describes your architecture.
+
+::: {.more}
+**Read more:** [cmake-buildsystem(7)](https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html)
+:::
+
+## Qt's CMake API {#sec-qt-cmake}
+
+Qt adds a handful of commands on top of CMake. Three of them cover a Qt Quick application:
+
+```{.cmake filename="CMakeLists.txt"}
+cmake_minimum_required(VERSION 3.31)
+project(Sketchbook VERSION 0.1.0 LANGUAGES CXX)
+
+find_package(Qt6 6.12 REQUIRED COMPONENTS Quick)
+qt_standard_project_setup(REQUIRES 6.12)  # <1>
+
+qt_add_executable(app main.cpp)
+qt_add_qml_module(app                     # <2>
+    URI App
+    QML_FILES Main.qml
+    SOURCES AppController.cpp AppController.hpp
+)
+target_link_libraries(app PRIVATE Qt::Quick)
+```
+1. Turns on Qt's code generators (such as moc) and the defaults of the Qt version you name.
+2. A **QML module**: a name to import (`URI`), its QML files and C++ sources, built and
+   checked together.
+
+You will meet `qt_add_qml_module()` again in @sec-cpp-qml. It is the one command that ties
+C++ and QML together.
+
+::: {.more}
+**Template:** `CMakeLists.txt`, `src/app/CMakeLists.txt` ·
+**Read more:** [Getting started with CMake (Qt)](https://doc.qt.io/qt-6/cmake-get-started.html)
+:::
+
+## Static and dynamic libraries {#sec-linking}
+
+A library reaches your program in one of two ways.
+
+A **static** library (`.a`, `.lib`) is copied into your executable when it is linked. The
+result is one file with everything inside.
+
+A **dynamic** library (`.so`, `.dylib`, `.dll`) stays a separate file. The operating system
+loads it when the program starts, so it must be on the user's machine.
+
+| | Static | Dynamic |
+|---|---|---|
+| Joins the program | at link time | at start-up |
+| On the user's machine | nothing extra | the library, from the system or shipped with the app |
+| Memory | one copy per program | one copy shared by every program that uses it |
+| Updates | rebuild the program | replace the library |
+
+The last two rows explain why systems share libraries such as the C runtime or OpenSSL:
+memory is used once, and a security fix reaches every program at once. For your app, the
+choice decides what you must ship (@sec-shipping) and, for LGPL libraries such as Qt, what
+the license requires (@sec-licenses).
+
+::: {.callout-warning}
+## Works on my machine
+A dynamic library that exists on your computer but not on the user's makes the program fail
+at start-up. Every dynamic dependency is something you must ship or require.
+:::
+
+## Presets: the build is one command {#sec-presets}
+
+`CMakePresets.json` records how to configure, build, test and package the project. Everyone,
+your CI included, runs the same command; nobody has to remember flags.
+
+```{.json filename="CMakePresets.json"}
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "dev",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    }
+  ],
+  "buildPresets": [{ "name": "dev", "configurePreset": "dev" }],
+  "testPresets": [{ "name": "dev", "configurePreset": "dev" }],
+  "workflowPresets": [
+    {
+      "name": "dev",
+      "steps": [
+        { "type": "configure", "name": "dev" },
+        { "type": "build", "name": "dev" },
+        { "type": "test", "name": "dev" }
+      ]
+    }
+  ]
+}
+```
+
+```sh
+cmake --workflow --preset dev
+```
+
+Settings that belong to one machine, such as the path to your Qt or a build folder outside a
+synced directory, go into `CMakeUserPresets.json`. It can inherit from the shared presets and
+stays out of version control.
+
+::: {.more}
+**Template:** `CMakePresets.json`, with `dev`, `asan`, `release` and `vcpkg-qt` workflows ·
+**Read more:** [cmake-presets(7)](https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html)
+:::

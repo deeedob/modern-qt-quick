@@ -1,9 +1,9 @@
-# How-to guides
+# Working with the template {#sec-template}
 
-Short recipes for common changes. For the reasoning behind the structure, see
-[architecture](architecture.md).
+Short recipes for common changes to the template. Each assumes you have read the chapter it
+refers to.
 
-## Rename the template
+## Rename the template {#rename}
 
 1. In the top-level `CMakeLists.txt`, change the name in `project()`, `APP_DISPLAY_NAME` and
    `APP_BUNDLE_ID`.
@@ -17,7 +17,7 @@ Short recipes for common changes. For the reasoning behind the structure, see
 3. Put your copyright and license into `LICENSE` and the first entry of `REUSE.toml`, then
    build and run `check`.
 
-## Remove the demo
+## Remove the demo {#remove-demo}
 
 1. Delete `src/canvas/`, `src/sketchbook/`, `tests/canvas/`, `tests/sketchbook/` and
    `libs/shapes/`, and their `add_subdirectory()` lines.
@@ -28,7 +28,9 @@ Short recipes for common changes. For the reasoning behind the structure, see
 
 Keep `src/style`: it is the base for your own views.
 
-## Add a separable library
+## Add a separable library {#add-library}
+
+See @sec-separable.
 
 1. Create `libs/<name>/` with `include/<name>/`, `src/` and `tests/`, and a `CMakeLists.txt`
    modeled on `libs/shapes/CMakeLists.txt`. Call `app_target_defaults(<target>)` so the
@@ -36,7 +38,9 @@ Keep `src/style`: it is the base for your own views.
 2. Add `add_subdirectory(libs/<name>)` to the top-level `CMakeLists.txt`, before `src`.
 3. Link it from the feature that uses it: `target_link_libraries(app_<feature> PUBLIC <name>::<name>)`.
 
-## Add a feature
+## Add a feature {#add-feature}
+
+See @sec-features and @sec-required.
 
 1. Create `src/<feature>/` with its C++ types, marked `QML_ELEMENT` and `QML_UNCREATABLE`, its
    pages, and a `qt_add_qml_module(app_<feature> URI App.<Feature> STATIC ...)`. Link
@@ -49,7 +53,9 @@ Keep `src/style`: it is the base for your own views.
 5. Add `tests/<feature>/` with Qt Test or Qt Quick Test, and `add_subdirectory(<feature>)` to
    `tests/CMakeLists.txt`.
 
-## Add a dependency from vcpkg
+## Add a dependency from vcpkg {#add-dependency}
+
+See @sec-vcpkg.
 
 1. Add the port to `dependencies` in `vcpkg.json`.
 2. Add `find_package(<Package> CONFIG REQUIRED)` to the top-level `CMakeLists.txt`, and link
@@ -57,10 +63,10 @@ Keep `src/style`: it is the base for your own views.
    targets.
 3. Reconfigure. Its license ships in the package's `licenses/` folder automatically.
 
-## Ship a license notice for an asset
+## Ship a license notice for an asset {#add-notice}
 
-Put the asset's upstream license file next to it, register it in that folder's
-`CMakeLists.txt`, and add the asset to `REUSE.toml`:
+See @sec-licenses. Put the asset's upstream license file next to it, register it in that
+folder's `CMakeLists.txt`, and add the asset to `REUSE.toml`:
 
 ```cmake
 app_add_notice(lucide-icons icons/LICENSE)
@@ -68,7 +74,7 @@ app_add_notice(lucide-icons icons/LICENSE)
 
 The package then contains `licenses/lucide-icons.txt`.
 
-## Change the app icon
+## Change the app icon {#app-icon}
 
 `src/app/app.svg` is the only icon you design; the About dialog shows it as is. macOS and
 Windows need the icon in their own formats, `app.icns` and `app.ico`, so regenerate those two
@@ -85,7 +91,9 @@ iconutil -c icns app.iconset && rm -r app.iconset
 magick -background none app.svg -define icon:auto-resize=256,64,48,32,16 app.ico
 ```
 
-## Add a language
+## Add a language {#add-language}
+
+See @sec-i18n.
 
 1. Add the language code to `I18N_TRANSLATED_LANGUAGES` in the top-level `CMakeLists.txt`.
 2. Generate the new `.ts` file and translate it, for example with Qt Linguist:
@@ -96,12 +104,15 @@ magick -background none app.svg -define icon:auto-resize=256,64,48,32,16 app.ico
    ```
 
 3. Rebuild. The `.qm` file is embedded automatically, together with Qt's own translations for
-   that language, and `AppController.language = "fr"` switches to it at runtime.
+   that language, and `AppController.language = "fr"` switches to it at run time.
 
-## Debug with more logging
+## Debug with more logging {#more-logging}
+
+See @sec-logging.
 
 ```sh
-QT_LOGGING_RULES="app.*.debug=true" build/dev/src/app/QtAppTemplate.app/Contents/MacOS/QtAppTemplate
+QT_LOGGING_RULES="app.*.debug=true" \
+    build/dev/src/app/QtAppTemplate.app/Contents/MacOS/QtAppTemplate
 ```
 
 On Windows and Linux, the executable is `build/dev/src/app/QtAppTemplate`. The session logs

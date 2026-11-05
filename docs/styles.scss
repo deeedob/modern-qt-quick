@@ -1,0 +1,35 @@
+/*-- scss:defaults --*/
+$primary: #5b5bd6;
+$font-size-root: 17px;
+$code-block-font-size: 0.86em;
+
+/*-- scss:rules --*/
+h2 {
+  margin-top: 2.4rem;
+}
+
+pre code {
+  line-height: 1.45;
+}
+
+.callout {
+  margin-block: 1.4rem;
+}
+
+// The closing line of a section: where the template shows it, and where to read more.
+.more {
+  margin-top: 0.8rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(128, 128, 128, 0.25);
+  font-size: 0.88em;
+  opacity: 0.85;
+}
+
+.more p {
+  margin-bottom: 0.2rem;
+}
+
+.quarto-figure img {
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 8px;
+}

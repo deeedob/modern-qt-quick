@@ -1,0 +1,127 @@
+# Testing {#sec-testing}
+
+The layering from @sec-shape pays off here. Each layer can be tested on its own, most of them
+without a window, and the tests run in seconds.
+
+## Test each layer without the UI {#sec-test-layers}
+
+| Layer | Test with | Needs a window |
+|---|---|---|
+| Core (plain C++) | any C++ test framework, such as Catch2 | no |
+| View models and stores | Qt Test | no |
+| QML components | Qt Quick Test | yes, offscreen |
+
+A view model test calls commands and checks state and signals, exactly as the view would:
+
+```{.cpp filename="tst_SketchbookViewModel.cpp"}
+class tst_SketchbookViewModel : public QObject
+{
+    Q_OBJECT
+
+private Q_SLOTS:
+    void createAddsAnOpenSketch()
+    {
+        QTemporaryDir dir;                                       // <1>
+        SketchStorage storage(dir.path());
+        CanvasStore canvas;
+        SketchbookViewModel viewModel(storage, canvas);
+        QSignalSpy opened(&viewModel, &SketchbookViewModel::openNameChanged);  // <2>
+
+        viewModel.create();
+
+        QCOMPARE(viewModel.model()->rowCount(), 1);
+        QCOMPARE(opened.count(), 1);
+    }
+};
+
+QTEST_GUILESS_MAIN(tst_SketchbookViewModel)
+#include "tst_SketchbookViewModel.moc"
+```
+1. A fresh folder per test: no test sees another test's files.
+2. `QSignalSpy` records every emission of a signal.
+
+::: {.more}
+**Template:** `tests/sketchbook/` ·
+**Read more:** [Qt Test overview](https://doc.qt.io/qt-6/qtest-overview.html)
+:::
+
+## Test QML components {#sec-quick-test}
+
+Qt Quick Test runs test cases written in QML. A test creates the component, simulates input,
+and checks properties and signals:
+
+```{.qml filename="tst_StrokeItem.qml"}
+import QtQuick
+import QtTest
+import App.Canvas
+
+TestCase {
+    id: testCase
+    name: "StrokeItem"
+    width: 200
+    height: 200
+    visible: true
+    when: windowShown
+
+    Component {
+        id: itemComponent
+        StrokeItem { anchors.fill: parent }
+    }
+
+    SignalSpy {
+        id: finished
+        signalName: "strokeFinished"
+    }
+
+    function test_dragReportsThePoints(): void {
+        const item = createTemporaryObject(itemComponent, testCase);
+        finished.target = item;
+
+        mousePress(item, 10, 10);
+        mouseMove(item, 90, 80, -1, Qt.LeftButton);
+        mouseRelease(item, 90, 80);
+
+        compare(finished.count, 1);
+    }
+}
+```
+
+Tests run without a screen with `QT_QPA_PLATFORM=offscreen`, which the template sets in its
+test presets.
+
+::: {.more}
+**Template:** `tests/canvas/tst_StrokeItem.qml` ·
+**Read more:** [Qt Quick Test](https://doc.qt.io/qt-6/qtquicktest-index.html)
+:::
+
+## Tests must be deterministic {#sec-determinism}
+
+A test that fails one run in twenty is worse than no test: people learn to ignore it.
+
+- **Never sleep for a fixed time.** Wait for the condition instead: `QTRY_VERIFY` and
+  `QTRY_COMPARE` in C++, `tryVerify()` and `tryCompare()` in QML.
+- **Isolate state.** Temporary directories instead of real paths, fakes at the seams
+  (@sec-interfaces) instead of the network or the clock.
+- **No order dependence.** Each test sets up what it needs and cleans up after itself.
+
+```cpp
+QTest::qWait(500);                    // flaky: sometimes 500 ms is not enough
+QTRY_COMPARE(spy.count(), 1);         // waits until true, or fails after a timeout
+```
+
+## Check your models {#sec-model-tester}
+
+Item models have strict rules: row counts must match the signals, indexes must stay valid,
+and every change needs the right begin and end calls. `QAbstractItemModelTester` checks all
+of them while your test runs:
+
+```cpp
+SketchListModel model;
+QAbstractItemModelTester tester(
+    &model, QAbstractItemModelTester::FailureReportingMode::QtTest);
+// every change to model is now verified
+```
+
+::: {.more}
+**Read more:** [QAbstractItemModelTester](https://doc.qt.io/qt-6/qabstractitemmodeltester.html)
+:::
