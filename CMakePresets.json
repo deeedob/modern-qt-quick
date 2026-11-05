@@ -1,0 +1,114 @@
+{
+  "version": 10,
+  "$comment": "SPDX-FileCopyrightText: 2026 Dennis Oberst / SPDX-License-Identifier: MIT-0",
+  "cmakeMinimumRequired": { "major": 3, "minor": 31, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "toolchainFile": "${sourceDir}/3rdparty/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "$env{QT_ROOT_DIR}",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+      }
+    },
+    {
+      "name": "dev",
+      "inherits": "base",
+      "displayName": "Development (Debug)",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "release",
+      "inherits": "base",
+      "displayName": "Release with debug info (crash traces stay readable)",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" }
+    },
+    {
+      "name": "asan",
+      "inherits": "dev",
+      "displayName": "Debug with AddressSanitizer and UndefinedBehaviorSanitizer",
+      "cacheVariables": { "APP_SANITIZERS": "address;undefined" }
+    },
+    {
+      "name": "vcpkg-qt",
+      "inherits": "release",
+      "displayName": "Release, with Qt built from source by vcpkg (slow first run)",
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "",
+        "VCPKG_MANIFEST_FEATURES": "qt"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "dev", "configurePreset": "dev" },
+    { "name": "release", "configurePreset": "release" },
+    { "name": "asan", "configurePreset": "asan" },
+    { "name": "vcpkg-qt", "configurePreset": "vcpkg-qt" }
+  ],
+  "testPresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error" },
+      "environment": { "QT_QPA_PLATFORM": "offscreen" }
+    },
+    { "name": "dev", "inherits": "base", "configurePreset": "dev" },
+    { "name": "release", "inherits": "base", "configurePreset": "release" },
+    {
+      "name": "asan",
+      "inherits": "base",
+      "configurePreset": "asan",
+      "environment": {
+        "$comment": "Qt itself is not instrumented, so container-overflow reports would be false positives.",
+        "ASAN_OPTIONS": "detect_container_overflow=0:strict_string_checks=1",
+        "UBSAN_OPTIONS": "print_stacktrace=1"
+      }
+    },
+    { "name": "vcpkg-qt", "inherits": "base", "configurePreset": "vcpkg-qt" }
+  ],
+  "packagePresets": [
+    { "name": "release", "configurePreset": "release" },
+    { "name": "vcpkg-qt", "configurePreset": "vcpkg-qt" }
+  ],
+  "workflowPresets": [
+    {
+      "name": "dev",
+      "steps": [
+        { "type": "configure", "name": "dev" },
+        { "type": "build", "name": "dev" },
+        { "type": "test", "name": "dev" }
+      ]
+    },
+    {
+      "name": "asan",
+      "steps": [
+        { "type": "configure", "name": "asan" },
+        { "type": "build", "name": "asan" },
+        { "type": "test", "name": "asan" }
+      ]
+    },
+    {
+      "name": "release",
+      "steps": [
+        { "type": "configure", "name": "release" },
+        { "type": "build", "name": "release" },
+        { "type": "test", "name": "release" },
+        { "type": "package", "name": "release" }
+      ]
+    },
+    {
+      "name": "vcpkg-qt",
+      "steps": [
+        { "type": "configure", "name": "vcpkg-qt" },
+        { "type": "build", "name": "vcpkg-qt" },
+        { "type": "test", "name": "vcpkg-qt" },
+        { "type": "package", "name": "vcpkg-qt" }
+      ]
+    }
+  ]
+}

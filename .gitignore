@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2026 Dennis Oberst
+# SPDX-License-Identifier: MIT-0
+
+/build/
+/CMakeUserPresets.json
+/.cache/
+/.qmlls.ini
+*.user
+.DS_Store

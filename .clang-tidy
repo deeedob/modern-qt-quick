@@ -1,0 +1,65 @@
+# SPDX-FileCopyrightText: 2026 Dennis Oberst
+# SPDX-License-Identifier: MIT-0
+#
+# Read by clangd (editor), clangd-tidy (`check_clangd` target) and clang-tidy alike.
+# Everything is on, minus vendor-specific groups and checks that fight Qt idioms (moc, model
+# roles, logging macros), the .clang-format style, or are matters of taste.
+
+Checks: >
+  *,
+  -abseil-*,
+  -altera-*,
+  -android-*,
+  -boost-*,
+  -fuchsia-*,
+  -google-*,
+  -hicpp-*,
+  -llvm*,
+  -zircon-*,
+  -bugprone-easily-swappable-parameters,
+  -concurrency-mt-unsafe,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
+  -cppcoreguidelines-avoid-do-while,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-macro-usage,
+  -cppcoreguidelines-narrowing-conversions,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-type-static-cast-downcast,
+  -cppcoreguidelines-pro-type-vararg,
+  -misc-include-cleaner,
+  -misc-non-private-member-variables-in-classes,
+  -misc-use-anonymous-namespace,
+  -misc-use-internal-linkage,
+  -modernize-use-designated-initializers,
+  -modernize-use-trailing-return-type,
+  -performance-avoid-endl,
+  -performance-enum-size,
+  -portability-avoid-pragma-once,
+  -readability-avoid-nested-conditional-operator,
+  -readability-braces-around-statements,
+  -readability-convert-member-functions-to-static,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-identifier-naming,
+  -readability-implicit-bool-conversion,
+  -readability-isolate-declaration,
+  -readability-magic-numbers,
+  -readability-math-missing-parentheses,
+  -readability-named-parameter,
+  -readability-redundant-access-specifiers,
+  -readability-trailing-comma,
+  -readability-uppercase-literal-suffix
+
+CheckOptions:
+  cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: true
+  bugprone-narrowing-conversions.IgnoreConversionFromTypes: "size_type;size_t"
+  bugprone-suspicious-include.IgnoredRegex: "^.*[mM][oO][cC].*$"
+
+# Diagnose our own headers, never Qt's or vcpkg's.
+HeaderFilterRegex: "/(src|tests)/"
