@@ -1,79 +1,74 @@
-// SPDX-FileCopyrightText: 2026 Dennis Oberst
-// SPDX-License-Identifier: MIT-0
-
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import QtQuick.Controls.Material
 import QtQuick.Layouts
-import App.Backend.Tasks
-import App.Backend.Timer
-import App.Frontend.Tasks
-import App.Frontend.Timer
-import App.Frontend.Ui
+import AppStyle
+import App.Canvas
+import App.Sketchbook
 
 // main() injects the dependencies as required properties; only AppController is a singleton.
 ApplicationWindow {
     id: window
 
-    required property TasksViewModel tasks
-    required property TimerStore timer
+    required property SketchbookViewModel sketchbook
+    required property CanvasStore canvas
 
-    width: 420
-    height: 640
+    width: 960
+    height: 680
     visible: true
     title: AppController.displayName
-    font.family: Theme.fontFamily
-    Material.theme: Material.System
-    Material.accent: Theme.accent
 
     header: ToolBar {
-        // Blend the bar into the window instead of the style's primary color.
-        Material.primary: window.Material.background
-        Material.elevation: 0
-
         RowLayout {
             anchors.fill: parent
+            anchors.leftMargin: Theme.spacing / 2
             anchors.rightMargin: Theme.spacing / 2
 
-            TabBar {
-                id: tabs
-
-                Layout.fillWidth: true
-
-                TabButton {
-                    text: qsTr("Tasks")
-                }
-
-                TabButton {
-                    text: qsTr("Focus")
-                }
+            ToolButton {
+                icon.source: Theme.icon("arrow-left")
+                text: qsTr("Back to the sketchbook")
+                visible: stack.depth > 1
+                onClicked: stack.pop()
             }
 
-            IconButton {
-                iconName: "languages"
-                toolTip: qsTr("Switch language")
+            Label {
+                Layout.fillWidth: true
+                Layout.leftMargin: Theme.spacing / 2
+                text: stack.depth > 1 ? window.sketchbook.openName : AppController.displayName
+                font.pixelSize: 16
+                font.weight: Font.DemiBold
+                elide: Text.ElideRight
+            }
+
+            ToolButton {
+                icon.source: Theme.icon("languages")
+                text: qsTr("Switch language")
                 onClicked: AppController.language = AppController.language === "de" ? "en" : "de"
             }
 
-            IconButton {
-                iconName: "info"
-                toolTip: qsTr("About")
+            ToolButton {
+                icon.source: Theme.icon("info")
+                text: qsTr("About")
                 onClicked: about.open()
             }
         }
     }
 
-    StackLayout {
+    StackView {
+        id: stack
+
         anchors.fill: parent
-        currentIndex: tabs.currentIndex
-
-        TasksPage {
-            viewModel: window.tasks
+        initialItem: SketchbookPage {
+            viewModel: window.sketchbook
+            onOpened: stack.push(canvasPage)
         }
+    }
 
-        TimerPage {
-            store: window.timer
+    Component {
+        id: canvasPage
+
+        CanvasPage {
+            store: window.canvas
         }
     }
 

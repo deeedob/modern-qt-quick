@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2026 Dennis Oberst
-// SPDX-License-Identifier: MIT-0
-
 #pragma once
 
 #include <QtCore/QObject>
@@ -35,7 +32,7 @@ public:
 
     Q_INVOKABLE void openLogDirectory() const;
 
-signals:
+Q_SIGNALS:
     void languageChanged();
 
 private:

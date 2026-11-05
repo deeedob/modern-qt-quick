@@ -1,9 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Dennis Oberst
-// SPDX-License-Identifier: MIT-0
-
 #include "BuildInfo.hpp"
 
-namespace app::platform {
+namespace app {
 
 const BuildInfo &buildInfo() noexcept
 {
@@ -20,4 +17,4 @@ const BuildInfo &buildInfo() noexcept
     return info;
 }
 
-} // namespace app::platform
+} // namespace app

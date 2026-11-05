@@ -1,6 +1,5 @@
 {
   "version": 10,
-  "$comment": "SPDX-FileCopyrightText: 2026 Dennis Oberst / SPDX-License-Identifier: MIT-0",
   "cmakeMinimumRequired": { "major": 3, "minor": 31, "patch": 0 },
   "configurePresets": [
     {
@@ -9,6 +8,10 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}",
       "toolchainFile": "${sourceDir}/3rdparty/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "environment": {
+        "$comment": "Oldest supported macOS (Qt 6.12's minimum), read by CMake and the vcpkg triplets.",
+        "MACOSX_DEPLOYMENT_TARGET": "14.4"
+      },
       "cacheVariables": {
         "CMAKE_PREFIX_PATH": "$env{QT_ROOT_DIR}",
         "CMAKE_EXPORT_COMPILE_COMMANDS": true,

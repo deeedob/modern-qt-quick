@@ -1,19 +1,20 @@
-<!--
-SPDX-FileCopyrightText: 2026 Dennis Oberst
-SPDX-License-Identifier: MIT-0
--->
-
 # Modern Qt 6 App Template
 
 A GitHub template for Qt Quick applications with Qt 6.12, C++23 and CMake. It covers the
-whole path from source to installer: a layered architecture that the build enforces,
-dependencies from vcpkg, strict warnings and sanitizers, a single `check` target for every
-linter, tests for each layer, translations, bundled fonts and icons, crash logging, and
-packaging per platform.
+whole path from source to installer: a Pitchfork layout, dependencies from vcpkg, strict
+warnings and sanitizers, one `check` target for every linter, tests, translations, a custom
+Qt Quick Controls style, crash logging, and packages per platform with their license notices.
 
-The included demo app, *Focus Tasks*, is deliberately small: a task list with fuzzy search
-and a focus timer. Each part of it shows one pattern: MVVM, Flux, dependency injection
-into QML, and a custom scene graph item.
+The demo app, *Sketchbook*, is small on purpose. You draw on a canvas, and circles,
+rectangles and triangles snap into clean shapes. Every part of it exists to show one idea:
+
+| Part | Shows |
+|---|---|
+| `libs/shapes` | Plain C++ that knows nothing about the app: the $1 gesture recognizer, with its own tests and benchmark |
+| `src/canvas` | Flux: actions, a pure reducer, and a history that makes undo and redo trivial; a custom scene graph item |
+| `src/sketchbook` | MVVM: a view model with an item model; saving on a worker thread with glaze |
+| `src/style` | A Qt Quick Controls style with design tokens and light and dark themes |
+| `src/app` | The composition root, logging, crash handling and build info |
 
 ## Quick start
 
@@ -35,7 +36,7 @@ On Windows, run the commands from a *Developer PowerShell for VS 2022*.
 |---|---|
 | `cmake --workflow --preset dev` | Debug build and all tests |
 | `cmake --workflow --preset asan` | Debug build and tests with AddressSanitizer and UBSan |
-| `cmake --workflow --preset release` | Release build, tests, and an installer in `build/release/` |
+| `cmake --workflow --preset release` | Release build, tests, and a package in `build/release/` |
 | `cmake --workflow --preset vcpkg-qt` | Same as release, but vcpkg builds Qt itself (takes hours) |
 | `cmake --build --preset dev --target check` | Every linter: format, clangd-tidy, qmllint, REUSE |
 | `cmake --build --preset dev --target format` | Format C++ and QML in place |
@@ -43,40 +44,36 @@ On Windows, run the commands from a *Developer PowerShell for VS 2022*.
 ## Layout
 
 ```
+libs/shapes/        a separable library: plain C++, own include/, src/ and tests/
 src/
-  libs/core/        pure C++23, no Qt: domain types, fuzzy search, timer reducer (public API in include/)
-  platform/         Qt without QML: storage, logging, crash handler, build info
-  backend/<f>/      QML modules of C++ types: view models, stores, item models (no Qt Quick)
-  frontend/ui/      design system: theme, reusable components, fonts, icons, a C++ scene graph item
-  frontend/<f>/     the views of each feature
+  style/            the design system: a Qt Quick Controls style, fonts, icons
+  canvas/           drawing (Flux) and the custom scene graph item
+  sketchbook/       the list of sketches (MVVM) and their files
   app/              the executable: main.cpp wires everything together
-tests/              one folder per layer, with Catch2, Qt Test and Qt Quick Test
+tests/              tests for src/, mirroring its folders
 cmake/              build policy: warnings, hardening, sanitizers, checks, packaging
 i18n/               translations (.ts)
-packaging/          icons and license texts for the installers
-3rdparty/vcpkg/     vcpkg, pinned as a shallow git submodule
+3rdparty/           vcpkg as a git submodule, and Qt's license texts
 ```
-
-Each layer may only use the layers above it in this list, and `target_link_libraries` enforces
-that: a view model that includes a Qt Quick header does not compile.
 
 ## Make it yours
 
 1. Click *Use this template* on GitHub, then clone with `--recurse-submodules`.
 2. Set your name, display name and bundle id in the top-level `CMakeLists.txt`
-   (`project()`, `APP_DISPLAY_NAME`, `APP_BUNDLE_ID`) and your copyright in `LICENSE` and `REUSE.toml`.
+   (`project()`, `APP_DISPLAY_NAME`, `APP_BUNDLE_ID`), and your copyright and license in
+   `LICENSE` and the first entry of `REUSE.toml`.
 3. Optionally rename the `App` QML prefix and the `app` namespace, see
    [docs/how-to.md](docs/how-to.md#rename-the-template).
-4. Delete the demo features you do not need, see [docs/how-to.md](docs/how-to.md#remove-the-demo-features).
+4. Replace the demo features, see [docs/how-to.md](docs/how-to.md#remove-the-demo).
 
 ## Documentation
 
-- [Architecture](docs/architecture.md): the layers, why they exist, and how the build enforces them.
-- [QML and C++](docs/qml-integration.md): dependency injection, MVVM, Flux, and custom items.
+- [Architecture](docs/architecture.md): the layout, separable libraries, and threads.
+- [QML and C++](docs/qml-integration.md): dependency injection, MVVM, Flux, the custom item, and the style.
 - [Build and dependencies](docs/build-and-dependencies.md): presets, vcpkg, and where Qt comes from.
 - [Code quality](docs/quality.md): warnings, hardening, sanitizers, linters, and tests.
-- [Packaging and licensing](docs/packaging-and-licensing.md): installers, SPDX, and LGPL obligations.
-- [How-to guides](docs/how-to.md): add a library or feature, add a language, remove the demo.
+- [Packaging and licensing](docs/packaging-and-licensing.md): packages, REUSE, and license notices.
+- [How-to guides](docs/how-to.md): add a library, feature, dependency, notice or language.
 
 ## License
 

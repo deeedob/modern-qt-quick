@@ -1,0 +1,1 @@
+app_add_quick_test(tst_style QML_FILES tst_ToolButton.qml LIBRARIES app_styleplugin)

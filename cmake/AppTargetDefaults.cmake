@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 Dennis Oberst
-# SPDX-License-Identifier: MIT-0
-#
 # The single source of compile policy for first-party targets:
 #
 #   app_target_defaults(<target>)
@@ -92,7 +89,11 @@ define_property(GLOBAL PROPERTY APP_FIRST_PARTY_SOURCES
 
 function(app_target_defaults target)
     target_compile_options(${target} PRIVATE ${_app_hardening_options} ${_app_sanitizer_options})
-    target_compile_definitions(${target} PRIVATE ${_app_hardening_definitions})
+    target_compile_definitions(${target} PRIVATE ${_app_hardening_definitions}
+        # Qt's `emit`, `signals` and `slots` are macros that break third-party code using those
+        # names (glaze has a variable called emit). Write Q_EMIT, Q_SIGNALS and Q_SLOTS instead.
+        QT_NO_KEYWORDS
+    )
     if(_app_sanitizer_options AND NOT MSVC)
         target_link_options(${target} PRIVATE ${_app_sanitizer_options})
     endif()
@@ -108,6 +109,14 @@ endfunction()
 function(_app_apply_warnings target)
     get_target_property(_sources ${target} SOURCES)
     get_target_property(_source_dir ${target} SOURCE_DIR)
+    # Headers in a FILE_SET are not part of SOURCES, but the checks must see them too.
+    get_target_property(_header_sets ${target} HEADER_SETS)
+    if(_header_sets)
+        foreach(_set IN LISTS _header_sets)
+            get_target_property(_headers ${target} HEADER_SET_${_set})
+            list(APPEND _sources ${_headers})
+        endforeach()
+    endif()
     set(_compiled "")
     foreach(_src IN LISTS _sources)
         if(_src MATCHES "^\\$<")

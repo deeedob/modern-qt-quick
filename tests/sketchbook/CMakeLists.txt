@@ -1,0 +1,2 @@
+app_add_qt_test(tst_SketchStorage SOURCES tst_SketchStorage.cpp LIBRARIES app_sketchbook)
+app_add_qt_test(tst_SketchbookViewModel SOURCES tst_SketchbookViewModel.cpp LIBRARIES app_sketchbook)

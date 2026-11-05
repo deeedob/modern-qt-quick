@@ -1,8 +1,3 @@
-<!--
-SPDX-FileCopyrightText: 2026 Dennis Oberst
-SPDX-License-Identifier: MIT-0
--->
-
 # Build and dependencies
 
 This document explains the build setup: presets, where dependencies come from, and the
@@ -55,8 +50,8 @@ vcpkg's ports may trail the latest Qt release by a few weeks.
 
 ## vcpkg for everything else
 
-vcpkg builds the C++ dependencies from source on first configure: rapidfuzz, cpptrace and
-Catch2. It runs in *manifest mode*: `vcpkg.json` lists the dependencies, and the vcpkg
+vcpkg builds the C++ dependencies from source on first configure: glaze (JSON through
+compile-time reflection), cpptrace (stack traces) and Catch2 (tests). It runs in *manifest mode*: `vcpkg.json` lists the dependencies, and the vcpkg
 toolchain file installs them into the build directory during `cmake --preset`.
 
 vcpkg itself is a git submodule in `3rdparty/vcpkg`, cloned shallowly (`shallow = true` in
@@ -79,13 +74,18 @@ Built packages land in vcpkg's binary cache (`~/.cache/vcpkg/archives` on macOS 
 (`arm64-osx`, `x64-linux`, ...). Each includes the built-in triplet and
 `common/settings.cmake`, which sets `VCPKG_BUILD_TYPE release`: that halves the build time
 and disk use, and a Debug build of the app links the release libraries. The shared settings
-also build libdwarf as a shared library (see [packaging and licensing](packaging-and-licensing.md))
-and set the macOS deployment target.
+also build libdwarf as a shared library (see [packaging and licensing](packaging-and-licensing.md)).
 
-The deployment target lives in one place, `cmake/MacOSDeploymentTarget.cmake`, which both the
-top-level `CMakeLists.txt` and the triplets read, so the app and its dependencies always agree.
-vcpkg's binary cache hashes only the triplet file itself, so `common/settings.cmake` lists the
-files it includes in `VCPKG_HASH_ADDITIONAL_FILES`; changing them rebuilds the dependencies.
+The oldest supported macOS is set once, as `MACOSX_DEPLOYMENT_TARGET` in the `environment` of
+the base preset. That is Apple's standard variable: CMake initializes
+`CMAKE_OSX_DEPLOYMENT_TARGET` from it, and the triplets read it for the dependencies, so the app
+and its libraries always agree. The triplets also pass it through `VCPKG_ENV_PASSTHROUGH`, which
+adds its value to vcpkg's binary-cache hash: changing it rebuilds the dependencies instead of
+reusing ones built for another macOS. Override it in your `CMakeUserPresets.json` if you need
+an older or newer minimum.
+
+vcpkg's binary cache hashes only the triplet file itself, so `common/settings.cmake` adds itself
+to `VCPKG_HASH_ADDITIONAL_FILES`.
 
 Windows keeps vcpkg's default triplet, which builds debug and release. MSVC's debug runtime
 is not compatible with release libraries, so a Debug build there needs debug dependencies.
@@ -93,7 +93,7 @@ is not compatible with release libraries, so a Debug build there needs debug dep
 ## Project-wide settings
 
 The top-level `CMakeLists.txt` sets the few things that apply to everything: C++23 without
-compiler extensions, the macOS deployment target, the application name and bundle id. All
+compiler extensions, the application name and bundle id. All
 other settings are attached to targets. In particular, warnings, hardening and sanitizers come
 from one function, `app_target_defaults()`, described in [code quality](quality.md).
 

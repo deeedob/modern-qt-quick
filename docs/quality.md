@@ -1,8 +1,3 @@
-<!--
-SPDX-FileCopyrightText: 2026 Dennis Oberst
-SPDX-License-Identifier: MIT-0
--->
-
 # Code quality
 
 This document explains how the template keeps code strict: compiler warnings, hardening,
@@ -18,7 +13,7 @@ sanitizers, linters and tests, each defined in exactly one place.
 | C++ formatting | `.clang-format` | the editor, `format`, `check_format` |
 | QML formatting | `.qmlformat.ini` | qmlformat, `format` |
 | QML lint severity | `.qmllint.ini` (any warning fails) | qmllint, `all_qmllint`, qmlls |
-| Licensing | SPDX headers and `REUSE.toml` | `check_reuse` |
+| Licensing | `REUSE.toml` | `check_reuse` |
 
 `.clangd` lists no warning flags of its own: clangd reads the real compile commands, so the
 editor shows exactly what the compiler reports.
@@ -82,30 +77,31 @@ diagnostics, clang-tidy and unused includes, in parallel and much faster than pl
 clang-tidy. Run it from time to time to catch problems in files nobody has opened recently.
 
 clang-tidy starts from every check and removes vendor-specific groups and checks that
-conflict with Qt idioms (moc, integer model roles, logging macros) or with the formatting
-style. Identifier naming is left to each project.
+conflict with Qt idioms (moc, logging macros), common C++ idioms (the `Overloaded` visitor),
+or the formatting style. Identifier naming is left to each project. Where a check is right in
+general but wrong in one known place, `.clang-tidy` configures it instead of the code carrying
+`NOLINT` comments: `main()` may let exceptions escape to the crash handler
+(`bugprone-exception-escape.CheckMain`, LLVM 22 or newer), and item-model roles stay unscoped
+enums inside their model (`cppcoreguidelines-use-enum-class.IgnoreUnscopedEnumsInClasses`).
+
+The checks cover public headers in a `FILE_SET` too. CMake keeps those out of a target's
+`SOURCES`, so `app_target_defaults()` collects them from the target's header sets.
 
 ## Tests
 
-Each layer is tested with the lightest tool that can test it:
+Each part is tested with the lightest tool that can test it:
 
-| Layer | Framework | What the demo tests |
+| Part | Framework | What the demo tests |
 |---|---|---|
-| `libs` | Catch2 | fuzzy search, and the timer reducer at compile time |
-| `platform` | Qt Test | the JSON repository, log files and their rotation |
-| `backend` | Qt Test, without Qt Quick | view model and store behavior, with `QAbstractItemModelTester` and `QSignalSpy` |
-| `frontend` | Qt Quick Test | component APIs, clicks, and the ring's pixels |
-| `app` | CTest | `--version` starts the real executable |
+| `libs/shapes` | Catch2, in `libs/shapes/tests/` | recognition across positions, sizes, aspect ratios and directions; degenerate input; a hidden benchmark |
+| `src/canvas` | Qt Test | the store: actions, undo and redo, snapping, history limits |
+| `src/canvas` | Qt Quick Test | `StrokeItem` turns pointer input into a `strokeFinished` signal |
+| `src/sketchbook` | Qt Test | storage round trips, ordered saves, broken files; the view model with `QAbstractItemModelTester` |
+| `src/style` | Qt Quick Test | the tooltip and click behavior of `ToolButton` |
+| `src/app` | Qt Test and CTest | log files and their rotation; `--version` starts the real executable |
 
-The timer reducer is `constexpr`, so `tests/libs/core/tst_FocusTimer.cpp` checks it with
-`STATIC_REQUIRE`: a broken reducer fails the build. The same file builds a second time with
-`CATCH_CONFIG_RUNTIME_STATIC_REQUIRE` as `tst_core_relaxed`, which runs the checks at runtime
-where a debugger can step through them.
+Qt Test and Qt Quick Test cover the Qt parts, and Catch2 covers the library, because a
+separable library should not need Qt even for its tests.
 
-The test presets set `QT_QPA_PLATFORM=offscreen`, so no windows appear. Qt Quick then uses
-its software renderer, which cannot draw custom scene graph geometry; tests that compare
-pixels skip themselves there. Run them on the GPU with:
-
-```sh
-QT_QPA_PLATFORM= ctest --preset dev -R frontend
-```
+The test presets set `QT_QPA_PLATFORM=offscreen`, so no windows appear. That platform turns
+hover effects off, which is why `tst_ToolButton.qml` enables hover on the button it tests.
