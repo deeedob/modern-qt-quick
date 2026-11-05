@@ -1,0 +1,130 @@
+# Project layout {#sec-layout}
+
+A good layout tells a newcomer where things are before they read a line of code. C++ has no
+official standard, but it has a widely used convention, and Qt Quick adds a few rules of
+its own.
+
+## A conventional top level {#sec-pitchfork}
+
+Base your layout on **Pitchfork**, the closest thing C++ has to a standard project layout.
+An application adapts it like this:
+
+```{.default filename="my-app/"}
+my-app/
+├── CMakeLists.txt
+├── CMakePresets.json
+├── cmake/        build helpers
+├── docs/         documentation
+├── external/     third-party code you embed, unchanged
+├── libs/         libraries that could live without the app
+├── src/          the application
+└── tests/        tests for src/
+```
+
+Pitchfork itself puts code either in `src/` or, split up, in `libs/`; an application with
+separable libraries commonly uses both, and adds `cmake/` for build helpers. Newcomers find
+code where they expect it, and the layout scales from one library to many.
+
+::: {.more}
+**Template:** the repository root (`3rdparty/` plays the role of `external/`) ·
+**Read more:** [Pitchfork](https://joholl.github.io/pitchfork-website/)
+:::
+
+## Public headers in `include/<name>/` {#sec-include-dirs}
+
+Every library splits its headers in two. Public headers, the library's API, go into
+`include/<name>/`. Private headers stay next to the sources in `src/`.
+
+```{.default filename="libs/core/"}
+core/
+├── CMakeLists.txt
+├── include/
+│   └── core/
+│       └── message.h        public: consumers include it
+└── src/
+    ├── message.cpp
+    ├── peerregistry.h       private: invisible to consumers
+    └── peerregistry.cpp
+```
+
+```{.cmake filename="libs/core/CMakeLists.txt"}
+add_library(core STATIC src/message.cpp src/peerregistry.cpp)
+target_include_directories(core
+    PUBLIC include   # <1>
+    PRIVATE src      # <2>
+)
+```
+1. Consumers get `include/` on their include path and write `#include <core/message.h>`.
+2. Only the library itself can include `peerregistry.h`.
+
+The extra `core/` folder pays off at every include. `#include <core/message.h>` says where
+the header comes from and cannot collide with another library's `message.h`. Do this for
+every library, including those used only inside your project: the split shows at a glance
+what a library promises and what it keeps to itself.
+
+::: {.more}
+**Template:** `libs/shapes/`, which declares its public headers as a `FILE_SET HEADERS`, the
+modern spelling of the same idea
+:::
+
+## Separable code becomes its own library {#sec-separable}
+
+Ask of every piece of code: *would someone use this without our app?* An algorithm, a file
+parser or a protocol passes that test. It then becomes a library under `libs/`, with its own
+tests and, ideally, no Qt at all.
+
+Such a library is the easiest code in the project to test, to reason about, and to reuse.
+Code that only serves one feature fails the test and stays inside that feature.
+
+::: {.more}
+**Template:** `libs/shapes/`, a shape recognizer in plain C++. It does not link Qt, so a Qt
+include there fails to compile.
+:::
+
+## Group by feature, then by role {#sec-features}
+
+Organize the application by feature, not by file type. A feature folder holds everything
+the feature needs: its C++ types and its QML files, side by side, built as one QML module.
+
+```{.default filename="src/"}
+src/
+├── app/            main.cpp, the main window
+├── style/          the look: controls, colors, icons
+├── canvas/         a small feature: a few files
+└── contacts/       a grown feature, split by role
+    ├── components/    reusable QML pieces: a search field, a delegate
+    ├── pages/         screens that combine components
+    ├── models/        item models
+    └── controllers/   view models and controllers
+```
+
+Adding a feature adds a folder; removing it deletes one. Split by role only once a feature
+outgrows a single folder.
+
+::: {.more}
+**Template:** `src/` ·
+**Read more:** [Qt 6 QML project architecture](https://www.learnqt.guide/qt6-qml-project-architecture)
+:::
+
+## Tests mirror the sources {#sec-tests-mirror}
+
+`tests/canvas/` tests `src/canvas/`. When you look for a class's tests, you know where they
+are. A library under `libs/` keeps its tests in its own `tests/` folder, so it can move to
+another repository in one piece.
+
+::: {.more}
+**Template:** `tests/` and `libs/shapes/tests/`
+:::
+
+## Include by module {#sec-include-style}
+
+Write Qt includes with their module, and your own libraries' includes with their folder:
+
+```cpp
+#include <QtCore/QObject>
+#include <QtQuick/QQuickItem>
+#include <core/message.h>
+```
+
+Every include then tells the reader which module or library a type comes from, in the same
+form for Qt and for your own code.

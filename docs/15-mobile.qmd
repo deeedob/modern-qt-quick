@@ -1,0 +1,62 @@
+# Mobile, briefly {#sec-mobile}
+
+The same Qt Quick application can run on Android and iOS. This chapter does not teach mobile
+development; it shows what changes, so you can plan for it.
+
+## Same code, different device {#sec-mobile-device}
+
+What stays: your C++ layers, your QML, your build. What changes is the device around them:
+
+- **Input.** Fingers instead of a mouse: no hover, larger touch targets, gestures.
+- **Screens.** Small, dense, and rotating between portrait and landscape.
+- **Lifecycle.** The system suspends your app when the user switches away, and may end it
+  without warning. Save early, not on quit.
+- **Files.** Each app lives in a sandbox; use `QStandardPaths` (@sec-paths), never fixed
+  paths.
+
+This is where the split from @sec-split pays off once more: logic stays in C++, and mostly
+the views adapt.
+
+::: {.more}
+**Read more:** [Mobile development with Qt](https://doc.qt.io/qt-6/mobiledevelopment.html)
+:::
+
+## Building for a device {#sec-mobile-build}
+
+Mobile builds are cross-compiled with the platform's own tools: the Android SDK and NDK, or
+Xcode for iOS. Qt provides a build for each platform, and the Qt Online Installer installs
+them next to your desktop Qt. vcpkg builds your other dependencies for mobile triplets from
+the same `vcpkg.json` (@sec-vcpkg).
+
+::: {.more}
+**Read more:** [Getting started with Qt for Android](https://doc.qt.io/qt-6/android-getting-started.html),
+[Qt for iOS](https://doc.qt.io/qt-6/ios.html)
+:::
+
+## Permissions {#sec-permissions}
+
+The camera, location, microphone or Bluetooth need the user's consent, asked at run time.
+Qt offers one permission API for all platforms:
+
+```qml
+import QtCore
+
+CameraPermission {
+    id: camera
+}
+
+Button {
+    text: qsTr("Scan a sketch")
+    visible: camera.status !== Qt.PermissionStatus.Denied
+    onClicked: camera.status === Qt.PermissionStatus.Granted
+               ? scanner.start() : camera.request()
+}
+```
+
+Each permission must also be declared: in the app's `AndroidManifest.xml` on Android, and
+with a usage description that tells the user why in `Info.plist` on iOS. Ask for as little as
+you need, at the moment you need it, so the user understands why.
+
+::: {.more}
+**Read more:** [Application permissions](https://doc.qt.io/qt-6/permissions.html)
+:::

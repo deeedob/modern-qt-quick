@@ -1,0 +1,164 @@
+# The shape of a Qt Quick application {#sec-shape}
+
+Before any detail, the big picture: which code goes where, and how the parts talk to each
+other. Every later chapter fills in one part of this picture.
+
+## QML composes, C++ implements {#sec-split}
+
+Qt Quick splits an application by language. C++ holds the state and the logic and offers
+them as properties, signals and methods. QML arranges the visual components and wires their
+properties to that state.
+
+```{.cpp filename="CanvasStore.hpp"}
+class CanvasStore : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+    Q_PROPERTY(bool canUndo READ canUndo NOTIFY changed FINAL)
+
+public:
+    bool canUndo() const;
+    Q_INVOKABLE void undo();
+
+Q_SIGNALS:
+    void changed();
+};
+```
+
+```{.qml filename="CanvasPage.qml"}
+ToolButton {
+    text: qsTr("Undo")
+    enabled: store.canUndo   // a binding: follows the store's state by itself
+    onClicked: store.undo()  // a handler: sends the user's intent to C++
+}
+```
+
+Moving that button, restyling it or putting it in a menu is a QML change that touches no
+logic. In Qt Widgets, layout and logic both live in C++, so the same change means editing
+and recompiling code. The split by language is also a split by responsibility, and that is
+the main reason to choose Qt Quick.
+
+::: {.more}
+**Template:** `src/canvas/CanvasStore.hpp`, `src/canvas/CanvasPage.qml` ·
+**Read more:** [Qt Quick best practices](https://doc.qt.io/qt-6/qtquick-bestpractices.html)
+:::
+
+## Layers, with Qt's names {#sec-layers}
+
+Most Qt Quick applications settle into four layers. Qt projects name them differently from
+textbooks, so here are both:
+
+| Layer | Name in Qt projects | Holds | Template example |
+|---|---|---|---|
+| Presentation | **View** | QML: layout, input, animation | `SketchbookPage.qml` |
+| Application | **ViewModel** or **Controller** | QObjects that turn user intent into operations | `SketchbookViewModel` |
+| Domain | **Core** or **Engine** | Plain C++ rules and algorithms | `shapes::Recognizer` |
+| Infrastructure | **Backend**, **Storage**, **Network** | Files, sockets, devices | `SketchStorage` |
+
+Only the view is QML. Only the view model knows that QML exists. The core knows neither,
+which is why it is the easiest code to test and to reuse.
+
+## Commands go down, notifications come up {#sec-flow}
+
+A layer calls the layer below it directly. The lower layer never calls back up; it emits a
+signal, and whoever cares listens. In QML, listening happens through bindings.
+
+```{mermaid}
+sequenceDiagram
+    participant V as View (QML)
+    participant VM as ViewModel (C++)
+    participant S as Storage (C++)
+    V->>VM: rename(row, "Floor plan")
+    VM->>S: save(id, document)
+    VM-->>V: dataChanged (signal)
+    Note over V: bindings update the row
+```
+
+Because lower layers never know who listens, you can test them without a UI and replace the
+UI without touching them.
+
+## Dependencies point one way, and the build enforces it {#sec-direction}
+
+Each layer and feature may only use what sits below it. Write that rule into the build: a
+library can only include headers of the libraries it links.
+
+```{mermaid}
+flowchart LR
+    A[app] --> SB[sketchbook] --> C[canvas] --> SH[shapes]
+    SB --> ST[style]
+    C --> ST
+```
+
+```{.cmake filename="CMakeLists.txt"}
+target_link_libraries(app_canvas PUBLIC shapes::shapes)
+target_link_libraries(app_sketchbook PUBLIC app_canvas)
+```
+
+When `canvas` tries to include a `sketchbook` header, the compiler refuses. A broken rule
+fails the build on the spot, long before a code review would catch it.
+
+::: {.more}
+**Template:** `src/CMakeLists.txt` and the `CMakeLists.txt` of each feature
+:::
+
+## One place wires everything {#sec-composition-root}
+
+Some code has to know every concrete type and connect them. Keep that code in one place,
+`main()`, and nowhere else. It creates the long-lived objects, hands each its dependencies,
+and passes them to QML.
+
+```{.cpp filename="main.cpp"}
+int main(int argc, char *argv[])
+{
+    QGuiApplication application(argc, argv);
+
+    SketchStorage storage(dataDir);              // <1>
+    CanvasStore canvas;
+    SketchbookViewModel sketchbook(storage, canvas);
+
+    QQmlApplicationEngine engine;                // <2>
+    engine.setInitialProperties({
+        { "sketchbook", QVariant::fromValue(&sketchbook) },
+        { "canvas", QVariant::fromValue(&canvas) },
+    });
+    engine.loadFromModule("App", "Main");
+    return application.exec();
+}
+```
+1. Objects receive their dependencies through the constructor. No globals.
+2. Created last, destroyed first: QML never sees an object that is already gone.
+
+Every lifetime is visible in one function, and a test can build the same objects with fakes.
+
+::: {.more}
+**Template:** `src/app/main.cpp`
+:::
+
+## Interfaces at the seams {#sec-interfaces}
+
+Where your code meets the outside world (a network, a device, the clock), put an abstract
+class between them. The rest of the app depends on the interface, and a test passes in a
+fake.
+
+```{.cpp filename="Transport.hpp"}
+class Transport
+{
+public:
+    virtual ~Transport() = default;
+    virtual void send(const QByteArray &payload) = 0;
+};
+
+class TcpTransport final : public Transport { /* the real network */ };
+class FakeTransport final : public Transport { /* records what was sent */ };
+```
+
+Give the interface the plain noun, `Transport`, and let implementations say what they are:
+`TcpTransport`, `FakeTransport`. Avoid an `I` prefix such as `ITransport`; callers should not
+care that a type is abstract.
+
+Add an interface when a second implementation exists, even if it is only a test fake. The
+template's storage has none: its tests write to a temporary folder instead.
+
+::: {.more}
+**Read more:** [C++ Core Guidelines, NL.5](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#nl5-avoid-encoding-type-information-in-names)
+:::

@@ -1,0 +1,122 @@
+# Dependencies {#sec-dependencies}
+
+Few applications are built from their own code alone. This chapter is about getting other
+people's code into your build, the same way on every platform.
+
+## Three ways to get dependencies {#sec-dependency-families}
+
+Every approach belongs to one of three families.
+
+| Family | Tools | Choose it when |
+|---|---|---|
+| Package managers | vcpkg, Conan | you have several dependencies, several platforms, and want prebuilt binaries cached |
+| CMake-native | `FetchContent`, CPM.cmake, `find_package` with system packages | you have a few small dependencies, or target one platform whose packages you trust |
+| Source-level | copying the code in ("vendoring"), git submodules or subtrees | you patch the dependency, or develop it alongside your app |
+
+**Package manager:**
+
+```{.json filename="vcpkg.json"}
+{
+  "dependencies": ["catch2", "glaze"]
+}
+```
+
+**CMake-native:**
+
+```{.cmake filename="CMakeLists.txt"}
+include(FetchContent)
+FetchContent_Declare(fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG 11.2.0
+)
+FetchContent_MakeAvailable(fmt)
+```
+
+**Source-level:**
+
+```sh
+git submodule add https://github.com/fmtlib/fmt.git external/fmt
+```
+
+```{.cmake filename="CMakeLists.txt"}
+add_subdirectory(external/fmt)
+```
+
+Source-level integration is common and often the right call. When you carry your own
+patches, or change a library as often as your app, having its code in your tree is the most
+flexible setup. The price: you update it by hand, and it builds with your project every
+time.
+
+Package managers sit at the other end. They resolve versions, build each library once and
+cache the result, and work the same on every platform. The more dependencies and platforms
+you have, the more that pays.
+
+## `find_package` is the stable interface {#sec-find-package}
+
+However a dependency arrives, consume it the same way: `find_package()` plus the imported
+target it defines.
+
+```{.cmake filename="CMakeLists.txt"}
+find_package(glaze CONFIG REQUIRED)
+target_link_libraries(storage PRIVATE glaze::glaze)
+```
+
+vcpkg, Conan, a system package or a library you built yourself can all provide `glaze`.
+Switch the provider and none of your targets change.
+
+## vcpkg in manifest mode {#sec-vcpkg}
+
+With vcpkg, a `vcpkg.json` file in your repository lists the dependencies. The vcpkg
+toolchain file installs them while CMake configures:
+
+```{.json filename="CMakePresets.json (excerpt)"}
+"toolchainFile": "${sourceDir}/external/vcpkg/scripts/buildsystems/vcpkg.cmake"
+```
+
+What you get:
+
+- **Pinned versions.** A vcpkg version (a `builtin-baseline` commit, or vcpkg itself as a git
+  submodule) fixes the version of every library.
+- **Debug and release builds** of each library by default; a triplet can limit it to
+  release, which halves build time.
+- **Control per library.** *Triplets* decide how libraries are built (static or dynamic,
+  which platform, which flags); *overlay ports* let you patch one.
+- **A binary cache.** Each library is built once and reused by every later build and every
+  project.
+- **Every platform with one setup**, from Windows, macOS and Linux to Android and iOS.
+
+::: {.more}
+**Template:** `vcpkg.json`, `cmake/vcpkg-triplets/`, and vcpkg as a submodule in `3rdparty/vcpkg` ·
+**Read more:** [vcpkg manifest mode](https://learn.microsoft.com/en-us/vcpkg/concepts/manifest-mode),
+[triplets](https://learn.microsoft.com/en-us/vcpkg/concepts/triplets)
+:::
+
+## Where Qt comes from {#sec-qt-source}
+
+Qt is a dependency like any other, just a large one. You have two good options:
+
+- **The [Qt Online Installer](https://www.qt.io/development/download-qt-installer-oss).**
+  Ready in minutes. Point CMake at it with `CMAKE_PREFIX_PATH`.
+- **Build Qt yourself**, from source or through your package manager. A full build takes
+  hours, so build only the modules you use. In return, every flag and every dependency of Qt
+  is under your control, on every platform.
+
+::: {.more}
+**Template:** the `dev` preset uses an installed Qt; the `vcpkg-qt` preset lets vcpkg build it
+:::
+
+## Reproducibility is control {#sec-reproducibility}
+
+A cross-platform app runs on machines you have never seen. Each platform brings its own
+surprises: Linux needs fontconfig, macOS frameworks, Windows the right runtime DLLs. Every
+library linked dynamically must exist on the user's machine at run time.
+
+The answer is control. When one tool builds every dependency the same way on every
+platform, a build that works today still works tomorrow, on a colleague's machine, and in
+CI. Prebuilt binaries from elsewhere bring flags and dependencies you did not choose.
+
+::: {.callout-tip}
+## Rule of thumb
+The more of your dependencies one tool builds for you, Qt included, the fewer surprises you
+meet when you ship.
+:::

@@ -1,0 +1,188 @@
+# Connecting C++ and QML {#sec-cpp-qml}
+
+C++ holds the state, QML shows it (@sec-split). This chapter is about the seam between them:
+how C++ types become QML types, how objects cross over, and who owns them afterwards.
+
+## QML modules and declarative registration {#sec-qml-modules}
+
+Mark a C++ class `QML_ELEMENT`, list it in a QML module, and QML can use it under the
+module's name. There is no registration code in `main()`.
+
+```{.cpp filename="CanvasStore.hpp"}
+#include <QtCore/QObject>
+#include <QtQmlIntegration/qqmlintegration.h>
+
+class CanvasStore : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+    // properties, methods, signals
+};
+```
+
+```{.cmake filename="src/canvas/CMakeLists.txt"}
+qt_add_qml_module(app_canvas
+    URI App.Canvas
+    STATIC
+    SOURCES CanvasStore.cpp CanvasStore.hpp
+    QML_FILES CanvasPage.qml
+)
+```
+
+```qml
+import App.Canvas   // CanvasStore and CanvasPage are now types
+```
+
+The build generates the registration, and the QML tools learn every type, property and
+method of the module. That is what makes typed QML (@sec-typed-qml) possible.
+
+::: {.callout-warning}
+## Static modules need their plugin
+A `STATIC` QML module registers itself only when its plugin target is linked. Link
+`app_canvasplugin`, not just `app_canvas`, into the executable and into QML tests.
+:::
+
+::: {.more}
+**Template:** `src/canvas/CMakeLists.txt` ·
+**Read more:** [Defining QML types from C++](https://doc.qt.io/qt-6/qtqml-cppintegration-definetypes.html)
+:::
+
+## Passing objects in: required properties {#sec-required}
+
+The main QML file declares what it needs. `main()` provides it before loading the file:
+
+```{.qml filename="Main.qml"}
+ApplicationWindow {
+    id: window
+    required property SketchbookViewModel sketchbook
+    required property CanvasStore canvas
+
+    CanvasPage { store: window.canvas }   // pages get their objects the same way
+}
+```
+
+```{.cpp filename="main.cpp"}
+engine.setInitialProperties({
+    { "sketchbook", QVariant::fromValue(&sketchbook) },
+    { "canvas", QVariant::fromValue(&canvas) },
+});
+engine.loadFromModule("App", "Main");
+```
+
+Every dependency is visible in the component's interface and has a type the tools can
+check. A test can load any page on its own and hand it a fake.
+
+Mark such classes `QML_UNCREATABLE("Created in main()")`, so QML cannot create a second,
+unconnected instance by accident.
+
+::: {.callout-warning}
+## Never use context properties
+`rootContext()->setContextProperty("canvas", &canvas)` injects a name that no tool can see
+or type-check. It is the Qt 5 way. Required properties replace it.
+:::
+
+::: {.more}
+**Template:** `src/app/main.cpp`, `src/app/Main.qml` ·
+**Read more:** [Exposing C++ state to QML](https://doc.qt.io/qt-6/qtqml-cppintegration-exposecppstate.html)
+:::
+
+## Singletons for app-wide state {#sec-singletons}
+
+Some state is needed by every view: the language, the build information. Passing it through
+every component would be noise. Make it a QML singleton, but create the instance yourself:
+
+```{.cpp filename="AppController.hpp"}
+class AppController : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+    QML_SINGLETON
+    QML_UNCREATABLE("Created in main()")
+    Q_PROPERTY(QString language READ language WRITE setLanguage
+               NOTIFY languageChanged FINAL)
+    // ...
+};
+```
+
+```{.cpp filename="main.cpp"}
+AppController controller(logFile);
+engine.setExternalSingletonInstance("App", "AppController", &controller);
+```
+
+```qml
+onClicked: AppController.language = "de"
+```
+
+Unlike a classic singleton, this one is not a global in C++. `main()` constructs it with its
+real dependencies, and a test can construct another. Keep singletons rare: most objects
+belong to a feature and arrive as required properties.
+
+::: {.more}
+**Template:** `src/app/AppController.hpp`
+:::
+
+## Item models in C++ {#sec-item-models}
+
+Collections reach QML as item models. Subclass `QAbstractListModel`, name your roles, and
+report every change as precisely as you can:
+
+```{.cpp filename="SketchListModel.cpp"}
+int SketchListModel::rowCount(const QModelIndex &parent) const
+{
+    return parent.isValid() ? 0 : static_cast<int>(m_entries.size());
+}
+
+QVariant SketchListModel::data(const QModelIndex &index, int role) const
+{
+    if (!checkIndex(index, CheckIndexOption::IndexIsValid))
+        return {};
+    const auto &entry = m_entries.at(index.row());
+    switch (role) {
+    case NameRole: return entry.name;
+    case StrokeCountRole: return entry.strokeCount;
+    default: return {};
+    }
+}
+
+QHash<int, QByteArray> SketchListModel::roleNames() const
+{
+    return { { NameRole, "name" }, { StrokeCountRole, "strokeCount" } };  // <1>
+}
+
+void SketchListModel::prepend(SketchEntry entry)
+{
+    beginInsertRows({}, 0, 0);  // <2>
+    m_entries.insert(m_entries.begin(), std::move(entry));
+    endInsertRows();
+}
+```
+1. The role names become the delegate's required properties (@sec-lists).
+2. "One row arrives at the top": the view adds one delegate and keeps its scroll position.
+
+Prefer `beginInsertRows`, `beginRemoveRows` and `dataChanged` over a model reset. A reset
+tells the view to throw everything away, so it loses scroll position, selection and any
+running animation.
+
+::: {.more}
+**Template:** `src/sketchbook/SketchListModel.cpp` ·
+**Read more:** [Model/view programming](https://doc.qt.io/qt-6/model-view-programming.html)
+:::
+
+## Lifetimes across the boundary {#sec-lifetimes}
+
+QML holds plain pointers to your C++ objects. Make sure those objects outlive the engine:
+create them before it in `main()`, and C++ destroys them after it (@sec-composition-root).
+
+One rule surprises almost everyone. When a `Q_INVOKABLE` method returns a `QObject *` that
+has no parent, **QML takes ownership** of it and may delete it during garbage collection.
+
+```cpp
+Q_INVOKABLE Document *createDocument();   // a parentless result now belongs to QML
+```
+
+Give such objects a parent, or call
+`QQmlEngine::setObjectOwnership(object, QQmlEngine::CppOwnership)` before returning them.
+
+::: {.more}
+**Read more:** [Data ownership](https://doc.qt.io/qt-6/qtqml-cppintegration-data.html)
+:::
