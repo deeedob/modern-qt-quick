@@ -1,0 +1,249 @@
+# SPDX-FileCopyrightText: 2026 Dennis Oberst
+# SPDX-License-Identifier: MIT-0
+
+# Options: https://releases.llvm.org/18.1.8/tools/clang/docs/ClangFormatStyleOptions.html
+---
+Language: Cpp
+Standard: Latest
+ColumnLimit: 100
+
+AccessModifierOffset: -4
+AlignAfterOpenBracket: DontAlign # for (), <>, []
+AlignArrayOfStructures: Left
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: None
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: None
+AlignEscapedNewlines: Left
+# AlignEscapedNewlines: LeftWithLastLine # version >= 19
+AlignOperands: DontAlign
+AlignTrailingComments:
+  Kind: Leave
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowBreakBeforeNoexceptSpecifier: OnlyWithParen
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortCompoundRequirementOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortIfStatementsOnASingleLine: Never # always break if
+AllowShortLambdasOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: Yes
+AttributeMacros:
+  [
+    Q_GRPC_EXPORT,
+    Q_GRPCQUICK_EXPORT,
+    Q_PROTOBUF_EXPORT,
+    Q_PROTOBUFQTCORETYPES_EXPORT,
+    Q_PROTOBUFQTGUITYPES_EXPORT,
+    Q_IMPLICIT,
+    Q_INVOKABLE,
+  ]
+
+BinPackArguments: true
+BinPackParameters: true
+BitFieldColonSpacing: Both
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: true
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterFunction: true
+  AfterNamespace: false
+  AfterObjCDeclaration: false
+  AfterStruct: true
+  AfterUnion: false
+  AfterExternBlock: false
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
+BreakAdjacentStringLiterals: true
+BreakAfterAttributes: Never
+BreakArrays: false
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBraces: Custom # Using BraceWrapping
+BreakBeforeConceptDeclarations: Allowed
+# BreakBeforeInlineASMColon:
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeComma
+BreakInheritanceList: BeforeComma
+BreakStringLiterals: true
+
+# REUSE-IgnoreStart
+CommentPragmas: "^ SPDX-License-Identifier:|^ Copyright|\\since|\\overload|\\reentrant|\\value|\\li|\\l"
+# REUSE-IgnoreEnd
+CompactNamespaces: false
+# ConstructorInitializerIndentWidth:
+ContinuationIndentWidth: 4
+Cpp11BracedListStyle: false
+
+DerivePointerAlignment: false
+
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: LogicalBlock
+
+FixNamespaceComments: true
+ForEachMacros:
+  [
+    forever,
+    foreach,
+    Q_FOREACH,
+    BOOST_FOREACH,
+    Q_FOREVER,
+    QBENCHMARK,
+    QBENCHMARK_ONCE,
+  ]
+
+# IfMacros:
+IncludeBlocks: Preserve
+IncludeCategories:
+  # Headers in "" with extension.
+  - Regex: '"([A-Za-z0-9.\/-_])+"'
+    Priority: 1
+  # Headers in <> starting with Qt
+  - Regex: "^<Qt*"
+    Priority: 2
+  # Headers in <> without extension.
+  - Regex: '<([a-z\/-_])+>'
+    Priority: 4
+  # Headers in <> with extension.
+  - Regex: '<([a-z.\/-_])+>'
+    Priority: 5
+# IncludeCategories:
+# IncludeIsMainRegex:
+# IncludeIsMainSourceRegex:
+IndentAccessModifiers: false
+IndentCaseBlocks: false
+IndentCaseLabels: false
+IndentExternBlock: NoIndent
+IndentGotoLabels: false
+IndentPPDirectives: AfterHash
+IndentRequiresClause: false
+IndentWidth: 4
+IndentWrappedFunctionNames: true
+InsertBraces: false
+InsertNewlineAtEOF: false
+InsertTrailingCommas: None # Cannot be used with BinPackArguments
+IntegerLiteralSeparator:
+  Binary: 0
+  Decimal: 3
+  DecimalMinDigits: 5
+  Hex: 2
+  HexMinDigits: 6
+
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+LambdaBodyIndentation: Signature
+LineEnding: LF # Qt is LF-only
+
+Macros:
+  - Q_PROTOBUF_OBJECT=x;
+  - Q_DISABLE_COPY_MOVE(x)=x;
+  - Q_DECLARE_PRIVATE(x)=x;
+  - Q_ENUM(x)=x;
+  - Q_ENUM_NS(x)=x;
+  - Q_FLAG(x)=x;
+  - Q_FLAG_NS(x)=x;
+  - Q_GADGET=x;
+  - Q_GADGET_EXPORT(x)=x;
+  - Q_INTERFACES(x)=x;
+  - Q_MOC_INCLUDE=x;
+  - Q_NAMESPACE=x;
+  - Q_NAMESPACE_EXPORT(x)=x;
+  - Q_OBJECT=x;
+  - Q_PROPERTY(x)=x;
+  - Q_REVISION=x;
+  - QML_ADDED_IN_VERSION(x,y)=x,y;
+  - QML_ANONYMOUS=x;
+  - QML_ATTACHED(x)=x;
+  - QML_CONSTRUCTIBLE_VALUE(x)=x;
+  - QML_DECLARE_TYPE=x;
+  - QML_DECLARE_TYPEINFO(x,y)=x,y;
+  - QML_ELEMENT=x;
+  - QML_EXTENDED(x)=x;
+  - QML_EXTENDED_NAMESPACE(x)=x;
+  - QML_EXTRA_VERSION(x)=x;
+  - QML_FOREIGN(x)=x;
+  - QML_FOREIGN_NAMESPACE(x)=x;
+  - QML_IMPLEMENTS_INTERFACE(x)=x;
+  - QML_INTERFACE=x;
+  - QML_NAMED_ELEMENT(x)=x;
+  - QML_REMOVED_IN_VERSION(x,y)=x,y;
+  - QML_SEQUENTIAL_CONTAINER(x)=x;
+  - QML_SINGLETON=x;
+  - QML_STRUCTURED_VALUE=x;
+  - QML_UNAVAILABLE=x;
+  - QML_UNCREATABLE(x)=x;
+  - QML_VALUE_TYPE(x)=x;
+MaxEmptyLinesToKeep: 2
+
+NamespaceIndentation: Inner
+
+PPIndentWidth: 2
+PackConstructorInitializers: NextLineOnly
+PenaltyBreakAssignment: 1000
+PenaltyBreakBeforeFirstCallParameter: 10
+PenaltyBreakComment: 10
+PenaltyBreakFirstLessLess: 20
+PenaltyBreakOpenParenthesis: 25
+PenaltyBreakScopeResolution: 1000
+PenaltyBreakString: 150
+PenaltyBreakTemplateDeclaration: 0
+PenaltyExcessCharacter: 1000
+PenaltyIndentedWhitespace: 5
+PenaltyReturnTypeOnItsOwnLine: 50
+PointerAlignment: Right
+
+QualifierAlignment: Left
+
+ReferenceAlignment: Right
+ReflowComments: false
+RemoveBracesLLVM: true
+RemoveParentheses: Leave
+RequiresClausePosition: OwnLine
+RequiresExpressionIndentation: OuterScope
+
+# SeparateDefnitionBlocks:
+ShortNamespaceLines: 4
+SkipMacroDefinitionBody: true
+SortIncludes: CaseSensitive
+SortUsingDeclarations: Lexicographic
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceAroundPointerQualifiers: Default # use PointerAlignment
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: true
+SpacesInAngles: Never
+SpacesInContainerLiterals: true
+SpacesInParens: Never
+SpacesInSquareBrackets: false
+StatementAttributeLikeMacros: [emit]
+StatementMacros: [Q_UNUSED]
+
+UseTab: Never
+
+# WhitespaceSensitiveMacros: [Q_PROPERTY]
+---
+# Use the Google-based style for .proto files.
+Language: Proto
+BasedOnStyle: Google
+IndentWidth: 4
+ColumnLimit: 100

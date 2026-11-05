@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 Dennis Oberst
+# SPDX-License-Identifier: MIT-0
+#
+# Editor settings only. Compiler warnings come from compile_commands.json (cmake/AppTargetDefaults.cmake)
+# and clang-tidy checks from .clang-tidy, so every tool shares one definition.
+
+CompileFlags:
+  CompilationDatabase: build/dev
+  # Show warnings as warnings while typing; the build still treats them as errors.
+  Remove: [-Werror]
+
+Diagnostics:
+  UnusedIncludes: Strict
+
+Index:
+  StandardLibrary: true
+  Background: Build
+
+Hover:
+  ShowAKA: true
+
+Completion:
+  AllScopes: true
+
+Documentation:
+  CommentFormat: Markdown

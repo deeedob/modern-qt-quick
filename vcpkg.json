@@ -1,0 +1,41 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "qtapptemplate",
+  "version-semver": "0.1.0",
+  "dependencies": [
+    "catch2",
+    "cpptrace",
+    "rapidfuzz-cpp"
+  ],
+  "features": {
+    "qt": {
+      "description": "Build Qt itself with vcpkg instead of using an installed Qt",
+      "dependencies": [
+        {
+          "name": "qtbase",
+          "default-features": false,
+          "features": ["concurrent", "freetype", "gui", "harfbuzz", "network", "opengl", "png", "testlib", "thread"]
+        },
+        {
+          "name": "qtbase",
+          "default-features": false,
+          "features": ["fontconfig", "xcb", "xkb", "xkbcommon-x11"],
+          "platform": "linux"
+        },
+        {
+          "name": "qtdeclarative",
+          "default-features": false
+        },
+        {
+          "name": "qtsvg",
+          "default-features": false
+        },
+        {
+          "name": "qttools",
+          "default-features": false,
+          "features": ["linguist"]
+        }
+      ]
+    }
+  }
+}

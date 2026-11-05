@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2026 Dennis Oberst
+# SPDX-License-Identifier: MIT-0
+
+* text=auto eol=lf
+*.icns binary
+*.ico binary
+*.ttf binary
+*.bat eol=crlf
