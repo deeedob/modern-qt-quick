@@ -77,6 +77,8 @@ quarto preview docs      # opens the guide in your browser
 quarto render docs       # writes the website and the PDF to docs/_book/
 ```
 
+A rendered copy is in [docs/modern-qt-quick-applications.pdf](docs/modern-qt-quick-applications.pdf).
+
 Recipes for common changes, such as adding a feature or a language, are in its appendix,
 [Working with the template](docs/template.qmd).
 
