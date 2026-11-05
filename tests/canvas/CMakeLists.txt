@@ -1,0 +1,2 @@
+app_add_qt_test(tst_CanvasStore SOURCES tst_CanvasStore.cpp LIBRARIES app_canvas)
+app_add_quick_test(tst_canvas_quick QML_FILES tst_StrokeItem.qml LIBRARIES app_canvasplugin)

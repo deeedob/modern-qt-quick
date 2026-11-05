@@ -5,7 +5,7 @@
   "dependencies": [
     "catch2",
     "cpptrace",
-    "rapidfuzz-cpp"
+    "glaze"
   ],
   "features": {
     "qt": {

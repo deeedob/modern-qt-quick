@@ -1,14 +1,8 @@
-# SPDX-FileCopyrightText: 2026 Dennis Oberst
-# SPDX-License-Identifier: MIT-0
-#
-# One test tree per layer, each with the lightest tool that can test it:
-#   libs      Catch2 (no Qt at all)
-#   platform  Qt Test
-#   backend   Qt Test, headless (no QtQuick)
-#   frontend  Qt Quick Test
+# Tests for src/, mirroring its folders. Libraries in libs/ carry their own tests.
+#   C++   Qt Test, one executable per class
+#   QML   Qt Quick Test, one tst_*.qml file per component, run by app_add_quick_test()
 
 set_directory_properties(PROPERTIES QT_EXCLUDE_FROM_TRANSLATION ON)
-include(Catch)
 
 function(app_add_qt_test name)
     cmake_parse_arguments(PARSE_ARGV 1 arg "" "" "SOURCES;LIBRARIES")
@@ -18,10 +12,20 @@ function(app_add_qt_test name)
     add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
-add_subdirectory(libs/core)
-add_subdirectory(platform)
-add_subdirectory(backend)
-add_subdirectory(frontend)
+# Static QML modules register only when their plugin is linked: pass the *plugin targets.
+function(app_add_quick_test name)
+    cmake_parse_arguments(PARSE_ARGV 1 arg "" "" "QML_FILES;LIBRARIES")
+    qt_add_executable(${name} "${PROJECT_SOURCE_DIR}/tests/quicktest.cpp" ${arg_QML_FILES})
+    target_compile_definitions(${name} PRIVATE QUICK_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(${name} PRIVATE Qt::QuickTest ${arg_LIBRARIES})
+    app_target_defaults(${name})
+    add_test(NAME ${name} COMMAND ${name})
+endfunction()
+
+add_subdirectory(app)
+add_subdirectory(canvas)
+add_subdirectory(sketchbook)
+add_subdirectory(style)
 
 # Smoke test of the real executable: starts, parses the command line, reports its version.
 add_test(NAME app.version COMMAND app --version)

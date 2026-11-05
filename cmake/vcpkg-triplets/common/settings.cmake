@@ -1,13 +1,12 @@
-# SPDX-FileCopyrightText: 2026 Dennis Oberst
-# SPDX-License-Identifier: MIT-0
-#
 # Settings shared by the overlay triplets one folder up, which shadow vcpkg's builtin ones.
-
-include("${CMAKE_CURRENT_LIST_DIR}/../../MacOSDeploymentTarget.cmake")
 
 # Dependencies are built once, in release only: halves build time and disk usage.
 set(VCPKG_BUILD_TYPE release)
-set(VCPKG_OSX_DEPLOYMENT_TARGET "${APP_MACOS_DEPLOYMENT_TARGET}")
+
+# The oldest macOS comes from MACOSX_DEPLOYMENT_TARGET (set in CMakePresets.json), the same
+# variable CMake reads for the app. Passing it through also adds it to the binary-cache hash.
+set(VCPKG_OSX_DEPLOYMENT_TARGET "$ENV{MACOSX_DEPLOYMENT_TARGET}")
+list(APPEND VCPKG_ENV_PASSTHROUGH MACOSX_DEPLOYMENT_TARGET)
 
 # libdwarf (used by cpptrace) is LGPL-2.1: linked dynamically, so users can replace it.
 if(PORT STREQUAL "libdwarf")
@@ -15,7 +14,4 @@ if(PORT STREQUAL "libdwarf")
 endif()
 
 # vcpkg's binary cache hashes only the triplet file itself; included files must be listed.
-list(APPEND VCPKG_HASH_ADDITIONAL_FILES
-    "${CMAKE_CURRENT_LIST_FILE}"
-    "${CMAKE_CURRENT_LIST_DIR}/../../MacOSDeploymentTarget.cmake"
-)
+list(APPEND VCPKG_HASH_ADDITIONAL_FILES "${CMAKE_CURRENT_LIST_FILE}")

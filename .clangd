@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 Dennis Oberst
-# SPDX-License-Identifier: MIT-0
-#
 # Editor settings only. Compiler warnings come from compile_commands.json (cmake/AppTargetDefaults.cmake)
 # and clang-tidy checks from .clang-tidy, so every tool shares one definition.
 

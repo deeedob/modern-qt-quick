@@ -1,16 +1,13 @@
-// SPDX-FileCopyrightText: 2026 Dennis Oberst
-// SPDX-License-Identifier: MIT-0
-//
 // The composition root: the only file that knows every concrete type and wires them together.
 
 #include "AppController.hpp"
+#include "BuildInfo.hpp"
+#include "CrashHandler.hpp"
+#include "Logging.hpp"
 
-#include <BuildInfo.hpp>
-#include <CrashHandler.hpp>
-#include <JsonTaskRepository.hpp>
-#include <Logging.hpp>
-#include <TasksViewModel.hpp>
-#include <TimerStore.hpp>
+#include <CanvasStore.hpp>
+#include <SketchStorage.hpp>
+#include <SketchbookViewModel.hpp>
 
 #include <QtCore/QCommandLineParser>
 #include <QtCore/QStandardPaths>
@@ -23,15 +20,14 @@
 
 using namespace Qt::StringLiterals;
 
-// Exceptions escaping main() reach std::terminate, where the crash handler logs them.
-int main(int argc, char *argv[]) // NOLINT(bugprone-exception-escape)
+int main(int argc, char *argv[])
 {
-    const auto &info = app::platform::buildInfo();
+    const auto &info = app::buildInfo();
     QGuiApplication::setApplicationName(info.name.toString());
     QGuiApplication::setApplicationDisplayName(info.displayName.toString());
     QGuiApplication::setApplicationVersion(info.version.toString());
 
-    // Multisampling smooths the edges of custom scene graph geometry such as ProgressRing.
+    // Multisampling smooths the edges of the strokes the canvas draws as scene graph geometry.
     auto format = QSurfaceFormat::defaultFormat();
     format.setSamples(4);
     QSurfaceFormat::setDefaultFormat(format);
@@ -47,17 +43,18 @@ int main(int argc, char *argv[]) // NOLINT(bugprone-exception-escape)
     parser.addOption(crashTest);
     parser.process(application);
 
-    app::platform::installCrashHandler();
+    app::installCrashHandler();
     const auto dataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
-    const auto logFile = app::platform::installLogging(dataDir + "/logs"_L1);
-    app::platform::logStartupInfo();
+    const auto logFile = app::installLogging(dataDir + "/logs"_L1);
+    app::logStartupInfo();
+    // Escapes main() on purpose: the crash handler logs it with a stack trace.
     if (parser.isSet(crashTest))
         throw std::runtime_error("crash test requested with --crash-test");
 
     // Declared before the engine, so they outlive it: QML only holds non-owning references.
-    app::platform::JsonTaskRepository repository(dataDir + "/tasks.json"_L1);
-    app::backend::TasksViewModel tasks(repository);
-    app::backend::TimerStore timer;
+    app::sketchbook::SketchStorage storage(dataDir + "/sketches"_L1);
+    app::canvas::CanvasStore canvas;
+    app::sketchbook::SketchbookViewModel sketchbook(storage, canvas);
     app::AppController controller(logFile);
 
     QQmlApplicationEngine engine;
@@ -66,8 +63,8 @@ int main(int argc, char *argv[]) // NOLINT(bugprone-exception-escape)
     if (!engine.setExternalSingletonInstance("App", "AppController", &controller))
         return EXIT_FAILURE;
     engine.setInitialProperties({
-        { "tasks"_L1, QVariant::fromValue(&tasks) },
-        { "timer"_L1, QVariant::fromValue(&timer) },
+        { "sketchbook"_L1, QVariant::fromValue(&sketchbook) },
+        { "canvas"_L1,     QVariant::fromValue(&canvas)     },
     });
     QObject::connect(
         &engine, &QQmlApplicationEngine::objectCreationFailed, &application,

@@ -1,8 +1,3 @@
-<!--
-SPDX-FileCopyrightText: 2026 Dennis Oberst
-SPDX-License-Identifier: MIT-0
--->
-
 # How-to guides
 
 Short recipes for common changes. For the reasoning behind the structure, see
@@ -15,47 +10,44 @@ Short recipes for common changes. For the reasoning behind the structure, see
 2. Replace the QML prefix `App` and the C++ namespace `app`, for example with `Acme`:
 
    ```sh
-   rg -l 'App\.|"App"|URI App|app::|namespace app' src tests cmake \
-       | xargs perl -pi -e 's/\bApp\./Acme./g; s/"App"/"Acme"/g; s/URI App\b/URI Acme/; s/\bapp::/acme::/g; s/namespace app\b/namespace acme/g'
-   git mv src/libs/core/include/app src/libs/core/include/acme
-   rg -l 'app/core/' src tests | xargs perl -pi -e 's{app/core/}{acme/core/}g'
+   rg -l 'App\.|"App"|URI App\b|AppStyle|app::|namespace app\b' src tests \
+       | xargs perl -pi -e 's/\bApp\./Acme./g; s/"App"/"Acme"/g; s/URI App\b/URI Acme/; s/\bAppStyle\b/AcmeStyle/g; s/\bapp::/acme::/g; s/namespace app\b/namespace acme/g'
    ```
 
-3. Put your copyright into `LICENSE`, `REUSE.toml` and the SPDX headers, then build and run
-   `check`.
+3. Put your copyright and license into `LICENSE` and the first entry of `REUSE.toml`, then
+   build and run `check`.
 
-## Remove the demo features
+## Remove the demo
 
-The timer and the tasks are independent. To remove the timer:
+1. Delete `src/canvas/`, `src/sketchbook/`, `tests/canvas/`, `tests/sketchbook/` and
+   `libs/shapes/`, and their `add_subdirectory()` lines.
+2. In `src/app/CMakeLists.txt`, remove the `app_canvas*` and `app_sketchbook*` entries.
+3. In `main.cpp`, remove the storage, the store and the view model; in `Main.qml`, remove the
+   two required properties, their imports and the pages.
+4. Remove `glaze` from `vcpkg.json` and the top-level `CMakeLists.txt` if nothing else uses it.
 
-1. Delete `src/backend/timer/`, `src/frontend/timer/` and `tests/backend/tst_TimerStore.cpp`,
-   and `FocusTimer.hpp` plus `tests/libs/core/tst_FocusTimer.cpp` from core.
-2. Remove the matching `add_subdirectory()` lines, `app_add_qt_test(tst_TimerStore ...)`, and
-   the two `*_timer*` entries in `src/app/CMakeLists.txt`.
-3. In `main.cpp`, remove the `TimerStore`; in `Main.qml`, remove `required property TimerStore`,
-   its import, the tab and the page.
+Keep `src/style`: it is the base for your own views.
 
-The tasks feature comes out the same way, including the `TaskRepository` implementation in
-`platform/` if nothing else needs it. Keep `frontend/ui`: it is the base for your own views.
+## Add a separable library
 
-## Add a pure C++ library
-
-1. Create `src/libs/<name>/` with a `CMakeLists.txt` modeled on `src/libs/core/CMakeLists.txt`.
-2. Add `add_subdirectory(<name>)` to `src/libs/CMakeLists.txt`.
-3. Call `app_target_defaults(<target>)` so it gets warnings, hardening and checks.
-4. Add Catch2 tests under `tests/libs/<name>/`.
+1. Create `libs/<name>/` with `include/<name>/`, `src/` and `tests/`, and a `CMakeLists.txt`
+   modeled on `libs/shapes/CMakeLists.txt`. Call `app_target_defaults(<target>)` so the
+   library gets warnings, hardening and checks.
+2. Add `add_subdirectory(libs/<name>)` to the top-level `CMakeLists.txt`, before `src`.
+3. Link it from the feature that uses it: `target_link_libraries(app_<feature> PUBLIC <name>::<name>)`.
 
 ## Add a feature
 
-1. Create `src/backend/<feature>/` with C++ types marked `QML_ELEMENT` and
-   `QML_UNCREATABLE`, and a `qt_add_qml_module(... URI App.Backend.<Feature> STATIC ...)`
-   that links `Qt::Qml`.
-2. Create `src/frontend/<feature>/` with the views, a `required property` for each backend
-   object, and `qt_add_qml_module(... URI App.Frontend.<Feature> STATIC ...)`.
-3. Link both `*plugin` targets in `src/app/CMakeLists.txt`.
-4. In `main.cpp`, construct the backend object before the engine and add it to
+1. Create `src/<feature>/` with its C++ types, marked `QML_ELEMENT` and `QML_UNCREATABLE`, its
+   pages, and a `qt_add_qml_module(app_<feature> URI App.<Feature> STATIC ...)`. Link
+   `app_style` privately if its QML imports `AppStyle`.
+2. Add `add_subdirectory(<feature>)` to `src/CMakeLists.txt`, before `app`.
+3. Link `app_<feature>` and `app_<feature>plugin` in `src/app/CMakeLists.txt`.
+4. In `main.cpp`, construct the feature's object before the engine and add it to
    `setInitialProperties()`; in `Main.qml`, declare it as a required property and pass it to
-   the view.
+   the page.
+5. Add `tests/<feature>/` with Qt Test or Qt Quick Test, and `add_subdirectory(<feature>)` to
+   `tests/CMakeLists.txt`.
 
 ## Add a dependency from vcpkg
 
@@ -63,7 +55,18 @@ The tasks feature comes out the same way, including the `TaskRepository` impleme
 2. Add `find_package(<Package> CONFIG REQUIRED)` to the top-level `CMakeLists.txt`, and link
    the target where you need it. The port's usage text, printed during configure, names the
    targets.
-3. Reconfigure. Its license appears in `THIRD_PARTY_NOTICES.txt` automatically.
+3. Reconfigure. Its license ships in the package's `licenses/` folder automatically.
+
+## Ship a license notice for an asset
+
+Put the asset's upstream license file next to it, register it in that folder's
+`CMakeLists.txt`, and add the asset to `REUSE.toml`:
+
+```cmake
+app_add_notice(lucide-icons icons/LICENSE)
+```
+
+The package then contains `licenses/lucide-icons.txt`.
 
 ## Add a language
 
@@ -75,8 +78,8 @@ The tasks feature comes out the same way, including the `TaskRepository` impleme
    linguist i18n/app_fr.ts
    ```
 
-3. Rebuild. The `.qm` file is embedded automatically, and `AppController.language = "fr"`
-   switches to it at runtime.
+3. Rebuild. The `.qm` file is embedded automatically, together with Qt's own translations for
+   that language, and `AppController.language = "fr"` switches to it at runtime.
 
 ## Debug with more logging
 

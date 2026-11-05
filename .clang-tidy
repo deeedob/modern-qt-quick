@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 Dennis Oberst
-# SPDX-License-Identifier: MIT-0
-#
 # Read by clangd (editor), clangd-tidy (`check_clangd` target) and clang-tidy alike.
 # Everything is on, minus vendor-specific groups and checks that fight Qt idioms (moc, model
 # roles, logging macros), the .clang-format style, or are matters of taste.
@@ -33,6 +30,7 @@ Checks: >
   -cppcoreguidelines-pro-type-static-cast-downcast,
   -cppcoreguidelines-pro-type-vararg,
   -misc-include-cleaner,
+  -misc-multiple-inheritance,
   -misc-non-private-member-variables-in-classes,
   -misc-use-anonymous-namespace,
   -misc-use-internal-linkage,
@@ -57,9 +55,13 @@ Checks: >
   -readability-uppercase-literal-suffix
 
 CheckOptions:
+  # main() lets exceptions reach the terminate handler, which logs them with a stack trace.
+  bugprone-exception-escape.CheckMain: false
+  # Qt item-model roles must convert to int, so they stay unscoped enums inside the model.
+  cppcoreguidelines-use-enum-class.IgnoreUnscopedEnumsInClasses: true
   cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: true
   bugprone-narrowing-conversions.IgnoreConversionFromTypes: "size_type;size_t"
   bugprone-suspicious-include.IgnoredRegex: "^.*[mM][oO][cC].*$"
 
 # Diagnose our own headers, never Qt's or vcpkg's.
-HeaderFilterRegex: "/(src|tests)/"
+HeaderFilterRegex: "/(libs|src|tests)/"

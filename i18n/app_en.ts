@@ -2,13 +2,13 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en" sourcelanguage="en">
 <context>
-    <name>TasksPage</name>
+    <name>SketchbookPage</name>
     <message numerus="yes">
-        <location filename="../src/frontend/tasks/TasksPage.qml" line="80"/>
-        <source>%n open task(s)</source>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="73"/>
+        <source>%n stroke(s)</source>
         <translation>
-            <numerusform>%n open task</numerusform>
-            <numerusform>%n open tasks</numerusform>
+            <numerusform>%n stroke</numerusform>
+            <numerusform>%n strokes</numerusform>
         </translation>
     </message>
 </context>

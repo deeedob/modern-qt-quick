@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 Dennis Oberst
-# SPDX-License-Identifier: MIT-0
-#
 # Developer checks over every source registered with app_target_defaults():
 #
 #   check          runs every check below whose tool was found

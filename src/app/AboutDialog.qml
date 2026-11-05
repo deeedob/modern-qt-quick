@@ -1,12 +1,8 @@
-// SPDX-FileCopyrightText: 2026 Dennis Oberst
-// SPDX-License-Identifier: MIT-0
-
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import QtQuick.Controls.Material
 import QtQuick.Layouts
-import App.Frontend.Ui
+import AppStyle
 
 Dialog {
     id: root
@@ -17,10 +13,10 @@ Dialog {
     padding: Theme.spacing * 2
 
     background: Rectangle {
-        color: root.Material.dialogColor
+        color: Theme.surface
         radius: 16
         border.width: 1
-        border.color: root.Material.frameColor
+        border.color: Theme.border
     }
 
     contentItem: ColumnLayout {
@@ -50,7 +46,7 @@ Dialog {
             Layout.fillWidth: true
             text: AppController.buildDetails
             font.pixelSize: 12
-            opacity: 0.6
+            color: Theme.mutedText
             wrapMode: Text.Wrap
             horizontalAlignment: Text.AlignHCenter
         }
@@ -61,9 +57,9 @@ Dialog {
 
         Label {
             Layout.fillWidth: true
-            text: qsTr("Built with Qt, licensed under the LGPL version 3. See THIRD_PARTY_NOTICES.txt.")
+            text: qsTr("Built with Qt, used under the LGPL version 3. The licenses of all third-party components ship with the application, in its licenses folder.")
             font.pixelSize: 12
-            opacity: 0.8
+            color: Theme.mutedText
             wrapMode: Text.Wrap
             horizontalAlignment: Text.AlignHCenter
         }

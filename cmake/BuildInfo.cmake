@@ -1,47 +1,45 @@
-# SPDX-FileCopyrightText: 2026 Dennis Oberst
-# SPDX-License-Identifier: MIT-0
-#
 #   app_add_build_info(<target>)
-#       Generates BuildInfo.cpp, which defines app::platform::buildInfo() (declared in
-#       src/platform/BuildInfo.hpp), and adds it to <target>. The values are captured when
-#       CMake runs, which it does again after every commit or checkout.
+#       Generates BuildInfo.cpp, which defines app::buildInfo() (declared in
+#       src/app/BuildInfo.hpp), and adds it to <target>.
+#
+#   APP_GIT_SHA
+#       The commit being built, with "-dirty" for uncommitted changes. Set when this file is
+#       included; CMake re-runs after every commit or checkout, so it stays current.
 
 include_guard(GLOBAL)
 
-function(app_add_build_info target)
-    set(APP_GIT_SHA "unknown")
-    find_package(Git QUIET)
-    if(GIT_FOUND)
+set(APP_GIT_SHA "unknown")
+find_package(Git QUIET)
+if(GIT_FOUND)
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --short=12 HEAD
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+        RESULT_VARIABLE _result OUTPUT_VARIABLE _sha
+        OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
+    )
+    if(_result EQUAL 0)
+        set(APP_GIT_SHA "${_sha}")
         execute_process(
-            COMMAND "${GIT_EXECUTABLE}" rev-parse --short=12 HEAD
+            COMMAND "${GIT_EXECUTABLE}" status --porcelain --untracked-files=no
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-            RESULT_VARIABLE _result OUTPUT_VARIABLE _sha
-            OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
+            OUTPUT_VARIABLE _status OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
         )
-        if(_result EQUAL 0)
-            set(APP_GIT_SHA "${_sha}")
-            execute_process(
-                COMMAND "${GIT_EXECUTABLE}" status --porcelain --untracked-files=no
-                WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-                OUTPUT_VARIABLE _status OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
-            )
-            if(NOT _status STREQUAL "")
-                string(APPEND APP_GIT_SHA "-dirty")
-            endif()
-        endif()
-        execute_process(
-            COMMAND "${GIT_EXECUTABLE}" rev-parse --absolute-git-dir
-            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-            OUTPUT_VARIABLE _git_dir OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
-        )
-        # The reflog changes on every commit and checkout: re-run CMake so the SHA stays current.
-        if(EXISTS "${_git_dir}/logs/HEAD")
-            set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_git_dir}/logs/HEAD")
+        if(NOT _status STREQUAL "")
+            string(APPEND APP_GIT_SHA "-dirty")
         endif()
     endif()
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --absolute-git-dir
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+        OUTPUT_VARIABLE _git_dir OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
+    )
+    # The reflog changes on every commit and checkout: re-run CMake so the SHA stays current.
+    if(EXISTS "${_git_dir}/logs/HEAD")
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_git_dir}/logs/HEAD")
+    endif()
+endif()
 
-    set_property(GLOBAL PROPERTY APP_GIT_SHA "${APP_GIT_SHA}")
-
+function(app_add_build_info target)
     # Honors SOURCE_DATE_EPOCH for reproducible builds.
     string(TIMESTAMP APP_BUILD_TIMESTAMP "%Y-%m-%dT%H:%M:%SZ" UTC)
 

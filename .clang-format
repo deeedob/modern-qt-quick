@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2026 Dennis Oberst
-# SPDX-License-Identifier: MIT-0
-
 # Options: https://releases.llvm.org/18.1.8/tools/clang/docs/ClangFormatStyleOptions.html
 ---
 Language: Cpp

@@ -4,114 +4,119 @@
 <context>
     <name>AboutDialog</name>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="45"/>
+        <location filename="../src/app/AboutDialog.qml" line="41"/>
         <source>Version %1</source>
         <translation>Version %1</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="64"/>
-        <source>Built with Qt, licensed under the LGPL version 3. See THIRD_PARTY_NOTICES.txt.</source>
-        <translation>Erstellt mit Qt, lizenziert unter der LGPL Version 3. Siehe THIRD_PARTY_NOTICES.txt.</translation>
+        <location filename="../src/app/AboutDialog.qml" line="60"/>
+        <source>Built with Qt, used under the LGPL version 3. The licenses of all third-party components ship with the application, in its licenses folder.</source>
+        <translation>Erstellt mit Qt, verwendet unter der LGPL Version 3. Die Lizenzen aller Komponenten von Drittanbietern liegen der Anwendung im Ordner „licenses“ bei.</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="76"/>
+        <location filename="../src/app/AboutDialog.qml" line="72"/>
         <source>Open log folder</source>
         <translation>Log-Ordner öffnen</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="86"/>
+        <location filename="../src/app/AboutDialog.qml" line="82"/>
         <source>Close</source>
         <translation>Schließen</translation>
     </message>
 </context>
 <context>
+    <name>CanvasPage</name>
+    <message>
+        <location filename="../src/canvas/CanvasPage.qml" line="45"/>
+        <source>Ink %1</source>
+        <translation>Tinte %1</translation>
+    </message>
+    <message>
+        <location filename="../src/canvas/CanvasPage.qml" line="53"/>
+        <source>Snap shapes</source>
+        <translation>Formen einrasten</translation>
+    </message>
+    <message>
+        <location filename="../src/canvas/CanvasPage.qml" line="64"/>
+        <source>Undo</source>
+        <translation>Rückgängig</translation>
+    </message>
+    <message>
+        <location filename="../src/canvas/CanvasPage.qml" line="71"/>
+        <source>Redo</source>
+        <translation>Wiederholen</translation>
+    </message>
+    <message>
+        <location filename="../src/canvas/CanvasPage.qml" line="78"/>
+        <source>Clear</source>
+        <translation>Leeren</translation>
+    </message>
+    <message>
+        <location filename="../src/canvas/CanvasPage.qml" line="103"/>
+        <source>Draw here. Circles, rectangles and triangles snap into shape.</source>
+        <translation>Hier zeichnen. Kreise, Rechtecke und Dreiecke rasten in Form ein.</translation>
+    </message>
+</context>
+<context>
     <name>Main</name>
     <message>
+        <location filename="../src/app/Main.qml" line="29"/>
+        <source>Back to the sketchbook</source>
+        <translation>Zurück zum Skizzenbuch</translation>
+    </message>
+    <message>
         <location filename="../src/app/Main.qml" line="45"/>
-        <source>Tasks</source>
-        <translation>Aufgaben</translation>
-    </message>
-    <message>
-        <location filename="../src/app/Main.qml" line="49"/>
-        <source>Focus</source>
-        <translation>Fokus</translation>
-    </message>
-    <message>
-        <location filename="../src/app/Main.qml" line="55"/>
         <source>Switch language</source>
         <translation>Sprache wechseln</translation>
     </message>
     <message>
-        <location filename="../src/app/Main.qml" line="61"/>
+        <location filename="../src/app/Main.qml" line="51"/>
         <source>About</source>
         <translation>Über</translation>
     </message>
 </context>
 <context>
-    <name>TaskDelegate</name>
+    <name>SketchbookPage</name>
     <message>
-        <location filename="../src/frontend/tasks/TaskDelegate.qml" line="43"/>
-        <source>Remove</source>
-        <translation>Entfernen</translation>
-    </message>
-</context>
-<context>
-    <name>TasksPage</name>
-    <message>
-        <location filename="../src/frontend/tasks/TasksPage.qml" line="31"/>
-        <source>Search tasks</source>
-        <translation>Aufgaben durchsuchen</translation>
-    </message>
-    <message>
-        <location filename="../src/frontend/tasks/TasksPage.qml" line="55"/>
-        <source>No matching tasks</source>
-        <translation>Keine passenden Aufgaben</translation>
-    </message>
-    <message>
-        <location filename="../src/frontend/tasks/TasksPage.qml" line="55"/>
-        <source>Nothing to do</source>
-        <translation>Nichts zu tun</translation>
-    </message>
-    <message>
-        <location filename="../src/frontend/tasks/TasksPage.qml" line="67"/>
-        <source>New task</source>
-        <translation>Neue Aufgabe</translation>
-    </message>
-    <message>
-        <location filename="../src/frontend/tasks/TasksPage.qml" line="73"/>
-        <source>Add task</source>
-        <translation>Aufgabe hinzufügen</translation>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="23"/>
+        <source>New sketch</source>
+        <translation>Neue Skizze</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/frontend/tasks/TasksPage.qml" line="80"/>
-        <source>%n open task(s)</source>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="73"/>
+        <source>%n stroke(s)</source>
         <translation>
-            <numerusform>%n offene Aufgabe</numerusform>
-            <numerusform>%n offene Aufgaben</numerusform>
+            <numerusform>%n Strich</numerusform>
+            <numerusform>%n Striche</numerusform>
         </translation>
+    </message>
+    <message>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="82"/>
+        <source>Rename</source>
+        <translation>Umbenennen</translation>
+    </message>
+    <message>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="88"/>
+        <source>Delete</source>
+        <translation>Löschen</translation>
+    </message>
+    <message>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="97"/>
+        <source>No sketches yet</source>
+        <translation>Noch keine Skizzen</translation>
+    </message>
+    <message>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="117"/>
+        <source>Rename sketch</source>
+        <translation>Skizze umbenennen</translation>
     </message>
 </context>
 <context>
-    <name>TimerPage</name>
+    <name>app::sketchbook::SketchbookViewModel</name>
     <message>
-        <location filename="../src/frontend/timer/TimerPage.qml" line="58"/>
-        <source>Pause</source>
-        <translation>Pausieren</translation>
-    </message>
-    <message>
-        <location filename="../src/frontend/timer/TimerPage.qml" line="58"/>
-        <source>Start</source>
-        <translation>Starten</translation>
-    </message>
-    <message>
-        <location filename="../src/frontend/timer/TimerPage.qml" line="64"/>
-        <source>Reset</source>
-        <translation>Zurücksetzen</translation>
-    </message>
-    <message>
-        <location filename="../src/frontend/timer/TimerPage.qml" line="80"/>
-        <source>minutes</source>
-        <translation>Minuten</translation>
+        <location filename="../src/sketchbook/SketchbookViewModel.cpp" line="38"/>
+        <source>Sketch %1</source>
+        <translation>Skizze %1</translation>
     </message>
 </context>
 </TS>
