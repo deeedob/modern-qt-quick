@@ -17,8 +17,6 @@ find_program(APP_CLANGD clangd)
 find_program(APP_REUSE reuse)
 if(TARGET Qt6::qmlformat)
     set(APP_QMLFORMAT "$<TARGET_FILE:Qt6::qmlformat>")
-else()
-    find_program(APP_QMLFORMAT qmlformat HINTS "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}")
 endif()
 
 add_custom_target(check)

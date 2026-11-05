@@ -98,10 +98,9 @@ Enable debug output at runtime without recompiling:
 QT_LOGGING_RULES="app.*.debug=true" ./QtAppTemplate
 ```
 
-`src/app/CrashHandler.cpp` replaces `std::terminate`. An uncaught exception is logged with its
+The same function replaces `std::terminate`. An uncaught exception is logged with its
 message and a symbolized stack trace from cpptrace before the process aborts. Fatal Qt
-messages (`qFatal`, a failed `Q_ASSERT`) get the same stack trace. Run the app with
-`--crash-test` to see it work.
+messages (`qFatal`, a failed `Q_ASSERT`) get the same stack trace.
 
 Segmentation faults are not handled. A signal handler may only call async-signal-safe
 functions, which rules out symbolizing a stack trace in-process; cpptrace supports a safe

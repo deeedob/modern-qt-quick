@@ -45,9 +45,8 @@ targets as system includes, so their warnings never show up.
 - `_FORTIFY_SOURCE=3` outside Debug builds;
 - `/sdl /guard:cf` on MSVC.
 
-`APP_SANITIZERS` takes a list of sanitizers; the `asan` preset sets `address;undefined`.
-Incompatible combinations, such as thread with address, stop the configure step with an
-explanation. Qt itself is not instrumented, so the test preset disables AddressSanitizer's
+`APP_SANITIZERS` takes a list of sanitizers; the `asan` preset sets `address;undefined`. The
+compiler rejects combinations that cannot work together, such as thread with address. Qt itself is not instrumented, so the test preset disables AddressSanitizer's
 container-overflow check, which reports false positives across instrumented and
 uninstrumented code.
 
@@ -80,9 +79,8 @@ clang-tidy starts from every check and removes vendor-specific groups and checks
 conflict with Qt idioms (moc, logging macros), common C++ idioms (the `Overloaded` visitor),
 or the formatting style. Identifier naming is left to each project. Where a check is right in
 general but wrong in one known place, `.clang-tidy` configures it instead of the code carrying
-`NOLINT` comments: `main()` may let exceptions escape to the crash handler
-(`bugprone-exception-escape.CheckMain`, LLVM 22 or newer), and item-model roles stay unscoped
-enums inside their model (`cppcoreguidelines-use-enum-class.IgnoreUnscopedEnumsInClasses`).
+`NOLINT` comments: item-model roles, for example, stay unscoped enums inside their model
+(`cppcoreguidelines-use-enum-class.IgnoreUnscopedEnumsInClasses`).
 
 The checks cover public headers in a `FILE_SET` too. CMake keeps those out of a target's
 `SOURCES`, so `app_target_defaults()` collects them from the target's header sets.
@@ -95,10 +93,11 @@ Each part is tested with the lightest tool that can test it:
 |---|---|---|
 | `libs/shapes` | Catch2, in `libs/shapes/tests/` | recognition across positions, sizes, aspect ratios and directions; degenerate input; a hidden benchmark |
 | `src/canvas` | Qt Test | the store: actions, undo and redo, snapping, history limits |
-| `src/canvas` | Qt Quick Test | `StrokeItem` turns pointer input into a `strokeFinished` signal |
+| `src/canvas` | Qt Quick Test | `StrokeItem` turns pointer input into a `strokeFinished` signal, also inside a `Flickable` |
+| `src/canvas` | Qt Test | trackpad pinches on `CanvasPage` zoom around the fingers and stay on the paper |
 | `src/sketchbook` | Qt Test | storage round trips, ordered saves, broken files; the view model with `QAbstractItemModelTester` |
 | `src/style` | Qt Quick Test | the tooltip and click behavior of `ToolButton` |
-| `src/app` | Qt Test and CTest | log files and their rotation; `--version` starts the real executable |
+| `src/app` | Qt Test | log files and their rotation |
 
 Qt Test and Qt Quick Test cover the Qt parts, and Catch2 covers the library, because a
 separable library should not need Qt even for its tests.

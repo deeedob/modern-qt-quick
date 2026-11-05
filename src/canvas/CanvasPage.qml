@@ -81,27 +81,84 @@ Page {
         }
     }
 
-    Rectangle {
+    // Zoom belongs to this view, not to the sketch, so it lives here instead of in the store.
+    property real zoom: 1.0
+
+    // Clamps directly: Flickable.returnToBounds() would start an animation on every pinch step.
+    function scrollTo(x: real, y: real): void {
+        viewport.contentX = Math.max(0, Math.min(x, viewport.contentWidth - viewport.width));
+        viewport.contentY = Math.max(0, Math.min(y, viewport.contentHeight - viewport.height));
+    }
+
+    // Keeps the paper point under `position`, in viewport coordinates, where it is.
+    function zoomBy(factor: real, position: point): void {
+        const next = Math.min(Math.max(root.zoom * factor, 0.25), 4);
+        const ratio = next / root.zoom;
+        root.zoom = next;
+        root.scrollTo((viewport.contentX + position.x) * ratio - position.x, (viewport.contentY + position.y) * ratio - position.y);
+    }
+
+    // One finger or the mouse draws. The wheel, the trackpad, the scroll bars and two fingers
+    // move the paper; Ctrl+wheel and pinching zoom it.
+    Flickable {
+        id: viewport
+
         anchors.fill: parent
         anchors.margins: Theme.spacing
-        radius: Theme.radius
-        color: "#fdfdfb" // paper stays light in dark mode, so saved ink colors keep working
-        border.color: Theme.border
         clip: true
+        contentWidth: paper.width * root.zoom
+        contentHeight: paper.height * root.zoom
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollBar.horizontal: ScrollBar {}
+        ScrollBar.vertical: ScrollBar {}
 
-        StrokeItem {
-            anchors.fill: parent
-            store: root.store
-            penColor: root.penColor
-            onStrokeFinished: points => root.store.addStroke(points, root.penColor)
+        Rectangle {
+            id: paper
+
+            width: 1600
+            height: 1200
+            scale: root.zoom
+            transformOrigin: Item.TopLeft
+            color: "#fdfdfb" // paper stays light in dark mode, so saved ink colors keep working
+            border.color: Theme.border
+            // StrokeItem keeps the pointer while drawing, even past the edge: hide what is off the paper.
+            clip: true
+
+            StrokeItem {
+                anchors.fill: parent
+                store: root.store
+                penColor: root.penColor
+                onStrokeFinished: points => root.store.addStroke(points, root.penColor)
+            }
+        }
+    }
+
+    // Outside the Flickable, so the handlers see positions that do not move while zooming.
+    Item {
+        anchors.fill: viewport
+
+        PinchHandler {
+            target: null
+            onScaleChanged: delta => root.zoomBy(delta, centroid.position)
+            // A trackpad pinch only zooms; its first delta is the whole pointer position (Qt 6.13).
+            onTranslationChanged: delta => {
+                if (centroid.device.type === PointerDevice.TouchScreen)
+                    root.scrollTo(viewport.contentX - delta.x, viewport.contentY - delta.y);
+            }
         }
 
-        Label {
-            anchors.centerIn: parent
-            visible: root.store.empty
-            text: qsTr("Draw here. Circles, rectangles and triangles snap into shape.")
-            color: "#8a8a94"
+        WheelHandler {
+            target: null
+            acceptedModifiers: Qt.ControlModifier
+            onWheel: event => root.zoomBy(Math.pow(2, event.angleDelta.y / 720), point.position)
         }
+    }
+
+    Label {
+        anchors.centerIn: viewport
+        visible: root.store.empty
+        text: qsTr("Draw here. Circles, rectangles and triangles snap into shape.")
+        color: "#8a8a94"
     }
 
     Shortcut {

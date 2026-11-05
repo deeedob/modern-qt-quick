@@ -46,6 +46,39 @@ TestCase {
         compare(points[2], Qt.point(90, 80));
     }
 
+    Component {
+        id: scrollableComponent
+
+        Flickable {
+            property alias item: strokeItem
+
+            anchors.fill: parent
+            contentWidth: 400
+            contentHeight: 400
+
+            StrokeItem {
+                id: strokeItem
+
+                width: 400
+                height: 400
+            }
+        }
+    }
+
+    function test_dragDrawsInsteadOfScrolling(): void {
+        const flickable = createTemporaryObject(scrollableComponent, testCase);
+        finishedSpy.target = flickable.item;
+
+        mousePress(flickable, 100, 150);
+        for (let y = 140; y >= 20; y -= 20)
+            mouseMove(flickable, 100, y, -1, Qt.LeftButton);
+        mouseRelease(flickable, 100, 20);
+
+        compare(flickable.contentY, 0);
+        compare(finishedSpy.count, 1);
+        verify(finishedSpy.signalArguments[0][0].length > 2);
+    }
+
     function test_clickReportsOnePoint(): void {
         const item = createTemporaryObject(itemComponent, testCase);
         finishedSpy.target = item;

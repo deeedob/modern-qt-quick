@@ -4,22 +4,22 @@
 <context>
     <name>AboutDialog</name>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="41"/>
+        <location filename="../src/app/AboutDialog.qml" line="34"/>
         <source>Version %1</source>
         <translation>Version %1</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="60"/>
+        <location filename="../src/app/AboutDialog.qml" line="53"/>
         <source>Built with Qt, used under the LGPL version 3. The licenses of all third-party components ship with the application, in its licenses folder.</source>
         <translation>Erstellt mit Qt, verwendet unter der LGPL Version 3. Die Lizenzen aller Komponenten von Drittanbietern liegen der Anwendung im Ordner „licenses“ bei.</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="72"/>
+        <location filename="../src/app/AboutDialog.qml" line="65"/>
         <source>Open log folder</source>
         <translation>Log-Ordner öffnen</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="82"/>
+        <location filename="../src/app/AboutDialog.qml" line="75"/>
         <source>Close</source>
         <translation>Schließen</translation>
     </message>
@@ -27,32 +27,32 @@
 <context>
     <name>CanvasPage</name>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="45"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="44"/>
         <source>Ink %1</source>
         <translation>Tinte %1</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="53"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="52"/>
         <source>Snap shapes</source>
         <translation>Formen einrasten</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="64"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="63"/>
         <source>Undo</source>
         <translation>Rückgängig</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="71"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="70"/>
         <source>Redo</source>
         <translation>Wiederholen</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="78"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="77"/>
         <source>Clear</source>
         <translation>Leeren</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="103"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="152"/>
         <source>Draw here. Circles, rectangles and triangles snap into shape.</source>
         <translation>Hier zeichnen. Kreise, Rechtecke und Dreiecke rasten in Form ein.</translation>
     </message>
@@ -106,7 +106,7 @@
         <translation>Noch keine Skizzen</translation>
     </message>
     <message>
-        <location filename="../src/sketchbook/SketchbookPage.qml" line="117"/>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="118"/>
         <source>Rename sketch</source>
         <translation>Skizze umbenennen</translation>
     </message>

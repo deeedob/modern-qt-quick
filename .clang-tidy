@@ -55,8 +55,6 @@ Checks: >
   -readability-uppercase-literal-suffix
 
 CheckOptions:
-  # main() lets exceptions reach the terminate handler, which logs them with a stack trace.
-  bugprone-exception-escape.CheckMain: false
   # Qt item-model roles must convert to int, so they stay unscoped enums inside the model.
   cppcoreguidelines-use-enum-class.IgnoreUnscopedEnumsInClasses: true
   cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: true

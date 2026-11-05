@@ -24,7 +24,6 @@ public:
         QObject *parent = nullptr);
 
     [[nodiscard]] SketchListModel *model();
-    [[nodiscard]] const SketchListModel *model() const;
     [[nodiscard]] QString openName() const;
 
     // Creates an empty sketch and opens it.

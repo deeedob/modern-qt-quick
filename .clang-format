@@ -12,7 +12,6 @@ AlignConsecutiveBitFields: None
 AlignConsecutiveDeclarations: None
 AlignConsecutiveMacros: None
 AlignEscapedNewlines: Left
-# AlignEscapedNewlines: LeftWithLastLine # version >= 19
 AlignOperands: DontAlign
 AlignTrailingComments:
   Kind: Leave
@@ -70,7 +69,6 @@ BreakArrays: false
 BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeBraces: Custom # Using BraceWrapping
 BreakBeforeConceptDeclarations: Allowed
-# BreakBeforeInlineASMColon:
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: BeforeComma
 BreakInheritanceList: BeforeComma
@@ -80,7 +78,6 @@ BreakStringLiterals: true
 CommentPragmas: "^ SPDX-License-Identifier:|^ Copyright|\\since|\\overload|\\reentrant|\\value|\\li|\\l"
 # REUSE-IgnoreEnd
 CompactNamespaces: false
-# ConstructorInitializerIndentWidth:
 ContinuationIndentWidth: 4
 Cpp11BracedListStyle: false
 
@@ -101,7 +98,6 @@ ForEachMacros:
     QBENCHMARK_ONCE,
   ]
 
-# IfMacros:
 IncludeBlocks: Preserve
 IncludeCategories:
   # Headers in "" with extension.
@@ -116,9 +112,6 @@ IncludeCategories:
   # Headers in <> with extension.
   - Regex: '<([a-z.\/-_])+>'
     Priority: 5
-# IncludeCategories:
-# IncludeIsMainRegex:
-# IncludeIsMainSourceRegex:
 IndentAccessModifiers: false
 IndentCaseBlocks: false
 IndentCaseLabels: false
@@ -210,7 +203,6 @@ RemoveParentheses: Leave
 RequiresClausePosition: OwnLine
 RequiresExpressionIndentation: OuterScope
 
-# SeparateDefnitionBlocks:
 ShortNamespaceLines: 4
 SkipMacroDefinitionBody: true
 SortIncludes: CaseSensitive
@@ -237,7 +229,6 @@ StatementMacros: [Q_UNUSED]
 
 UseTab: Never
 
-# WhitespaceSensitiveMacros: [Q_PROPERTY]
 ---
 # Use the Google-based style for .proto files.
 Language: Proto

@@ -39,6 +39,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y g++-14 libgl1-mesa-dev libxkbcommon-x11-0 libxcb-cursor0
           echo "CXX=g++-14" >> "$GITHUB_ENV"
+          pipx install clang-format "reuse[charset-normalizer]"
 
       - uses: ilammy/msvc-dev-cmd@v1
         if: runner.os == 'Windows'
@@ -57,6 +58,10 @@ jobs:
       - name: Configure, build, test and package
         run: cmake --workflow --preset release
 
+      - name: Format, qmllint and REUSE
+        if: runner.os == 'Linux'
+        run: cmake --build --preset release --target check
+
       - uses: actions/upload-artifact@v4
         with:
           name: package-${{ matrix.os }}
@@ -64,41 +69,3 @@ jobs:
             build/release/*.dmg
             build/release/*.zip
             build/release/*.tar.gz
-
-  checks:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          submodules: true
-
-      - uses: lukka/get-cmake@latest
-
-      - uses: jurplel/install-qt-action@v4
-        with:
-          version: ${{ env.QT_VERSION }}
-          aqtsource: ${{ env.AQT_SOURCE }}
-          cache: true
-
-      - name: Install check tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y g++-14
-          echo "CXX=g++-14" >> "$GITHUB_ENV"
-          pipx install clang-format
-          pipx install "reuse[charset-normalizer]"
-
-      - name: Key the vcpkg cache on the pinned vcpkg commit
-        id: vcpkg
-        run: echo "commit=$(git rev-parse HEAD:3rdparty/vcpkg)" >> "$GITHUB_OUTPUT"
-
-      - uses: actions/cache@v4
-        with:
-          path: .vcpkg-cache
-          key: vcpkg-checks-${{ steps.vcpkg.outputs.commit }}-${{ hashFiles('vcpkg.json', 'cmake/vcpkg-triplets/**/*.cmake') }}
-          restore-keys: vcpkg-checks-
-
-      - name: Format, qmllint and REUSE
-        run: |
-          cmake --preset dev
-          cmake --build --preset dev --target check

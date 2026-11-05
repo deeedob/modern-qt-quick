@@ -68,6 +68,23 @@ app_add_notice(lucide-icons icons/LICENSE)
 
 The package then contains `licenses/lucide-icons.txt`.
 
+## Change the app icon
+
+`src/app/app.svg` is the only icon you design; the About dialog shows it as is. macOS and
+Windows need the icon in their own formats, `app.icns` and `app.ico`, so regenerate those two
+after changing the SVG. On macOS, with [ImageMagick](https://imagemagick.org) for the `.ico`:
+
+```sh
+cd src/app
+mkdir app.iconset
+for s in 16 32 128 256 512; do
+    sips -s format png -Z $s app.svg --out app.iconset/icon_${s}x${s}.png
+    sips -s format png -Z $((s * 2)) app.svg --out app.iconset/icon_${s}x${s}@2x.png
+done
+iconutil -c icns app.iconset && rm -r app.iconset
+magick -background none app.svg -define icon:auto-resize=256,64,48,32,16 app.ico
+```
+
 ## Add a language
 
 1. Add the language code to `I18N_TRANSLATED_LANGUAGES` in the top-level `CMakeLists.txt`.
