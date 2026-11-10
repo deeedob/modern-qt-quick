@@ -44,6 +44,9 @@ book:
       chapters:
         - 11-quality.qmd
         - 12-testing.qmd
+    - part: "Collaboration"
+      chapters:
+        - 17-git.qmd
     - part: "Shipping"
       chapters:
         - 13-shipping.qmd

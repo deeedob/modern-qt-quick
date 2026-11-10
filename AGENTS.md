@@ -1,11 +1,8 @@
 # AGENTS.md
 
 A cross-platform Qt Quick application: **Qt 6.12, C++23, CMake 3.31, vcpkg**. QML shows the
-state; C++ holds it. Write current Qt 6.12 code: much Qt code online is Qt 5 and still
-compiles, but it is not how this project works. For general Qt, QML and CMake guidance, use
-Qt's agent skills and documentation server
-(https://github.com/TheQtCompanyRnD/agent-skills). This file covers what is specific to this
-project.
+state; C++ holds it. Use Qt's agent skills and documentation server for general Qt, QML and
+CMake guidance: https://github.com/TheQtCompanyRnD/agent-skills.
 
 ## Commands
 
@@ -25,7 +22,25 @@ cmake --workflow --preset release           # what CI builds, tests and packages
 Qt comes from `QT_ROOT_DIR` (an installed Qt 6.12). If configure says Qt is missing, ask the
 user for the path; do not install Qt. Everything under `build/` is generated and disposable.
 
-A change is done when the `dev` workflow passes and `check` is clean. Warnings are errors.
+Report missing tools, skipped checks and warnings. Warnings are errors for project code.
+
+## Git
+
+- Follow `docs/17-git.qmd`: integrate small, reviewed changes into `main` frequently; use
+  short-lived branches and rebase before integration when a branch is needed.
+- Keep commits atomic and self-contained, with their tests; split unrelated changes so a fix
+  can be reviewed, reverted or backported independently.
+- Use Conventional Commits: `type(scope): imperative summary`, at most 72 characters, with a
+  blank line and a body explaining what and why, wrapped at 72 characters. Mark breaking
+  changes with `!` or a `BREAKING CHANGE:` footer. Follow `.githooks/` for the exact policy.
+- Hooks are opt-in per clone: `git config core.hooksPath .githooks`. Do not replace an existing
+  hook path without asking. Run `bash .githooks/test_git_hooks.sh` when changing hooks.
+- Never commit or push without being asked. Preserve others' changes and do not rewrite shared
+  history without coordination. Use `git revise` for authorized fixes to earlier commits on
+  your own branch; after rewriting a published branch, use `--force-with-lease` if pushing is
+  authorized.
+- For supported release lines, fix `main` first when possible, then backport the atomic fix
+  with `git cherry-pick -x` and test it on the maintenance branch. Tag tested releases.
 
 ## Layout
 

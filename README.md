@@ -26,6 +26,19 @@ cmake --build --preset dev --target run     # start the app
 
 On Windows, use a *Developer PowerShell for VS 2022*.
 
+## Git hooks
+
+After you have initialized a project from this template, enable its local Git policy before
+your first team commit:
+
+```sh
+git config core.hooksPath .githooks
+```
+
+The hooks check commit messages, staged whitespace, and staged C++ and QML formatting. They
+need `clang-format` for C++ changes and Qt's `qmlformat` for QML changes. The guide's
+[Git chapter](docs/17-git.qmd) explains the policy and how to enforce it for pull requests.
+
 ## Make it yours
 
 Click *Use this template* on GitHub, clone your repository, then run:

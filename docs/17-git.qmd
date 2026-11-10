@@ -1,0 +1,283 @@
+# Collaboration with Git {#sec-git}
+
+Git keeps a project's history as a chain of **commits**. Each commit records a snapshot,
+its author and a message. A useful history lets a teammate understand a change, find a
+regression, undo a mistake or bring a fix to an older release.
+
+This chapter is not a Git course. It explains the decisions a team makes around that
+history: what belongs in a commit, how changes reach the shared branch and how a fix reaches
+users of an older version.
+
+## One change per commit {#sec-atomic-commits}
+
+Suppose you fix a crash when opening an empty sketch and also change the canvas colors. Both
+changes work, but they solve different problems. Put them in separate commits: the crash fix
+can then be reviewed, reverted or copied to an older release without taking the colors with it.
+
+That is an **atomic commit**: one self-contained change. Include its tests and any necessary
+supporting changes, and aim to keep the project building and the tests passing at that point
+in history. A large feature can be several such steps; atomic does not mean one file or one
+line.
+
+Git records what you **stage**, not every edit in your working directory. Inspect that
+selection before you commit:
+
+```sh
+git add -p          # choose changes in small pieces
+git diff --cached   # review the staged result
+git commit
+```
+
+On a shared branch, undo a change with a new commit instead of rewriting history. For example,
+`git revert --no-commit <commit>` applies the inverse change so you can inspect it and write
+a `revert:` message explaining why.
+
+::: {.more}
+**Read more:** [Recording changes to the repository](https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository)
+:::
+
+## A message for the next reader {#sec-commit-messages}
+
+The diff shows *what* changed. The commit message gives a future reader the reason and the
+context that the code cannot show. Start with a short summary, leave a blank line, then explain
+why the change was needed. Finish with optional metadata, such as an issue reference.
+
+This template uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
+a type before the summary tells both people and tools what kind of change it is. An optional
+scope names the affected area.
+
+```{.default filename="Commit message"}
+fix(sketchbook): prevent a crash when opening an empty sketch
+
+An empty file has no strokes to load. Treat it as an empty sketch so
+users can open it instead of losing access to their work.
+
+Closes: #42
+```
+
+Here `fix` says this is a bug fix and `sketchbook` names the area. `Closes: #42` is a
+**trailer**, a labelled piece of metadata at the end of the message. Other examples include
+`Co-authored-by:` and links to a review.
+
+| Type | A change that ... |
+|---|---|
+| `feat` | adds a feature |
+| `fix` | fixes a bug |
+| `docs`, `test`, `style` | changes documentation, tests or formatting |
+| `refactor`, `perf` | restructures code or improves performance |
+| `build`, `ci`, `chore` | changes the build, automation or project maintenance |
+| `revert` | undoes an earlier change |
+
+Use a short, lower-case imperative summary, such as “add” rather than “added”. This template
+requires a body, limits the subject and body prose to 72 characters per line, and omits the
+subject's final period. Conventional Commits itself leaves the body optional and does not set
+those limits: they are this template's choices, checked by its hooks.
+
+Other teams use a plain imperative subject, such as `Prevent a crash on empty sketches`, or
+their own prefixes. The important part is a shared convention. Conventional Commits adds a
+benefit: release tools can recognize `fix`, `feat` and breaking changes when preparing a
+changelog or suggesting a version. The team still reviews the result.
+
+::: {.more}
+**Read more:** [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/),
+[Git trailers](https://git-scm.com/docs/git-interpret-trailers)
+:::
+
+## Tell users when a change breaks compatibility {#sec-breaking-changes}
+
+Imagine an app exposes a REST endpoint used by another program. Removing that endpoint may
+leave the app itself working, but the other program breaks when it upgrades. That is a
+**breaking change**: it changes a contract existing users depend on.
+
+Conventional Commits offers two ways to flag it. Put `!` before the colon in the subject:
+
+```{.default filename="Breaking change in the subject"}
+feat(api)!: remove v1 REST endpoints
+
+Clients must use v2 before upgrading.
+```
+
+Or add a `BREAKING CHANGE:` footer that describes the impact:
+
+```{.default filename="Breaking change in a footer"}
+feat(api): remove v1 REST endpoints
+
+Clients must use v2 before upgrading.
+
+BREAKING CHANGE: The v1 REST endpoints no longer accept requests.
+```
+
+Both mark the commit as breaking; a footer also gives release tools an explicit description.
+Neither form changes the version by itself. A release pipeline must be configured to act on
+the marker, and a reviewer must decide whether the change is actually incompatible.
+
+Some projects add a `[ChangeLog]` marker to selected messages to identify changes for release
+notes. That is a separate project convention, not part of Conventional Commits. Use it when
+your chosen changelog tool understands it; users generally need to hear about the effect of a
+change, not every internal commit.
+
+## Hooks: feedback before a commit {#sec-git-hooks}
+
+A **hook** is a program Git runs at a particular point in a command. The template's hooks
+check the staged C++ and QML formatting and whitespace, then check the commit message. They
+report problems without changing your files. They cannot judge whether the explanation is
+useful or replace a build and tests.
+
+Git does not enable hooks from a cloned repository automatically. Once you have initialized
+your project from the template, enable these hooks in each clone:
+
+```sh
+git config core.hooksPath .githooks
+```
+
+This replaces any existing hook path for that clone. The checks need `clang-format` for C++
+and Qt's `qmlformat` for QML. If a check fails, fix the file or message and try again. The
+`format` target formats the working files; stage the intended result afterwards.
+
+Local hooks can be bypassed, so the template also checks commit messages in GitHub Actions.
+For a shared repository, require the `commits` status check and pull requests for `main` in
+[branch protection](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
+Keep build and test checks there too.
+
+::: {.more}
+**Template:** `.githooks/`, `tools/check_commit_message.sh`, `.github/workflows/git-policy.yml`
+
+**Read more:** [Git hooks](https://git-scm.com/docs/githooks)
+:::
+
+## Bringing work together {#sec-trunk-based-development}
+
+A **branch** is a movable name for a commit. When you start a feature branch, it shares the
+history of `main`. While you work, someone else may add a commit to `main`:
+
+```{mermaid}
+%%| fig-width: 6.5
+flowchart LR
+    A((A)) --> B((B)) --> C((C<br/>main))
+    B --> D((D)) --> E((E<br/>feature))
+```
+
+Read the arrows as “followed by”. `C` is the new work on `main`; `D` and `E` are the feature
+commits. There are two common ways to combine them:
+
+**Merge** joins both histories. A merge commit `M` has two parents, so the history records
+where the branches came together. The existing commits keep their identities.
+
+```{mermaid}
+%%| fig-width: 6.5
+flowchart LR
+    A((A)) --> B((B)) --> C((C)) --> M((M<br/>main))
+    B --> D((D)) --> E((E)) --> M
+```
+
+**Rebase** reapplies the feature commits after `C`. Git creates new commits `D′` and `E′`
+with the same intended changes but new identities: their parent has changed. Once the branch
+is reviewed, a fast-forward merge moves `main` to `E′`, giving a linear history.
+
+```{mermaid}
+%%| fig-width: 6.5
+flowchart LR
+    A((A)) --> B((B)) --> C((C)) --> D((D′)) --> E((E′<br/>main))
+```
+
+Rebase preserves the individual changes and their messages, not their original commit IDs.
+Resolve conflicts and test again: replaying a change onto a newer base can change its result.
+Rebase your own short-lived branch before it joins `main`; do not rewrite shared history that
+others already depend on.
+
+The template favors **trunk-based development**: the team integrates small, reviewed changes
+into `main` frequently and keeps it releasable. Short-lived branches make review possible
+without letting work drift apart for weeks. A practical sequence is:
+
+```sh
+git switch -c feat/pressure-strokes
+# make and test small commits
+git push -u origin feat/pressure-strokes
+# open a pull request; after main moves on:
+git fetch origin
+git rebase origin/main
+git push --force-with-lease
+```
+
+`--force-with-lease` updates your published branch after a rebase only if the remote still
+matches what you expect. Coordinate before rewriting a branch someone else uses. After review
+and passing checks, a rebase merge can put the individual commits on `main` in a straight
+line. A squash merge instead combines the branch changes into one new commit.
+
+::: {.callout-tip}
+## Fix an earlier commit
+During review you may find a mistake in an earlier commit on your branch. The optional
+[git-revise](https://git-revise.readthedocs.io/en/latest/) tool folds a staged correction
+into that commit and updates the commits after it:
+
+```sh
+git add path/to/corrected-file
+git revise <commit>
+```
+
+This rewrites the affected commits, so use it on your own branch before integration and
+coordinate with anyone sharing that branch. Recheck the changes and tests afterwards. Git's
+built-in interactive rebase and fixup commits can do the same job without an extra tool.
+:::
+
+Other teams make different trade-offs. [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow)
+uses short-lived branches and pull requests. [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/)
+also has long-lived development and release branches, which can help with scheduled releases
+but need more coordination. Pick a workflow for the team's release needs.
+
+::: {.more}
+**Read more:** [Trunk-Based Development](https://trunkbaseddevelopment.com/),
+[Git branching and merging](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging),
+[Git rebase](https://git-scm.com/docs/git-rebase)
+:::
+
+## Versions, releases and backports {#sec-versions-and-backports}
+
+A **version** tells a user which release they have. With
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html), a version has three numbers:
+
+| Change | Example | Meaning |
+|---|---|---|
+| Patch | `1.2.0` → `1.2.1` | a backward-compatible bug fix |
+| Minor | `1.2.1` → `1.3.0` | backward-compatible functionality |
+| Major | `1.3.0` → `2.0.0` | an incompatible public change |
+
+These promises need a defined public contract: for an app that might include a file format,
+an API or commands used by scripts. Before `1.0.0`, SemVer treats the public API as unstable.
+A **tag** such as `v1.2.0` names the exact commit used for a release; a branch can continue
+moving as more fixes are added.
+
+Now imagine users run both version `1.2` and the newer `2.2`. You discover a serious bug in
+both. Fix and test it on `main` for the next release, then bring the same fix to the
+`release/1.2` maintenance branch. That branch starts at the old release and contains only
+the fixes the team chooses to support there. Test the backport and release `1.2.1`, tagged
+at its own commit. Users can receive the fix without upgrading to version 2.
+
+```{mermaid}
+%%| fig-width: 6.5
+flowchart LR
+    A["v1.2.0<br/>released"] --> B["v2.2.0<br/>released"] --> C["Fix on main"]
+    A --> D["release/1.2<br/>maintenance"] --> E["Backport fix<br/>tag v1.2.1"]
+    C -. "copy the fix" .-> E
+```
+
+Copying a commit to another branch is called **cherry-picking** or **backporting**. An atomic
+fix is easier to pick because it brings the fix and its test without unrelated features:
+
+```sh
+git switch release/1.2
+git cherry-pick -x <fix-commit>
+```
+
+The result is a new commit on the maintenance branch. The `-x` option records the original
+commit when the pick applies without conflicts; after resolving a conflict, check the message
+and add that reference if needed. A fix may need adaptation if version 1 has different code.
+Maintain older branches only for releases you have chosen to support.
+
+::: {.more}
+**Template:** `CMakeLists.txt` sets the app version; the release build puts it in the package
+
+**Read more:** [Semantic Versioning](https://semver.org/spec/v2.0.0.html),
+[Git tags](https://git-scm.com/book/en/v2/Git-Basics-Tagging),
+[Git cherry-pick](https://git-scm.com/docs/git-cherry-pick)
+:::
