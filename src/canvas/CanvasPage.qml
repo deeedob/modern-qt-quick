@@ -2,7 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
-import AppStyle
+import App.Controls
 
 // A Flux view: it shows the store's state and turns input into actions, never editing the sketch.
 Page {

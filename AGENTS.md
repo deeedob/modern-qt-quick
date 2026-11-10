@@ -32,7 +32,7 @@ A change is done when the `dev` workflow passes and `check` is clean. Warnings a
 ```
 libs/<name>/          separable plain C++ library: include/<name>/ (public .h), src/, tests/
 src/<feature>/        one folder and one static QML module per feature: C++ and QML together
-src/style/            the Qt Quick Controls style (QML module AppStyle) and Theme tokens
+src/controls/         the Qt Quick Controls style (QML module App.Controls) and Theme tokens
 src/app/              the executable: main.cpp creates and wires every long-lived object
 tests/<feature>/      tests for src/, mirroring its folders
 cmake/                build helpers: app_target_defaults(), app_add_notice(), checks
@@ -95,7 +95,7 @@ external/vcpkg/       vcpkg as a git submodule: never edit
 - Bindings, not assignments: never overwrite a bound property from JavaScript; change its
   source.
 - Components declare their inputs as `required property` and their outputs as signals.
-- Views import `AppStyle`, not `QtQuick.Controls`. Colors, spacing and radii come from `Theme`,
+- Views import `App.Controls`, not `QtQuick.Controls`. Colors, spacing and radii come from `Theme`,
   never from literals.
 - Every user-visible string goes through `qsTr()`.
 - Keep JavaScript to small expressions; logic belongs in C++.

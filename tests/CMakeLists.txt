@@ -25,4 +25,4 @@ endfunction()
 add_subdirectory(app)
 add_subdirectory(canvas) # demo
 add_subdirectory(sketchbook) # demo
-add_subdirectory(style)
+add_subdirectory(controls)

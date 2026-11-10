@@ -1,6 +1,6 @@
 import QtQuick
 import QtTest
-import AppStyle
+import App.Controls
 
 TestCase {
     id: testCase

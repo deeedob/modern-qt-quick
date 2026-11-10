@@ -173,7 +173,7 @@ the feature needs: its C++ types and its QML files, side by side, built as one Q
 ```{.default filename="src/"}
 src/
 ├── app/            main.cpp, the main window
-├── style/          the look: controls, colors, icons
+├── controls/       the look: controls, colors, icons
 ├── canvas/         a small feature: a few files
 └── contacts/       a grown feature, split by role
     ├── components/    reusable QML pieces: a search field, a delegate

@@ -172,7 +172,6 @@ def rename_prefix(prefix):
         (r"\bApp\.", f"{prefix}."),
         (r'"App"', f'"{prefix}"'),
         (r"\bURI App\b", f"URI {prefix}"),
-        (r"\bAppStyle\b", f"{prefix}Style"),
         (r"\bapp::", f"{namespace}::"),
         (r"\bnamespace app\b", f"namespace {namespace}"),
     ]

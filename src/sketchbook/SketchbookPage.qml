@@ -2,7 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
-import AppStyle
+import App.Controls
 
 // An MVVM view: binds to the view model's list and calls its commands. It knows no files.
 Page {

@@ -70,17 +70,17 @@
 <context>
     <name>Main</name>
     <message>
-        <location filename="../src/app/Main.qml" line="33"/>
+        <location filename="../src/app/Main.qml" line="29"/>
         <source>Back</source>
         <translation>Zurück</translation>
     </message>
     <message>
-        <location filename="../src/app/Main.qml" line="49"/>
+        <location filename="../src/app/Main.qml" line="45"/>
         <source>Switch language</source>
         <translation>Sprache wechseln</translation>
     </message>
     <message>
-        <location filename="../src/app/Main.qml" line="55"/>
+        <location filename="../src/app/Main.qml" line="51"/>
         <source>About</source>
         <translation>Über</translation>
     </message>

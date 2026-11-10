@@ -2,7 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
-import AppStyle
+import App.Controls
 import App.Canvas // demo
 import App.Sketchbook // demo
 

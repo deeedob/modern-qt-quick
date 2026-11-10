@@ -12,29 +12,29 @@ SPDX-FileCopyrightText = "2026 Dennis Oberst"
 SPDX-License-Identifier = "MIT-0"
 
 [[annotations]]
-path = ["src/style/fonts/InterVariable.ttf", "src/style/fonts/LICENSE.txt"]
+path = ["src/controls/fonts/InterVariable.ttf", "src/controls/fonts/LICENSE.txt"]
 SPDX-FileCopyrightText = "2016 The Inter Project Authors"
 SPDX-License-Identifier = "OFL-1.1"
 
 # Lucide icons; the ones derived from Feather also carry Feather's MIT license.
 [[annotations]]
 path = [
-    "src/style/icons/eraser.svg",
-    "src/style/icons/languages.svg",
-    "src/style/icons/pencil.svg",
-    "src/style/icons/redo-2.svg",
-    "src/style/icons/undo-2.svg",
+    "src/controls/icons/eraser.svg",
+    "src/controls/icons/languages.svg",
+    "src/controls/icons/pencil.svg",
+    "src/controls/icons/redo-2.svg",
+    "src/controls/icons/undo-2.svg",
 ]
 SPDX-FileCopyrightText = "2026 Lucide Icons and Contributors"
 SPDX-License-Identifier = "ISC"
 
 [[annotations]]
 path = [
-    "src/style/icons/arrow-left.svg",
-    "src/style/icons/info.svg",
-    "src/style/icons/plus.svg",
-    "src/style/icons/trash.svg",
-    "src/style/icons/LICENSE",
+    "src/controls/icons/arrow-left.svg",
+    "src/controls/icons/info.svg",
+    "src/controls/icons/plus.svg",
+    "src/controls/icons/trash.svg",
+    "src/controls/icons/LICENSE",
 ]
 SPDX-FileCopyrightText = ["2026 Lucide Icons and Contributors", "2013-present Cole Bemis"]
 SPDX-License-Identifier = "ISC AND MIT"

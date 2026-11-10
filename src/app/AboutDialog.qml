@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
-import AppStyle
+import App.Controls
 
 Dialog {
     width: 360

@@ -101,7 +101,7 @@ SPDX-FileCopyrightText = "2026 Your Name"
 SPDX-License-Identifier = "MIT-0"
 
 [[annotations]]
-path = "src/style/fonts/**"
+path = "src/controls/fonts/**"
 SPDX-FileCopyrightText = "2016 The Inter Project Authors"
 SPDX-License-Identifier = "OFL-1.1"
 ```

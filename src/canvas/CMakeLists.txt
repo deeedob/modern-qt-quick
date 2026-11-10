@@ -13,6 +13,6 @@ qt_add_qml_module(app_canvas
 target_include_directories(app_canvas PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(app_canvas
     PUBLIC Qt::Quick shapes::shapes
-    PRIVATE app_style
+    PRIVATE app_controls
 )
 app_target_defaults(app_canvas)

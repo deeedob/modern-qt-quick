@@ -4,4 +4,4 @@ app_add_quick_test(tst_canvas_quick QML_FILES tst_StrokeItem.qml LIBRARIES app_c
 set(QT_NO_PRIVATE_MODULE_WARNING ON)
 find_package(Qt6 REQUIRED COMPONENTS GuiPrivate)
 app_add_qt_test(tst_CanvasPage SOURCES tst_CanvasPage.cpp
-    LIBRARIES Qt::Quick Qt::GuiPrivate app_canvas app_canvasplugin app_styleplugin)
+    LIBRARIES Qt::Quick Qt::GuiPrivate app_canvas app_canvasplugin app_controlsplugin)

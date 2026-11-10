@@ -48,7 +48,7 @@ target_link_libraries(app PRIVATE
     Qt::Svg
     app_support
     # Static QML modules are registered by linking their plugins.
-    app_styleplugin
+    app_controlsplugin
     app_canvas # demo
     app_canvasplugin # demo
     app_sketchbook # demo
