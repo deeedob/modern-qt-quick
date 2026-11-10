@@ -76,7 +76,8 @@ def commit_template_changes(plan):
             print(f"Could not stage the template changes:\n{added.stderr}", file=sys.stderr)
             return False
         committed = subprocess.run(
-            ["git", "commit", "-m", f"Initialize {plan.display_name} from Qt Kickstart"],
+            ["git", "commit", "-m", "chore(template): initialize project",
+             "-m", "Replace the Qt Kickstart identity with this project's initial settings."],
             cwd=ROOT, capture_output=True, text=True)
     except FileNotFoundError:
         print("Git is not available, so the template changes remain uncommitted.", file=sys.stderr)

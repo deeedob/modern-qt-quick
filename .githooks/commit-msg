@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+git rev-parse -q --verify MERGE_HEAD >/dev/null && exit 0
+
+root=$(git rev-parse --show-toplevel)
+exec "$root/tools/check_commit_message.sh" "$1"

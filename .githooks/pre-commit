@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+git diff --cached --check
+
+root=$(git rev-parse --show-toplevel)
+exec "$root/tools/check_staged_format.sh"

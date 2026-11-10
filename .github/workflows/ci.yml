@@ -64,7 +64,9 @@ jobs:
 
       - name: Format, qmllint and REUSE
         if: runner.os == 'Linux'
-        run: cmake --build --preset release --target check
+        run: |
+          cmake --build --preset release --target check
+          bash .githooks/test_git_hooks.sh
 
       - uses: actions/upload-artifact@v7
         with:

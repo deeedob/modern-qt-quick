@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+[[ "${GIT_EDITOR:-}" == : ]] && exit 0
+
+case "${2:-}" in
+    message|commit|merge|squash)
+        exit 0
+        ;;
+esac
+
+cat >> "$1" <<'EOF'
+
+# <type>(<scope>): <imperative summary, 72 characters or fewer>
+#
+# Explain what changed and why. Wrap prose at 72 characters.
+#
+# BREAKING CHANGE: explain the incompatible change
+# Closes: #123
+# Co-authored-by: Name <email@example.com>
+EOF
