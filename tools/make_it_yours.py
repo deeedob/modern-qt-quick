@@ -69,6 +69,25 @@ def git(*args):
     return result.stdout if result.returncode == 0 else None
 
 
+def commit_template_changes(plan):
+    try:
+        added = subprocess.run(["git", "add", "--all"], cwd=ROOT, capture_output=True, text=True)
+        if added.returncode != 0:
+            print(f"Could not stage the template changes:\n{added.stderr}", file=sys.stderr)
+            return False
+        committed = subprocess.run(
+            ["git", "commit", "-m", f"Initialize {plan.display_name} from Qt Quickstart"],
+            cwd=ROOT, capture_output=True, text=True)
+    except FileNotFoundError:
+        print("Git is not available, so the template changes remain uncommitted.", file=sys.stderr)
+        return False
+    if committed.returncode != 0:
+        print(f"Could not create the template commit:\n{committed.stderr}", file=sys.stderr)
+        return False
+    print(committed.stdout.strip())
+    return True
+
+
 def tracked_files():
     listed = git("ls-files")
     if listed is not None:
@@ -255,6 +274,8 @@ def main():
         print(f"error: {error}", file=sys.stderr)
         print("Undo the partial changes with: git checkout -- . && git clean -fd", file=sys.stderr)
         return 1
+    if confirm("Create one commit for these template changes?"):
+        commit_template_changes(plan)
     steps = ["cmake --workflow --preset dev --fresh",
              "cmake --build --preset dev --target update_translations"]
     if plan.prefix != "App":
