@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.31)
 
 project(Sketchbook
     VERSION 0.1.0
-    DESCRIPTION "A sketchbook that recognizes shapes: a modern Qt Quick application template"
+    DESCRIPTION "A sketchbook that recognizes shapes: a Qt Kickstart template"
     LANGUAGES CXX
 )
 

@@ -16,7 +16,7 @@ to working code.
 ![](images/canvas-light.png){fig-alt="Sketchbook's canvas with a circle, a rectangle and a triangle that snapped into shape, and a free line." width=85%}
 
 The app and this guide share one repository,
-[deeedob/modern-qt-quick](https://github.com/deeedob/modern-qt-quick). Its README explains
+[deeedob/qt-kickstart](https://github.com/deeedob/qt-kickstart). Its README explains
 how to build and run the app and how to start your own project from it.
 
 ## How to read this guide

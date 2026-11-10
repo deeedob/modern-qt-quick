@@ -3,18 +3,18 @@ project:
   output-dir: _book
 
 book:
-  title: "Modern Qt Quick Applications"
+  title: "Qt Kickstart"
   subtitle: "The concepts behind building, testing and shipping a Qt Quick app"
   author: "Dennis Oberst"
   date: today
-  site-url: https://deeedob.github.io/modern-qt-quick/
-  repo-url: https://github.com/deeedob/modern-qt-quick
+  site-url: https://deeedob.github.io/qt-kickstart/
+  repo-url: https://github.com/deeedob/qt-kickstart
   repo-subdir: docs
   repo-branch: main
   repo-actions: [source, issue]
   downloads: [pdf]
   search: true
-  output-file: modern-qt-quick-applications
+  output-file: qt-kickstart
   reader-mode: true
   page-navigation: true
   sidebar:

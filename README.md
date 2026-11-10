@@ -1,9 +1,9 @@
-# Modern Qt Quick
+# Qt Kickstart
 
 A guide to the concepts behind cross-platform Qt Quick applications, and a template that
 applies every one of them. Qt 6.12, C++23, CMake.
 
-**Read the guide: [deeedob.github.io/modern-qt-quick](https://deeedob.github.io/modern-qt-quick/)**
+**Read the guide: [deeedob.github.io/qt-kickstart](https://deeedob.github.io/qt-kickstart/)**
 
 ![Sketchbook's canvas](docs/images/canvas-light.png)
 
@@ -16,8 +16,8 @@ You need CMake 3.31, Ninja, a C++23 compiler (Xcode 16, Visual Studio 2022 or GC
 Qt 6.12 from the [Qt Online Installer](https://www.qt.io/download-qt-installer-oss).
 
 ```sh
-git clone --recurse-submodules https://github.com/deeedob/modern-qt-quick.git
-cd modern-qt-quick
+git clone --recurse-submodules https://github.com/deeedob/qt-kickstart.git
+cd qt-kickstart
 export QT_ROOT_DIR=~/Qt/6.12.0/macos        # Windows: $env:QT_ROOT_DIR="C:\Qt\6.12.0\msvc2022_64"
 
 cmake --workflow --preset dev               # configure, build and test

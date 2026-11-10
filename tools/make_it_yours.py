@@ -76,7 +76,7 @@ def commit_template_changes(plan):
             print(f"Could not stage the template changes:\n{added.stderr}", file=sys.stderr)
             return False
         committed = subprocess.run(
-            ["git", "commit", "-m", f"Initialize {plan.display_name} from Qt Quickstart"],
+            ["git", "commit", "-m", f"Initialize {plan.display_name} from Qt Kickstart"],
             cwd=ROOT, capture_output=True, text=True)
     except FileNotFoundError:
         print("Git is not available, so the template changes remain uncommitted.", file=sys.stderr)
@@ -177,7 +177,7 @@ def remove_guide(display_name):
         remove(path)
     (ROOT / "README.md").write_text(
         f"# {display_name}\n\n"
-        "Built from the [Modern Qt Quick](https://github.com/deeedob/modern-qt-quick) template.\n\n"
+        "Built from the [Qt Kickstart](https://github.com/deeedob/qt-kickstart) template.\n\n"
         "```sh\n"
         "cmake --workflow --preset dev            # configure, build, run all tests\n"
         "cmake --build --preset dev --target run  # start the app\n"

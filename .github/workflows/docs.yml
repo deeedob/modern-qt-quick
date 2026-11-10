@@ -39,7 +39,7 @@ jobs:
 
   deploy:
     # Only the original repository publishes the guide, not the ones created from the template.
-    if: github.repository == 'deeedob/modern-qt-quick' && github.event_name != 'pull_request'
+    if: github.repository == 'deeedob/qt-kickstart' && github.event_name != 'pull_request'
     needs: render
     runs-on: ubuntu-24.04
     permissions:
