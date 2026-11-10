@@ -32,6 +32,8 @@ jobs:
       - uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
+          # Qt 6.12's QML asset downloader needs TaskTree; without it every configure warns.
+          modules: qttasktree
           aqtsource: ${{ env.AQT_SOURCE }}
           cache: true
 
