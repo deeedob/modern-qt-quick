@@ -17,6 +17,8 @@ class tst_Logging : public QObject
     Q_OBJECT
 
 private Q_SLOTS:
+    void init() { QTest::failOnWarning(); }
+
     void messagesReachTheSessionLog()
     {
         QTemporaryDir dir;

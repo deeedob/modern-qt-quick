@@ -108,6 +108,9 @@ external/vcpkg/       vcpkg as a git submodule: never edit
 - Write the failing test first for a bug fix or a feature.
 - Deterministic: `QTRY_*` / `tryCompare()` instead of sleeps, `QTemporaryDir` instead of real
   paths. Tests run with `QT_QPA_PLATFORM=offscreen`.
+- Fail each test on unexpected warnings: call `QTest::failOnWarning()` in C++ `init()` or
+  `failOnWarning(/.?/)` in QML `init()`. Declare an expected warning immediately before the
+  operation that emits it with `QTest::ignoreMessage()` in C++ or `ignoreWarning()` in QML.
 
 ## Adding things
 

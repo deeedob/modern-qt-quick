@@ -27,6 +27,7 @@ TestCase {
     }
 
     function init(): void {
+        failOnWarning(/.?/);
         finishedSpy.clear();
     }
 

@@ -12,6 +12,10 @@ TestCase {
     visible: true
     when: windowShown
 
+    function init(): void {
+        failOnWarning(/.?/);
+    }
+
     Component {
         id: buttonComponent
 
@@ -24,6 +28,8 @@ TestCase {
     }
 
     function test_hoverShowsTheTextAsToolTip(): void {
+        // Qt's offscreen macOS font fallback requests an unavailable generic family.
+        ignoreWarning(/Populating font family aliases took .*Replace uses of missing font family "Sans Serif".*/);
         const button = createTemporaryObject(buttonComponent, testCase);
         const toolTip = findChild(button, "toolTip");
         verify(!toolTip.visible);
