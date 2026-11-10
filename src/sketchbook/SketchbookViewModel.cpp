@@ -36,6 +36,7 @@ void SketchbookViewModel::create()
         .modified = QDateTime::currentDateTime(),
     };
     m_storage.save(entry.id, { .name = entry.name.toStdString(), .strokes = {}, .page = {} });
+    qCDebug(lcSketchbook) << "Created sketch" << entry.id;
     m_model.prepend(std::move(entry));
     open(0);
 }
@@ -52,6 +53,7 @@ void SketchbookViewModel::open(int row)
     }
     m_openId = entry.id;
     m_canvas.load({ .strokes = std::move(document->strokes), .page = document->page });
+    qCDebug(lcSketchbook) << "Opened sketch" << m_openId;
     Q_EMIT openNameChanged();
 }
 
@@ -68,6 +70,7 @@ void SketchbookViewModel::rename(int row, const QString &name)
     }
     document->name = trimmed.toStdString();
     m_storage.save(entry.id, std::move(*document));
+    qCDebug(lcSketchbook) << "Renamed sketch" << entry.id;
     entry.name = trimmed;
     m_model.update(row, std::move(entry));
     if (m_model.entry(row).id == m_openId)
@@ -97,6 +100,7 @@ void SketchbookViewModel::duplicate(int row)
     };
     document->name = copy.name.toStdString();
     m_storage.save(copy.id, std::move(*document));
+    qCDebug(lcSketchbook) << "Duplicated sketch" << source.id << "as" << copy.id;
     m_model.prepend(std::move(copy));
 }
 
@@ -105,6 +109,7 @@ void SketchbookViewModel::remove(int row)
     if (row < 0 || row >= m_model.rowCount())
         return;
     const auto id = m_model.entry(row).id;
+    qCDebug(lcSketchbook) << "Removing sketch" << id;
     m_storage.remove(id);
     m_model.removeAt(row);
     if (id == m_openId) {

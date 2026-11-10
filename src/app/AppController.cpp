@@ -90,6 +90,7 @@ void AppController::setDarkTheme(bool darkTheme)
         return;
     m_darkTheme = darkTheme;
     m_settings.setValue("theme/dark"_L1, darkTheme);
+    qCDebug(lcApp) << "Theme set to" << (darkTheme ? "dark" : "light");
     Q_EMIT darkThemeChanged();
 }
 

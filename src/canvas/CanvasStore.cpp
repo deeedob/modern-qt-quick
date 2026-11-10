@@ -154,6 +154,7 @@ void CanvasStore::setSnapShapes(bool snap)
     if (snap == m_snapShapes)
         return;
     m_snapShapes = snap;
+    qCDebug(lcCanvas) << "Shape snapping" << (snap ? "enabled" : "disabled");
     Q_EMIT snapShapesChanged();
 }
 
@@ -227,6 +228,7 @@ void CanvasStore::undo()
 {
     if (canUndo()) {
         moveTo(m_current - 1);
+        qCDebug(lcCanvas) << "Undo, history position" << m_current;
         Q_EMIT historyMoved(false);
     }
 }
@@ -235,6 +237,7 @@ void CanvasStore::redo()
 {
     if (canRedo()) {
         moveTo(m_current + 1);
+        qCDebug(lcCanvas) << "Redo, history position" << m_current;
         Q_EMIT historyMoved(true);
     }
 }

@@ -11,6 +11,7 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
+#include <QtCore/QLoggingCategory>
 #include <QtCore/QSettings>
 #include <QtCore/QStandardPaths>
 #include <QtGui/QGuiApplication>
@@ -20,6 +21,8 @@
 #include <cstdlib>
 
 using namespace Qt::StringLiterals;
+
+Q_STATIC_LOGGING_CATEGORY(lcMain, "app.main")
 
 int main(int argc, char *argv[])
 {
@@ -44,7 +47,9 @@ int main(int argc, char *argv[])
         : QString::fromUtf8(APP_DEV_LICENSES_DIRECTORY);
 
     // Declared before the engine, so they outlive it: QML only holds non-owning references.
-    app::sketchbook::SketchStorage storage(dataDir + "/sketches"_L1); // demo
+    const auto sketchDirectory = dataDir + "/sketches"_L1;           // demo
+    qCInfo(lcMain) << "Sketchbook directory:" << sketchDirectory;     // demo
+    app::sketchbook::SketchStorage storage(sketchDirectory);           // demo
     app::canvas::CanvasStore canvas;                                  // demo
     app::sketchbook::SketchbookViewModel sketchbook(storage, canvas); // demo
     QSettings settings;
@@ -53,8 +58,10 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     QObject::connect(&controller, &app::AppController::languageChanged, &engine,
         &QQmlEngine::retranslate);
-    if (!engine.setExternalSingletonInstance("App", "AppController", &controller))
+    if (!engine.setExternalSingletonInstance("App", "AppController", &controller)) {
+        qCCritical(lcMain) << "Cannot register application controller";
         return EXIT_FAILURE;
+    }
     // demo:begin
     engine.setInitialProperties({
         { "sketchbook"_L1, QVariant::fromValue(&sketchbook) },
@@ -63,7 +70,11 @@ int main(int argc, char *argv[])
     // demo:end
     QObject::connect(
         &engine, &QQmlApplicationEngine::objectCreationFailed, &application,
-        [] { QCoreApplication::exit(EXIT_FAILURE); }, Qt::QueuedConnection);
+        [] {
+            qCCritical(lcMain) << "Cannot create application window";
+            QCoreApplication::exit(EXIT_FAILURE);
+        },
+        Qt::QueuedConnection);
     engine.loadFromModule("App", "Main");
 
     return QGuiApplication::exec();

@@ -1,5 +1,6 @@
 #include "CanvasStore.h"
 
+#include <QtCore/QRegularExpression>
 #include <QtTest/QSignalSpy>
 #include <QtTest/QTest>
 
@@ -163,6 +164,18 @@ private Q_SLOTS:
         const auto drawn = wobblyCircle({ 100, 100 }, 50);
         store.addStroke(drawn, Qt::black);
         QCOMPARE(store.sketch().strokes.front()->points.size(), drawn.size());
+    }
+
+    void snappingAndHistoryLogTransitions()
+    {
+        CanvasStore store;
+        QTest::ignoreMessage(QtDebugMsg, QRegularExpression(u"Shape snapping disabled"_s));
+        store.setSnapShapes(false);
+        store.addStroke(zigzag(), Qt::black);
+        QTest::ignoreMessage(QtDebugMsg, QRegularExpression(u"Undo.*"_s));
+        store.undo();
+        QTest::ignoreMessage(QtDebugMsg, QRegularExpression(u"Redo.*"_s));
+        store.redo();
     }
 
     void emptyStrokesAreIgnored()
