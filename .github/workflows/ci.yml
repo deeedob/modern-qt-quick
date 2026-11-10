@@ -53,7 +53,7 @@ jobs:
         shell: bash
         run: echo "commit=$(git rev-parse HEAD:external/vcpkg)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .vcpkg-cache
           key: vcpkg-${{ matrix.os }}-${{ steps.vcpkg.outputs.commit }}-${{ hashFiles('vcpkg.json', 'cmake/vcpkg-triplets/**/*.cmake') }}
