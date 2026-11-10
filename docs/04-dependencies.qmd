@@ -109,7 +109,7 @@ Qt is a dependency like any other, just a large one. You have two good options:
   is under your control, on every platform.
 
 ::: {.more}
-**Template:** the `dev` preset uses an installed Qt; the `vcpkg-qt` preset lets vcpkg build it
+**Template:** the `dev` preset uses an installed Qt; the `qt-from-source` preset lets vcpkg build it
 :::
 
 ## Reproducibility is control {#sec-reproducibility}

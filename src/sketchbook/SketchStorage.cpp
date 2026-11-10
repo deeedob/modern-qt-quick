@@ -7,7 +7,7 @@
 #include <QtCore/QLoggingCategory>
 #include <QtCore/QSaveFile>
 
-#include <glaze/glaze.hpp>
+#include <glaze/json.hpp>
 
 using namespace Qt::StringLiterals;
 

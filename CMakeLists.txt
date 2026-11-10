@@ -9,10 +9,14 @@ project(Sketchbook
 set(APP_DISPLAY_NAME "Sketchbook" CACHE STRING "Human-readable application name")
 set(APP_BUNDLE_ID "org.example.Sketchbook" CACHE STRING "Reverse-DNS application identifier")
 option(BUILD_TESTING "Build the test suites" ON)
+enable_testing()
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+# The project uses no C++ modules. Scanning for them makes GCC compile with its experimental
+# -fmodules-ts, which has crashed GCC 14 on glaze's headers.
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(AppTargetDefaults)
@@ -27,7 +31,7 @@ if(NOT Qt6_FOUND)
         "Qt 6.12 or newer was not found.\n"
         "Install it with the Qt Online Installer or aqtinstall, then point QT_ROOT_DIR at it:\n"
         "  export QT_ROOT_DIR=~/Qt/6.12.0/macos\n"
-        "Alternatively let vcpkg build Qt (takes hours): cmake --workflow --preset vcpkg-qt")
+        "Alternatively let vcpkg build Qt (takes hours): cmake --workflow --preset qt-from-source")
 endif()
 
 qt_standard_project_setup(REQUIRES 6.12
@@ -36,15 +40,9 @@ qt_standard_project_setup(REQUIRES 6.12
 )
 # One QML import root in the build tree: source folders stay lowercase, URIs stay PascalCase.
 set(QT_QML_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/qml")
-# Writes a .qmlls.ini next to each QML module, so the QML language server finds this build.
-set(QT_QML_GENERATE_QMLLS_INI ON)
 
 find_package(cpptrace CONFIG REQUIRED)
 find_package(glaze CONFIG REQUIRED) # demo
-
-if(BUILD_TESTING)
-    enable_testing()
-endif()
 
 add_subdirectory(libs/shapes) # demo
 add_subdirectory(src)

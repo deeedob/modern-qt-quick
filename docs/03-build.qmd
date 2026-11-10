@@ -165,7 +165,7 @@ for everyone.
 :::
 
 ::: {.more}
-**Template:** `CMakePresets.json`, with `dev`, `asan`, `release` and `vcpkg-qt` workflows,
+**Template:** `CMakePresets.json`, with `dev`, `asan`, `release` and `qt-from-source` workflows,
 and `.github/workflows/ci.yml`, which runs `cmake --workflow --preset release`
 
 **Read more:** [cmake-presets(7)](https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html)

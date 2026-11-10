@@ -36,6 +36,10 @@
           "features": ["linguist"]
         },
         {
+          "name": "qttranslations",
+          "default-features": false
+        },
+        {
           "name": "qtwayland",
           "default-features": false,
           "platform": "linux"

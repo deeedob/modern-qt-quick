@@ -82,7 +82,7 @@ private Q_SLOTS:
         file.close();
         SketchStorage storage(dir.path());
 
-        QTest::ignoreMessage(QtWarningMsg, QRegularExpression("broken"));
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"broken"_s));
         QVERIFY(storage.list().empty());
         QVERIFY(!storage.load("broken"_L1));
         QVERIFY(!storage.load("missing"_L1));

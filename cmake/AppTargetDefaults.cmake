@@ -85,6 +85,12 @@ function(app_target_defaults target)
         # Qt's `emit`, `signals` and `slots` are macros that break third-party code using those
         # names (glaze has a variable called emit). Write Q_EMIT, Q_SIGNALS and Q_SLOTS instead.
         QT_NO_KEYWORDS
+        # Disables the Qt APIs that Qt itself deems dangerous or deprecated, up to the oldest Qt
+        # this project supports: keep it equal to the version in find_package(Qt6).
+        "QT_ENABLE_STRICT_MODE_UP_TO=QT_VERSION_CHECK(6,12,0)"
+        # Not part of strict mode: no implicit conversion from char * to QString, whose encoding
+        # the compiler cannot know. Write u"..."_s or "..."_L1 instead.
+        QT_NO_CAST_FROM_ASCII
     )
     target_link_options(${target} PRIVATE ${_app_hardening_link_options})
     if(_app_sanitizer_options AND NOT MSVC)
