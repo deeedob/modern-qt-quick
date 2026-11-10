@@ -58,6 +58,10 @@ external/vcpkg/       vcpkg as a git submodule: never edit
 - One class per file, named after it. `.h` for public headers of `libs/`, `.hpp` for the rest.
   Include Qt by module: `#include <QtCore/QObject>`.
 - `QT_NO_KEYWORDS` is on: write `Q_EMIT`, `Q_SIGNALS`, `Q_SLOTS`.
+- Qt's strict mode (6.12) and `QT_NO_CAST_FROM_ASCII` are on: no implicit `char *` to `QString`
+  (write `u"..."_s` or `"..."_L1`), no `QUrl` from a `QString` (`QUrl::fromLocalFile()`), every
+  `connect()` to a lambda takes a context object, `open()` results are checked, no `QPair`
+  (`std::pair`), and each file includes the Qt headers it uses.
 - Every `Q_PROPERTY` has `NOTIFY` (or `CONSTANT`) and `FINAL`. In `Q_PROPERTY`, signals and
   `Q_INVOKABLE`s, spell types fully qualified (`app::<feature>::Type *`).
 - Ownership: parent/child for QObjects, values or `std::unique_ptr` for the rest. A `QObject *`

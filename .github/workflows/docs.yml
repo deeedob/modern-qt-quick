@@ -15,6 +15,7 @@ concurrency:
 jobs:
   render:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -24,10 +25,12 @@ jobs:
         with:
           version: 1.10.18
 
-      # Quarto draws the PDF's Mermaid diagrams with headless Chrome, which the runner has.
+      # Quarto draws the PDF's Mermaid diagrams with a headless browser. The runner's full
+      # Chrome hung there, so install the lightweight one that Quarto recommends for CI.
+      - name: Install Chrome Headless Shell
+        run: quarto install chrome-headless-shell --no-prompt
+
       - name: Render the website and the PDF
-        env:
-          QUARTO_CHROMIUM: /usr/bin/google-chrome
         run: quarto render docs
 
       - uses: actions/upload-pages-artifact@v5

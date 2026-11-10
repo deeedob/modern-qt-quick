@@ -41,9 +41,9 @@ guide, and rename the `App` prefix.
 
 | | |
 |---|---|
-| **Workflow presets** | `dev`, `asan` (AddressSanitizer and UBSan), `release` (with a package), `vcpkg-qt` (Qt built by vcpkg; needs autotools outside Windows): `cmake --workflow --preset <name>` |
+| **Workflow presets** | `dev`, `asan` (AddressSanitizer and UBSan), `release` (with a package), `qt-from-source` (Qt built by vcpkg; needs autotools outside Windows): `cmake --workflow --preset <name>` |
 | **`check` and `format`** | One target runs clang-format, clangd-tidy, qmllint and REUSE; `format` fixes the files. Tools that are not installed are skipped. |
-| **`app_target_defaults()`** | Warnings as errors, hardening and sanitizers for your own targets, and registers their sources for `check` |
+| **`app_target_defaults()`** | Warnings as errors, Qt's strict mode, hardening and sanitizers for your own targets, and registers their sources for `check` |
 | **`app_add_notice()`** | Ships a third-party license in the package; licenses of vcpkg dependencies are added automatically |
 | **`app_add_build_info()`** | Version, Git commit and build time, compiled into the app |
 | **`run`** | Builds and starts the app: `cmake --build --preset dev --target run` |

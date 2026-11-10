@@ -14,7 +14,9 @@ namespace app::canvas {
 class CanvasStore : public QObject
 {
     Q_OBJECT
-    QML_ELEMENT
+    // Not QML_ELEMENT: Qt 6.12's qmltyperegistrar then checks the namespace-qualified name and
+    // wrongly warns that a type starting with a lowercase letter cannot export its enums.
+    QML_NAMED_ELEMENT(CanvasStore)
     QML_UNCREATABLE("Created in main() and passed to Main.qml as a required property")
     Q_PROPERTY(bool canUndo READ canUndo NOTIFY changed FINAL)
     Q_PROPERTY(bool canRedo READ canRedo NOTIFY changed FINAL)

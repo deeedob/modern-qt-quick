@@ -39,6 +39,40 @@ code and the code Qt generates cannot break your build.
 sanitizers to every first-party target with one call
 :::
 
+## Qt's strict mode {#sec-strict-mode}
+
+Qt keeps some APIs only for compatibility, although it considers them dangerous. One
+definition switches them off for your code, and a second one adds the conversion that strict
+mode leaves on:
+
+```{.cmake filename="CMakeLists.txt"}
+target_compile_definitions(core PRIVATE
+    "QT_ENABLE_STRICT_MODE_UP_TO=QT_VERSION_CHECK(6,12,0)"
+    QT_NO_CAST_FROM_ASCII
+)
+```
+
+Set the version to the oldest Qt you support. It also removes everything deprecated up to
+that version, and a newer Qt disables nothing more until you raise the number yourself. The
+compiler then rejects code that compiles fine but misbehaves:
+
+```cpp
+QUrl url = path;                                     // a "#" in the file name starts a fragment
+connect(&timer, &QTimer::timeout, [this] { tick(); }); // may run after this is destroyed
+file.open(QIODevice::ReadOnly);                      // the failure goes unnoticed
+QString title = name;                                // name is a char *: which encoding?
+```
+
+Instead, you write `QUrl::fromLocalFile(path)`, pass `this` as the context object of the
+connection so it ends with `this`, check what `open()` returns, and say what the bytes are:
+`QString::fromUtf8(name)`, or `u"Café"_s` and `"title"_L1` for literals.
+
+::: {.more}
+**Template:** `cmake/AppTargetDefaults.cmake`, which sets both for every first-party target
+
+**Read more:** [QT_ENABLE_STRICT_MODE_UP_TO](https://doc.qt.io/qt-6/qtglobal.html#QT_ENABLE_STRICT_MODE_UP_TO)
+:::
+
 ## Sanitizers {#sec-sanitizers}
 
 Sanitizers make the compiler add checks to your program. When a check fails, the program
@@ -154,10 +188,11 @@ clang-format formats C++, configured in `.qmlformat.ini`.
 [**qmlls**](https://doc.qt.io/qt-6/qtqml-tooling-qmlls.html), the QML language server, brings
 both into any editor that speaks the Language Server Protocol: completion, go to definition,
 rename, formatting, and qmllint's warnings as you type. It needs your build folder, where the
-generated type information lives. Pass it with `--build-dir`, or set
-`QT_QML_GENERATE_QMLLS_INI` in CMake: the build then writes a `.qmlls.ini` next to each QML
-module that points qmlls there. The file holds a path on your machine, so keep it out of
-version control.
+generated type information lives. How it gets it depends on how your editor starts qmlls:
+with `--build-dir build/dev`, or, if you cannot pass arguments, configure once with
+`-DQT_QML_GENERATE_QMLLS_INI=ON` and the build writes a `.qmlls.ini` next to each QML module.
+That is a setting for your machine, not for the project, so keep it out of `CMakeLists.txt`
+and the file out of version control.
 
 Two more tools are worth knowing by name. The
 [QML script compiler](https://doc.qt.io/qt-6/qtqml-qml-script-compiler.html) runs during the
@@ -166,8 +201,7 @@ build and compiles typed bindings and functions to C++, one more reason to write
 records where a running app spends its time.
 
 ::: {.more}
-**Template:** `.qmllint.ini`, `.qmlformat.ini`, and `QT_QML_GENERATE_QMLLS_INI` in the
-top-level `CMakeLists.txt`
+**Template:** `.qmllint.ini` and `.qmlformat.ini`
 
 **Read more:** [QML tooling](https://doc.qt.io/qt-6/qtqml-tooling.html)
 :::

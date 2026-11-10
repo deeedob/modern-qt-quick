@@ -48,7 +48,7 @@ private:
     {
         page.view.setResizeMode(QQuickView::SizeRootObjectToView);
         page.view.setInitialProperties({
-            { "store", QVariant::fromValue(&page.store) }
+            { u"store"_s, QVariant::fromValue(&page.store) }
         });
         page.view.loadFromModule("App.Canvas", "CanvasPage");
         page.view.resize(800, 600);
