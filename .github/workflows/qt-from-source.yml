@@ -46,7 +46,7 @@ jobs:
         shell: bash
         run: echo "commit=$(git rev-parse HEAD:external/vcpkg)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v6
         with:
           path: .vcpkg-cache
           key: qt-from-source-${{ matrix.os }}-${{ steps.vcpkg.outputs.commit }}-${{ hashFiles('vcpkg.json', 'cmake/vcpkg-triplets/**/*.cmake') }}
@@ -56,7 +56,7 @@ jobs:
         run: cmake --workflow --preset qt-from-source
 
       # Saved even when a step fails, so the hours spent building Qt are not lost.
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v6
         if: always()
         with:
           path: .vcpkg-cache
