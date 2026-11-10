@@ -55,6 +55,8 @@ struct Page
     int width = 1600;
     int height = 1200;
     PaperBackground background = PaperBackground::Plain;
+    int spacing = 32;
+    int thickness = 1;
 
     bool operator==(const Page &) const = default;
 };

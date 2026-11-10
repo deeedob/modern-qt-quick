@@ -111,6 +111,14 @@ int CanvasStore::strokeCount() const
     return static_cast<int>(sketch().strokes.size());
 }
 
+int CanvasStore::pointCount() const
+{
+    std::size_t count = 0;
+    for (const auto &stroke : sketch().strokes)
+        count += stroke->points.size();
+    return static_cast<int>(count);
+}
+
 int CanvasStore::pageWidth() const
 {
     return sketch().page.width;
@@ -124,6 +132,16 @@ int CanvasStore::pageHeight() const
 int CanvasStore::paperBackgroundValue() const
 {
     return static_cast<int>(sketch().page.background);
+}
+
+int CanvasStore::paperSpacing() const
+{
+    return sketch().page.spacing;
+}
+
+int CanvasStore::paperThickness() const
+{
+    return sketch().page.thickness;
 }
 
 bool CanvasStore::snapShapes() const
@@ -149,7 +167,7 @@ void CanvasStore::addStroke(const QList<QPointF> &points, const QColor &color, d
     auto stroke = std::make_shared<const Stroke>(Stroke{
         .points = points | std::views::transform(toPoint) | std::ranges::to<std::vector>(),
         .color = color.name().toStdString(),
-        .width = std::clamp(width, 1.0, 12.0),
+        .width = std::clamp(width, 1.0, 36.0),
     });
     dispatch(action::AddStroke{ stroke });
 
@@ -194,6 +212,14 @@ void CanvasStore::setPaperBackground(PaperBackground background)
 {
     auto page = sketch().page;
     page.background = background;
+    dispatch(action::SetPage{ page });
+}
+
+void CanvasStore::setPaperPattern(int spacing, int thickness)
+{
+    auto page = sketch().page;
+    page.spacing = std::clamp(spacing, 8, 128);
+    page.thickness = std::clamp(thickness, 1, 8);
     dispatch(action::SetPage{ page });
 }
 

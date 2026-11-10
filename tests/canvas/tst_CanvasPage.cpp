@@ -105,13 +105,57 @@ private:
 private Q_SLOTS:
     void init() { QTest::failOnWarning(); }
 
-    void aSnappedShapeShowsAHint()
+    void canvasSettingsMaintainAspectRatio()
     {
         Page page;
-        // Qt's offscreen macOS font fallback requests an unavailable generic family.
         QTest::ignoreMessage(QtWarningMsg,
             QRegularExpression(
                 uR"(Populating font family aliases took .*Replace uses of missing font family "Sans Serif".*)"_s));
+        QVERIFY(load(page));
+        auto *settings = page.root->findChild<QQuickItem *>(u"paperSettingsButton"_s);
+        QVERIFY(settings);
+        const QPointF settingsCenter(settings->width() / 2, settings->height() / 2);
+        const QPoint settingsPoint = settings->mapToScene(settingsCenter).toPoint();
+        QTest::mouseClick(&page.view, Qt::LeftButton, Qt::NoModifier, settingsPoint);
+        auto *width = page.root->findChild<QObject *>(u"pageWidth"_s);
+        auto *link = page.root->findChild<QQuickItem *>(u"aspectLink"_s);
+        QVERIFY(width);
+        QVERIFY(link);
+        const QPointF linkCenter(link->width() / 2, link->height() / 2);
+        const QPoint linkPoint = link->mapToScene(linkCenter).toPoint();
+        QTest::mouseClick(&page.view, Qt::LeftButton, Qt::NoModifier, linkPoint);
+        QVERIFY(page.root->property("aspectLinked").toBool());
+        auto *input = width->property("contentItem").value<QQuickItem *>();
+        QVERIFY(input);
+        input->forceActiveFocus();
+        QVERIFY(QMetaObject::invokeMethod(input, "selectAll"));
+        QTest::keyClick(&page.view, Qt::Key_1);
+        QTest::keyClick(&page.view, Qt::Key_2);
+        QTest::keyClick(&page.view, Qt::Key_0);
+        QTest::keyClick(&page.view, Qt::Key_0);
+        QTest::keyClick(&page.view, Qt::Key_Return);
+        QCOMPARE(page.store.pageWidth(), 1200);
+        QCOMPARE(page.store.pageHeight(), 900);
+    }
+
+    void zoomControlStaysDiscoverable()
+    {
+        Page page;
+        QVERIFY(load(page));
+        auto *button = page.root->findChild<QQuickItem *>(u"zoomButton"_s);
+        QVERIFY(button);
+        QVERIFY(button->opacity() > 0);
+        QVERIFY(button->property("text").toString().endsWith(u'%'));
+        QVERIFY(page.root->setProperty("zoom", 2.0));
+        const QPointF center(button->width() / 2, button->height() / 2);
+        QTest::mouseClick(&page.view, Qt::LeftButton, Qt::NoModifier,
+            button->mapToScene(center).toPoint());
+        QTRY_COMPARE(page.zoom(), page.root->property("fitZoom").toDouble());
+    }
+
+    void aSnappedShapeShowsAHint()
+    {
+        Page page;
         QVERIFY(load(page));
         QList<QPointF> circle;
         for (int i = 0; i <= 40; ++i) {

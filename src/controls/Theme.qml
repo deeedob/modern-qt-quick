@@ -16,6 +16,7 @@ QtObject {
     readonly property color accent: "#5b5bd6"
     readonly property color accentPressed: "#4a4ac0"
     readonly property color accentText: "#ffffff"
+    readonly property color overlay: "#252533"
 
     readonly property int spacing: 12
     readonly property int radius: 8

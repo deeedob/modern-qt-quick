@@ -1,1 +1,1 @@
-app_add_quick_test(tst_controls QML_FILES tst_ToolButton.qml LIBRARIES app_controlsplugin)
+app_add_quick_test(tst_controls QML_FILES tst_ComboBox.qml tst_LanguageSelector.qml tst_SketchTitle.qml tst_ToolButton.qml LIBRARIES app_controlsplugin)

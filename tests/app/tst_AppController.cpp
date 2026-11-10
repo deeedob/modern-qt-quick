@@ -46,6 +46,22 @@ private Q_SLOTS:
         QCOMPARE(settings.value("theme/dark"_L1).toBool(), true);
     }
 
+    void exposesStructuredBuildDetails()
+    {
+        QTemporaryDir dir;
+        QSettings settings(dir.filePath("settings.ini"_L1), QSettings::IniFormat);
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"No translation for language.*"_s));
+        app::AppController controller(dir.filePath("session.log"_L1), dir.path(), settings);
+
+        const auto details = controller.buildDetails();
+        QVERIFY(!details.gitSha.isEmpty());
+        QVERIFY(!details.buildType.isEmpty());
+        QVERIFY(!details.timestamp.isEmpty());
+        QVERIFY(!details.compiler.isEmpty());
+        QVERIFY(!details.system.isEmpty());
+        QVERIFY(!details.qtVersion.isEmpty());
+    }
+
     void recordOpenedUrl(const QUrl &url) { m_openedUrl = url; }
 
 private:

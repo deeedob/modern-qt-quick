@@ -5,6 +5,7 @@ qt_add_qml_module(app_canvas
     STATIC
     QML_FILES
         CanvasPage.qml
+        SketchTitle.qml
     SOURCES
         CanvasStore.cpp CanvasStore.h
         Sketch.h

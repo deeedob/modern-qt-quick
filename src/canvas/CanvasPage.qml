@@ -12,9 +12,8 @@ Page {
     readonly property list<color> inks: ["#1c1c22", "#e5484d", "#30a46c", "#0090ff"]
     property color penColor: inks[0]
     property real penWidth: 4.0
-    property string sketchName: ""
-
-    signal renameRequested(string name)
+    property bool aspectLinked: false
+    property real aspectRatio: 1.0
 
     component Swatch: AbstractButton {
         id: swatch
@@ -46,56 +45,172 @@ Page {
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: Theme.spacing / 2
+                spacing: root.width < 600 ? Theme.spacing / 6 : Theme.spacing / 2
 
-                TextField {
-                    id: titleField
+                Repeater {
+                    model: root.inks
 
-                    Layout.fillWidth: true
-                    Layout.minimumWidth: 120
-                    placeholderText: qsTr("Sketch name")
-                    onEditingFinished: root.renameRequested(text)
-                }
+                    delegate: Swatch {
+                        required property color modelData
 
-                Binding {
-                    target: titleField
-                    property: "text"
-                    value: root.sketchName
-                    when: !titleField.activeFocus
-                }
-
-                ComboBox {
-                    id: pageSize
-
-                    Layout.preferredWidth: 170
-                    model: [qsTr("Square · 1200 × 1200"), qsTr("Landscape · 1600 × 1200"), qsTr("Portrait · 1200 × 1600")]
-                    currentIndex: root.store.pageWidth === 1200 && root.store.pageHeight === 1200 ? 0 : root.store.pageWidth === 1200 ? 2 : 1
-                    onActivated: index => {
-                        switch (index) {
-                        case 0:
-                            root.store.setPageSize(1200, 1200);
-                            break;
-                        case 1:
-                            root.store.setPageSize(1600, 1200);
-                            break;
-                        case 2:
-                            root.store.setPageSize(1200, 1600);
-                            break;
-                        }
-                        root.fitPage();
+                        ink: modelData
+                        text: qsTr("Ink %1").arg(modelData)
+                        checked: Qt.colorEqual(root.penColor, ink)
+                        onPicked: ink => root.penColor = ink
                     }
                 }
 
-                ComboBox {
-                    Layout.preferredWidth: 100
-                    model: [qsTr("Plain"), qsTr("Dots"), qsTr("Ruled")]
-                    currentIndex: root.store.paperBackground
-                    onActivated: index => root.store.setPaperBackground(index)
+                Slider {
+                    Layout.leftMargin: Theme.spacing
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 48
+                    Layout.preferredWidth: 120
+                    Layout.maximumWidth: 120
+                    from: 1
+                    to: 36
+                    stepSize: 1
+                    value: root.penWidth
+                    onMoved: root.penWidth = value
                 }
 
                 Label {
-                    text: qsTr("%n stroke(s)", "", root.store.strokeCount)
+                    text: qsTr("%1 px").arg(Math.round(root.penWidth))
                     color: Theme.mutedText
+                }
+
+                Switch {
+                    Layout.leftMargin: Theme.spacing
+                    text: root.width < 600 ? "" : qsTr("Snap shapes")
+                    Accessible.name: qsTr("Snap shapes")
+                    ToolTip.text: qsTr("Snap shapes")
+                    ToolTip.visible: hovered && text === ""
+                    ToolTip.delay: 600
+                    checked: root.store.snapShapes
+                    onToggled: root.store.snapShapes = checked
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                ToolButton {
+                    id: paperButton
+                    objectName: "paperSettingsButton"
+                    icon.source: Theme.icon("settings-2")
+                    text: qsTr("Canvas settings")
+                    onClicked: paperSettings.open()
+
+                    Popup {
+                        id: paperSettings
+                        x: paperButton.width - width
+                        y: paperButton.height + Theme.spacing / 2
+                        padding: Theme.spacing
+                        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+                        background: Rectangle {
+                            color: Theme.surface
+                            radius: Theme.radius
+                            border.color: Theme.border
+                        }
+
+                        contentItem: ColumnLayout {
+                            spacing: Theme.spacing / 2
+
+                            Label {
+                                text: qsTr("Canvas")
+                                font.weight: Font.DemiBold
+                            }
+
+                            GridLayout {
+                                columns: 3
+                                columnSpacing: Theme.spacing / 2
+                                rowSpacing: Theme.spacing / 2
+
+                                Label {
+                                    text: qsTr("Width")
+                                }
+                                SpinBox {
+                                    objectName: "pageWidth"
+                                    Layout.fillWidth: true
+                                    from: 100
+                                    to: 4096
+                                    editable: true
+                                    value: root.store.pageWidth
+                                    onValueModified: root.store.setPageSize(value, root.aspectLinked ? Math.max(100, Math.min(4096, Math.round(value / root.aspectRatio))) : root.store.pageHeight)
+                                }
+                                ToolButton {
+                                    objectName: "aspectLink"
+                                    checkable: true
+                                    checked: root.aspectLinked
+                                    icon.source: Theme.icon(root.aspectLinked ? "link-2" : "unlink-2")
+                                    text: root.aspectLinked ? qsTr("Unlock aspect ratio") : qsTr("Lock aspect ratio")
+                                    onClicked: {
+                                        root.aspectRatio = root.store.pageWidth / root.store.pageHeight;
+                                        root.aspectLinked = !root.aspectLinked;
+                                    }
+                                }
+                                Label {
+                                    text: qsTr("Height")
+                                }
+                                SpinBox {
+                                    objectName: "pageHeight"
+                                    Layout.fillWidth: true
+                                    from: 100
+                                    to: 4096
+                                    editable: true
+                                    value: root.store.pageHeight
+                                    onValueModified: root.store.setPageSize(root.aspectLinked ? Math.max(100, Math.min(4096, Math.round(value * root.aspectRatio))) : root.store.pageWidth, value)
+                                }
+                                Item {
+                                    Layout.preferredWidth: Theme.controlHeight
+                                }
+
+                                ComboBox {
+                                    Layout.fillWidth: true
+                                    Layout.columnSpan: 3
+                                    model: [qsTr("Plain"), qsTr("Dots"), qsTr("Ruled")]
+                                    currentIndex: root.store.paperBackground
+                                    onActivated: index => root.store.setPaperBackground(index)
+                                }
+
+                                Label {
+                                    visible: root.store.paperBackground !== 0
+                                    text: qsTr("Spacing")
+                                }
+                                SpinBox {
+                                    visible: root.store.paperBackground !== 0
+                                    Layout.fillWidth: true
+                                    from: 8
+                                    to: 128
+                                    editable: true
+                                    value: root.store.paperSpacing
+                                    onValueModified: root.store.setPaperPattern(value, root.store.paperThickness)
+                                }
+                                Item {
+                                    visible: root.store.paperBackground !== 0
+                                    Layout.preferredWidth: Theme.controlHeight
+                                }
+
+                                Label {
+                                    visible: root.store.paperBackground !== 0
+                                    text: qsTr("Thickness")
+                                }
+                                SpinBox {
+                                    visible: root.store.paperBackground !== 0
+                                    Layout.fillWidth: true
+                                    from: 1
+                                    to: 8
+                                    editable: true
+                                    value: root.store.paperThickness
+                                    onValueModified: root.store.setPaperPattern(root.store.paperSpacing, value)
+                                }
+                                Item {
+                                    visible: root.store.paperBackground !== 0
+                                    Layout.preferredWidth: Theme.controlHeight
+                                }
+                            }
+                        }
+                    }
                 }
 
                 ToolButton {
@@ -119,52 +234,25 @@ Page {
                     onClicked: root.store.clear()
                 }
             }
-
-            RowLayout {
-                spacing: Theme.spacing / 2
-
-                Repeater {
-                    model: root.inks
-
-                    delegate: Swatch {
-                        required property color modelData
-
-                        ink: modelData
-                        text: qsTr("Ink %1").arg(modelData)
-                        checked: Qt.colorEqual(root.penColor, ink)
-                        onPicked: ink => root.penColor = ink
-                    }
-                }
-
-                Slider {
-                    Layout.leftMargin: Theme.spacing
-                    Layout.preferredWidth: 120
-                    from: 1
-                    to: 12
-                    stepSize: 1
-                    value: root.penWidth
-                    onMoved: root.penWidth = value
-                }
-
-                Label {
-                    text: qsTr("%1 px").arg(Math.round(root.penWidth))
-                    color: Theme.mutedText
-                }
-
-                Switch {
-                    Layout.leftMargin: Theme.spacing
-                    text: qsTr("Snap shapes")
-                    checked: root.store.snapShapes
-                    onToggled: root.store.snapShapes = checked
-                }
-            }
         }
     }
 
     // Zoom belongs to this view, not to the sketch, so it lives here instead of in the store.
     property real zoom: 1.0
+    property bool zoomActive: false
     readonly property real fitZoom: Math.min(viewport.width / paper.width, viewport.height / paper.height)
     readonly property real minimumZoom: fitZoom * 0.85
+
+    onZoomChanged: {
+        root.zoomActive = true;
+        zoomIdle.restart();
+    }
+
+    Timer {
+        id: zoomIdle
+        interval: 1800
+        onTriggered: root.zoomActive = false
+    }
 
     // Clamps directly: Flickable.returnToBounds() would start an animation on every pinch step.
     function scrollTo(x: real, y: real): void {
@@ -217,19 +305,20 @@ Page {
                 anchors.fill: parent
                 visible: root.store.paperBackground === 1
 
-                readonly property int columns: Math.ceil(paper.width / 32)
-                readonly property int rows: Math.ceil(paper.height / 32)
+                readonly property int columns: Math.ceil(paper.width / root.store.paperSpacing)
+                readonly property int rows: Math.ceil(paper.height / root.store.paperSpacing)
 
                 Repeater {
-                    model: parent.columns * parent.rows
+                    model: dots.visible ? dots.columns * dots.rows : 0
 
                     delegate: Rectangle {
                         required property int index
 
-                        x: (index % dots.columns) * 32
-                        y: Math.floor(index / dots.columns) * 32
-                        width: 1
-                        height: 1
+                        x: (index % dots.columns) * root.store.paperSpacing
+                        y: Math.floor(index / dots.columns) * root.store.paperSpacing
+                        width: root.store.paperThickness
+                        height: root.store.paperThickness
+                        radius: width / 2
                         color: "#d5d5dc"
                     }
                 }
@@ -240,15 +329,15 @@ Page {
                 visible: root.store.paperBackground === 2
 
                 Repeater {
-                    model: Math.ceil(paper.height / 32)
+                    model: root.store.paperBackground === 2 ? Math.ceil(paper.height / root.store.paperSpacing) : 0
 
                     delegate: Rectangle {
                         required property int index
 
                         x: 0
-                        y: index * 32
+                        y: index * root.store.paperSpacing
                         width: paper.width
-                        height: 1
+                        height: root.store.paperThickness
                         color: "#d5d5dc"
                     }
                 }
@@ -293,12 +382,44 @@ Page {
     }
 
     Button {
-        anchors.horizontalCenter: viewport.horizontalCenter
-        anchors.top: viewport.top
-        anchors.topMargin: Theme.spacing
+        id: zoomButton
+        objectName: "zoomButton"
+        anchors.right: viewport.right
+        anchors.bottom: viewport.bottom
+        anchors.margins: Theme.spacing
         text: qsTr("%1%").arg(Math.round(root.zoom * 100))
-        flat: true
+        opacity: hovered || activeFocus ? 1 : root.zoomActive ? 0.95 : 0.8
         onClicked: root.fitPage()
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 350
+            }
+        }
+
+        contentItem: Text {
+            text: zoomButton.text
+            font: zoomButton.font
+            color: Theme.accentText
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+
+        background: Rectangle {
+            implicitWidth: 72
+            implicitHeight: Theme.controlHeight
+            radius: Theme.radius
+            color: Theme.overlay
+            border.width: zoomButton.visualFocus ? 2 : 0
+            border.color: Theme.accent
+        }
+
+        ToolTip {
+            y: -height - Theme.spacing / 2
+            text: qsTr("Fit canvas to window")
+            visible: zoomButton.hovered
+            delay: 600
+        }
     }
 
     Label {

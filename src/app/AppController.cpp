@@ -42,11 +42,16 @@ AppController::AppController(QString logFilePath, QString licensesDirectory, QSe
     setLanguage(QLocale::system().language() == QLocale::German ? "de"_L1 : "en"_L1);
 }
 
-QString AppController::buildDetails() const
+BuildDetails AppController::buildDetails() const
 {
-    // u""_s, not _L1: the middle dot is two bytes in this UTF-8 file, but one character.
-    return u"%1 · %2 · %3 · Qt %4"_s.arg(buildInfo.gitSha, buildInfo.buildType, buildInfo.compiler,
-        QLatin1StringView(qVersion()));
+    BuildDetails details;
+    details.gitSha = QString::fromUtf8(buildInfo.gitSha);
+    details.buildType = QString::fromUtf8(buildInfo.buildType);
+    details.timestamp = QString::fromUtf8(buildInfo.buildTimestamp);
+    details.compiler = QString::fromUtf8(buildInfo.compiler);
+    details.system = QString::fromUtf8(buildInfo.system);
+    details.qtVersion = QLatin1StringView(qVersion());
+    return details;
 }
 
 QString AppController::language() const

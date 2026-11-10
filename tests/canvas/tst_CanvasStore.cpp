@@ -182,6 +182,32 @@ private Q_SLOTS:
         QCOMPARE(store.sketch().strokes.front()->width, 9.0);
     }
 
+    void wideStrokesAndPointCountsFollowHistory()
+    {
+        CanvasStore store;
+        store.setSnapShapes(false);
+        store.addStroke(zigzag(), Qt::black, 36.0);
+        QCOMPARE(store.sketch().strokes.front()->width, 36.0);
+        QCOMPARE(store.pointCount(), 5);
+        store.undo();
+        QCOMPARE(store.pointCount(), 0);
+        store.redo();
+        QCOMPARE(store.pointCount(), 5);
+    }
+
+    void paperPatternChangesAreUndoable()
+    {
+        CanvasStore store;
+        store.setPaperPattern(24, 3);
+        QCOMPARE(store.paperSpacing(), 24);
+        QCOMPARE(store.paperThickness(), 3);
+        store.undo();
+        QCOMPARE(store.paperSpacing(), 32);
+        QCOMPARE(store.paperThickness(), 1);
+        store.redo();
+        QCOMPARE(store.paperSpacing(), 24);
+    }
+
     void pageChangesAreUndoable()
     {
         CanvasStore store;
@@ -197,6 +223,19 @@ private Q_SLOTS:
         store.undo();
         QCOMPARE(store.sketch().page.width, 1600);
         QCOMPARE(store.sketch().page.height, 1200);
+    }
+
+    void resizingKeepsStrokeCoordinates()
+    {
+        CanvasStore store;
+        store.setSnapShapes(false);
+        store.addStroke(zigzag(), Qt::black);
+        const auto points = store.sketch().strokes.front()->points;
+        store.setPageSize(800, 600);
+        QVERIFY(store.sketch().strokes.front()->points == points);
+        store.undo();
+        QCOMPARE(store.pageWidth(), 1600);
+        QVERIFY(store.sketch().strokes.front()->points == points);
     }
 
     void paperBackgroundsUseStableNames()

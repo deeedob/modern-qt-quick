@@ -9,6 +9,8 @@
 
 #include <glaze/json.hpp>
 
+#include <algorithm>
+
 using namespace Qt::StringLiterals;
 
 Q_STATIC_LOGGING_CATEGORY(lcStorage, "app.storage")
@@ -20,6 +22,8 @@ struct SerializablePage
     int width = 1600;
     int height = 1200;
     std::string background = "plain";
+    int spacing = 32;
+    int thickness = 1;
 };
 
 // glaze 9 silently leaves a shared_ptr<const T> empty when reading, so read mutable strokes.
@@ -86,7 +90,9 @@ std::expected<SketchDocument, QString> SketchStorage::load(const QString &id)
         .strokes = { parsed.strokes.begin(), parsed.strokes.end() },
         .page = { .width = parsed.page.width,
                     .height = parsed.page.height,
-                    .background = *background },
+                    .background = *background,
+                    .spacing = std::clamp(parsed.page.spacing, 8, 128),
+                    .thickness = std::clamp(parsed.page.thickness, 1, 8) },
     };
 }
 
@@ -101,7 +107,9 @@ void SketchStorage::save(const QString &id, SketchDocument document)
                 .page = { .width = document.page.width,
                          .height = document.page.height,
                          .background = std::string(
-                        canvas::paperBackgroundName(document.page.background)) },
+                        canvas::paperBackgroundName(document.page.background)),
+                         .spacing = document.page.spacing,
+                         .thickness = document.page.thickness },
             });
             if (!json) {
                 qCWarning(lcStorage) << "Cannot serialize" << path;

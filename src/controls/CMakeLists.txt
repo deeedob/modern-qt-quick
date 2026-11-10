@@ -10,9 +10,11 @@ qt_add_qml_module(app_controls
     QML_FILES
         ApplicationWindow.qml
         Button.qml
+        ComboBox.qml
         Dialog.qml
         DialogButtonBox.qml
         ItemDelegate.qml
+        SpinBox.qml
         TextField.qml
         Theme.qml
         ToolButton.qml
@@ -20,15 +22,22 @@ qt_add_qml_module(app_controls
     RESOURCES
         fonts/InterVariable.ttf
         icons/arrow-left.svg
+        icons/book-open.svg
         icons/copy.svg
         icons/eraser.svg
+        icons/external-link.svg
         icons/info.svg
         icons/languages.svg
+        icons/link-2.svg
+        icons/moon.svg
         icons/pencil.svg
         icons/plus.svg
         icons/redo-2.svg
+        icons/settings-2.svg
+        icons/sun.svg
         icons/trash.svg
         icons/undo-2.svg
+        icons/unlink-2.svg
 )
 target_link_libraries(app_controls PRIVATE Qt::Quick Qt::QuickControls2)
 app_target_defaults(app_controls)

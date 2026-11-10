@@ -44,18 +44,35 @@ ApplicationWindow {
                 font.pixelSize: 16
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
+                visible: stack.depth === 1 // demo
             }
 
-            Button {
-                flat: true
-                text: AppController.darkTheme ? qsTr("Light") : qsTr("Dark")
+            // demo:begin
+            SketchTitle {
+                Layout.fillWidth: true
+                visible: stack.depth > 1
+                name: window.sketchbook.openName
+                onRenameRequested: name => window.sketchbook.renameOpen(name)
+            }
+            // demo:end
+
+            // demo:begin
+            Label {
+                visible: stack.depth > 1
+                text: qsTr("%n stroke(s)", "", window.canvas.strokeCount) + " · " + qsTr("%n point(s)", "", window.canvas.pointCount)
+                color: Theme.mutedText
+            }
+            // demo:end
+
+            ToolButton {
+                icon.source: Theme.icon(AppController.darkTheme ? "sun" : "moon")
+                text: AppController.darkTheme ? qsTr("Switch to light theme") : qsTr("Switch to dark theme")
                 onClicked: AppController.darkTheme = !AppController.darkTheme
             }
 
-            ToolButton {
-                icon.source: Theme.icon("languages")
-                text: qsTr("Switch language")
-                onClicked: AppController.language = AppController.language === "de" ? "en" : "de"
+            LanguageSelector {
+                language: AppController.language
+                onLanguageSelected: language => AppController.language = language
             }
 
             ToolButton {
@@ -84,8 +101,6 @@ ApplicationWindow {
 
         CanvasPage {
             store: window.canvas
-            sketchName: window.sketchbook.openName
-            onRenameRequested: name => window.sketchbook.renameOpen(name)
         }
     }
 

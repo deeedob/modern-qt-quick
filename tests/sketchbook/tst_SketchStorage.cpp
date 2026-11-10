@@ -22,7 +22,8 @@ SketchDocument twoStrokes()
                 .points = { { .x = 1, .y = 2 }, { .x = 3.5, .y = 4 } }, .color = "#ff0000" }),
             std::make_shared<const Stroke>(Stroke{ .points = { { .x = 0, .y = 0 } }, .color = "#000000" }),
         },
-        .page = { .width = 1200, .height = 1600, .background = PaperBackground::Dots },
+        .page = { .width = 1200, .height = 1600, .background = PaperBackground::Dots,
+            .spacing = 24, .thickness = 3 },
     };
 }
 
@@ -52,6 +53,8 @@ private Q_SLOTS:
         QCOMPARE(loaded->page.width, 1200);
         QCOMPARE(loaded->page.height, 1600);
         QCOMPARE(loaded->page.background, PaperBackground::Dots);
+        QCOMPARE(loaded->page.spacing, 24);
+        QCOMPARE(loaded->page.thickness, 3);
         storage.waitForSaves();
         QFile saved(QDir(dir.path()).filePath("a.json"_L1));
         QVERIFY(saved.open(QIODevice::ReadOnly));
@@ -73,6 +76,23 @@ private Q_SLOTS:
         QCOMPARE(loaded->page.width, 1600);
         QCOMPARE(loaded->page.height, 1200);
         QCOMPARE(loaded->page.background, PaperBackground::Plain);
+        QCOMPARE(loaded->page.spacing, 32);
+        QCOMPARE(loaded->page.thickness, 1);
+    }
+
+    void existingPageGetsPatternDefaults()
+    {
+        QTemporaryDir dir;
+        QFile file(QDir(dir.path()).filePath("old.json"_L1));
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.write(
+            R"({"name":"Old","strokes":[],"page":{"width":900,"height":600,"background":"dots"}})");
+        file.close();
+        SketchStorage storage(dir.path());
+        const auto loaded = storage.load("old"_L1);
+        QVERIFY2(loaded, qPrintable(loaded.error_or({})));
+        QCOMPARE(loaded->page.spacing, 32);
+        QCOMPARE(loaded->page.thickness, 1);
     }
 
     void listDescribesEachSketch()

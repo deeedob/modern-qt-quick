@@ -6,6 +6,9 @@ import QtQuick.Templates as T
 T.ToolButton {
     id: control
 
+    property bool showToolTip: true
+    focusPolicy: Qt.StrongFocus
+
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
@@ -38,7 +41,7 @@ T.ToolButton {
     ToolTip {
         objectName: "toolTip"
         text: control.text
-        visible: control.display === T.AbstractButton.IconOnly && control.text !== "" && control.hovered
+        visible: control.showToolTip && control.display === T.AbstractButton.IconOnly && control.text !== "" && control.hovered
         delay: 600
     }
 }

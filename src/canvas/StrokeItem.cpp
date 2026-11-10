@@ -143,6 +143,7 @@ void StrokeItem::setPenWidth(double width)
 
 void StrokeItem::mousePressEvent(QMouseEvent *event)
 {
+    forceActiveFocus(Qt::MouseFocusReason);
     const auto position = event->position();
     m_live = {
         { .x = position.x(), .y = position.y() }

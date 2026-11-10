@@ -10,6 +10,26 @@ class QSettings;
 
 namespace app {
 
+struct BuildDetails
+{
+    Q_GADGET
+    QML_VALUE_TYPE(buildDetails)
+    Q_PROPERTY(QString gitSha MEMBER gitSha CONSTANT FINAL)
+    Q_PROPERTY(QString buildType MEMBER buildType CONSTANT FINAL)
+    Q_PROPERTY(QString timestamp MEMBER timestamp CONSTANT FINAL)
+    Q_PROPERTY(QString compiler MEMBER compiler CONSTANT FINAL)
+    Q_PROPERTY(QString system MEMBER system CONSTANT FINAL)
+    Q_PROPERTY(QString qtVersion MEMBER qtVersion CONSTANT FINAL)
+
+public:
+    QString gitSha;
+    QString buildType;
+    QString timestamp;
+    QString compiler;
+    QString system;
+    QString qtVersion;
+};
+
 // App-wide state for every view. A QML singleton, but main() owns the instance (no C++ global).
 class AppController : public QObject
 {
@@ -17,7 +37,7 @@ class AppController : public QObject
     QML_ELEMENT
     QML_SINGLETON
     QML_UNCREATABLE("Created in main() and registered with setExternalSingletonInstance()")
-    Q_PROPERTY(QString buildDetails READ buildDetails CONSTANT FINAL)
+    Q_PROPERTY(app::BuildDetails buildDetails READ buildDetails CONSTANT FINAL)
     Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged FINAL)
     Q_PROPERTY(bool darkTheme READ darkTheme WRITE setDarkTheme NOTIFY darkThemeChanged FINAL)
 
@@ -25,7 +45,7 @@ public:
     explicit AppController(QString logFilePath, QString licensesDirectory, QSettings &settings,
         QObject *parent = nullptr);
 
-    [[nodiscard]] QString buildDetails() const;
+    [[nodiscard]] BuildDetails buildDetails() const;
     [[nodiscard]] QString language() const;
     [[nodiscard]] bool darkTheme() const;
     // Loads the embedded translation for an ISO 639 language code, e.g. "en" or "de".

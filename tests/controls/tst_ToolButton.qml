@@ -27,9 +27,23 @@ TestCase {
         }
     }
 
+    Component {
+        id: focusComponent
+        Item {
+            TextField {
+                objectName: "field"
+                width: 100
+            }
+            ToolButton {
+                objectName: "button"
+                x: 120
+                text: "Action"
+                icon.source: Theme.icon("plus")
+            }
+        }
+    }
+
     function test_hoverShowsTheTextAsToolTip(): void {
-        // Qt's offscreen macOS font fallback requests an unavailable generic family.
-        ignoreWarning(/Populating font family aliases took .*Replace uses of missing font family "Sans Serif".*/);
         const button = createTemporaryObject(buttonComponent, testCase);
         const toolTip = findChild(button, "toolTip");
         verify(!toolTip.visible);
@@ -38,5 +52,15 @@ TestCase {
 
         tryVerify(() => toolTip.visible);
         compare(toolTip.text, "Add");
+    }
+
+    function test_clickTakesFocusFromEditor(): void {
+        const fixture = createTemporaryObject(focusComponent, testCase);
+        const field = findChild(fixture, "field");
+        const button = findChild(fixture, "button");
+        field.forceActiveFocus();
+        verify(field.activeFocus);
+        mouseClick(button);
+        tryVerify(() => !field.activeFocus);
     }
 }
