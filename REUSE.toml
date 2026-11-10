@@ -41,6 +41,6 @@ SPDX-License-Identifier = "ISC AND MIT"
 
 # The GPL and LGPL texts shipped with the application, as Qt's LGPLv3 license requires.
 [[annotations]]
-path = ["3rdparty/qt/GPL-3.0-only.txt", "3rdparty/qt/LGPL-3.0-only.txt"]
+path = ["src/app/licenses/GPL-3.0-only.txt", "src/app/licenses/LGPL-3.0-only.txt"]
 SPDX-FileCopyrightText = "2007 Free Software Foundation, Inc."
 SPDX-License-Identifier = "LicenseRef-FSF-verbatim"

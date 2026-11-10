@@ -6,7 +6,9 @@
 #include <QtQuick/QQuickView>
 #include <QtTest/QTest>
 
+#include <cmath>
 #include <memory>
+#include <numbers>
 
 using namespace Qt::StringLiterals;
 using app::canvas::CanvasStore;
@@ -100,6 +102,24 @@ private:
     }
 
 private Q_SLOTS:
+    void aSnappedShapeShowsAHint()
+    {
+        Page page;
+        QVERIFY(load(page));
+        QList<QPointF> circle;
+        for (int i = 0; i <= 40; ++i) {
+            const double angle = 2.0 * std::numbers::pi * i / 40.0;
+            circle.append(QPointF(300, 300) + (QPointF(std::cos(angle), std::sin(angle)) * 80));
+        }
+
+        page.store.addStroke(circle, Qt::black);
+
+        auto *hint = page.root->findChild<QQuickItem *>(u"snapHint"_s);
+        QVERIFY(hint);
+        QCOMPARE(hint->property("text").toString(), u"Snapped to a circle"_s);
+        QTRY_VERIFY(hint->opacity() > 0.5);
+    }
+
     void pinchingInZoomsAroundTheFingers()
     {
         Page page;

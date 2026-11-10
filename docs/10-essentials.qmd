@@ -33,7 +33,8 @@ Switching the language while the app runs takes two steps: install a new `QTrans
 then call `QQmlEngine::retranslate()` so every `qsTr()` binding re-evaluates.
 
 ::: {.more}
-**Template:** `AppController::setLanguage()` in `src/app/AppController.cpp`, and `i18n/` ·
+**Template:** `AppController::setLanguage()` in `src/app/AppController.cpp`, and `i18n/`
+
 **Read more:** [Internationalization with Qt](https://doc.qt.io/qt-6/internationalization.html)
 :::
 
@@ -63,7 +64,8 @@ const auto language = settings.value("language", "en").toString();
 ```
 
 ::: {.more}
-**Template:** `src/app/main.cpp` (the template does not persist preferences yet) ·
+**Template:** `src/app/main.cpp` (the template does not persist preferences yet)
+
 **Read more:** [QStandardPaths](https://doc.qt.io/qt-6/qstandardpaths.html),
 [QSettings](https://doc.qt.io/qt-6/qsettings.html)
 :::
@@ -83,14 +85,22 @@ if (!file.open(QIODevice::WriteOnly) || file.write(json) < 0 || !file.commit()) 
 
 Save on a worker thread (@sec-threads) so large files never freeze the UI.
 
+::: {.callout-important}
+## Never write over the user's file in place
+Opening the real file with `QFile` and `WriteOnly` empties it at once, so any failure after
+that point loses the user's data. Every save goes to a new file that replaces the old one
+only when it is complete.
+:::
+
 ::: {.more}
-**Template:** `src/sketchbook/SketchStorage.cpp` ·
+**Template:** `src/sketchbook/SketchStorage.cpp`
+
 **Read more:** [QSaveFile](https://doc.qt.io/qt-6/qsavefile.html)
 :::
 
 ## Logging {#sec-logging}
 
-Log through a **category** per module. You can then switch the debug output of one module on
+Give each module its own logging **category** and log through it. You can then switch the debug output of one module on
 at run time, without rebuilding:
 
 ```{.cpp filename="SketchStorage.cpp"}
@@ -111,7 +121,8 @@ from a user is then enough to reproduce their setup.
 ![The About dialog shows the same build details and opens the log folder.](images/about.png){width=70%}
 
 ::: {.more}
-**Template:** `src/app/Logging.cpp` ·
+**Template:** `src/app/Logging.cpp`
+
 **Read more:** [QLoggingCategory](https://doc.qt.io/qt-6/qloggingcategory.html)
 :::
 
@@ -137,6 +148,7 @@ can do further damage. Leave them to the operating system's crash reporter, or t
 reporting service.
 
 ::: {.more}
-**Template:** `src/app/Logging.cpp` ·
+**Template:** `src/app/Logging.cpp`
+
 **Read more:** [cpptrace](https://github.com/jeremy-rifkin/cpptrace)
 :::

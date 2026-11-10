@@ -11,7 +11,7 @@ target_sources(shapes
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS include
-        FILES include/shapes/Recognizer.hpp
+        FILES include/shapes/Recognizer.h
 )
 target_compile_features(shapes PUBLIC cxx_std_23)
 app_target_defaults(shapes)

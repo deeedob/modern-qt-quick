@@ -1,6 +1,6 @@
 #   app_add_build_info(<target>)
-#       Generates BuildInfo.cpp, which defines app::buildInfo() (declared in
-#       src/app/BuildInfo.hpp), and adds it to <target>.
+#       Generates BuildInfo.hpp, which defines app::buildInfo, and puts it on <target>'s
+#       public include path.
 #
 #   APP_GIT_SHA
 #       The commit being built, with "-dirty" for uncommitted changes. Set when this file is
@@ -44,8 +44,9 @@ function(app_add_build_info target)
     string(TIMESTAMP APP_BUILD_TIMESTAMP "%Y-%m-%dT%H:%M:%SZ" UTC)
 
     set(_dir "${CMAKE_CURRENT_BINARY_DIR}/buildinfo")
-    configure_file("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/BuildInfo.cpp.in" "${_dir}/BuildInfo.cpp.in" @ONLY)
+    configure_file("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/BuildInfo.hpp.in" "${_dir}/BuildInfo.hpp.in" @ONLY)
     # Second pass resolves $<CONFIG>, so multi-config generators get one file per configuration.
-    file(GENERATE OUTPUT "${_dir}/$<CONFIG>/BuildInfo.cpp" INPUT "${_dir}/BuildInfo.cpp.in")
-    target_sources(${target} PRIVATE "${_dir}/$<CONFIG>/BuildInfo.cpp")
+    file(GENERATE OUTPUT "${_dir}/$<CONFIG>/BuildInfo.hpp" INPUT "${_dir}/BuildInfo.hpp.in")
+    target_sources(${target} PRIVATE "${_dir}/$<CONFIG>/BuildInfo.hpp")
+    target_include_directories(${target} PUBLIC "${_dir}/$<CONFIG>")
 endfunction()

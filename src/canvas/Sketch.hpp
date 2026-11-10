@@ -1,6 +1,6 @@
 #pragma once
 
-#include <shapes/Recognizer.hpp>
+#include <shapes/Recognizer.h>
 
 #include <memory>
 #include <string>

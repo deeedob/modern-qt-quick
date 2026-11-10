@@ -8,8 +8,9 @@ set(VCPKG_BUILD_TYPE release)
 set(VCPKG_OSX_DEPLOYMENT_TARGET "$ENV{MACOSX_DEPLOYMENT_TARGET}")
 list(APPEND VCPKG_ENV_PASSTHROUGH MACOSX_DEPLOYMENT_TARGET)
 
-# libdwarf (used by cpptrace) is LGPL-2.1: linked dynamically, so users can replace it.
-if(PORT STREQUAL "libdwarf")
+# LGPL libraries are linked dynamically, so users can replace them: libdwarf (used by
+# cpptrace) and, with the vcpkg-qt preset, Qt itself.
+if(PORT STREQUAL "libdwarf" OR PORT MATCHES "^qt")
     set(VCPKG_LIBRARY_LINKAGE dynamic)
 endif()
 

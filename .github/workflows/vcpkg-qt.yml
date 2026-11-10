@@ -1,0 +1,63 @@
+name: Qt from vcpkg
+
+# Builds Qt itself with vcpkg (the vcpkg-qt preset). The first run takes hours, so it runs on
+# demand only; later runs reuse the binary cache.
+on:
+  workflow_dispatch:
+
+env:
+  VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite"
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - uses: lukka/get-cmake@latest
+
+      # libb2, a qtbase dependency outside Windows, is built with autotools.
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-14 autoconf autoconf-archive automake libtool pkg-config \
+            '^libxcb.*-dev' libx11-xcb-dev libxrender-dev libxi-dev libxkbcommon-dev \
+            libxkbcommon-x11-dev libgl1-mesa-dev libegl1-mesa-dev
+          echo "CXX=g++-14" >> "$GITHUB_ENV"
+
+      - name: Install macOS build dependencies
+        if: runner.os == 'macOS'
+        run: brew install autoconf autoconf-archive automake libtool
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
+
+      - name: Key the vcpkg cache on the pinned vcpkg commit
+        id: vcpkg
+        shell: bash
+        run: echo "commit=$(git rev-parse HEAD:external/vcpkg)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: .vcpkg-cache
+          key: vcpkg-qt-${{ matrix.os }}-${{ steps.vcpkg.outputs.commit }}-${{ hashFiles('vcpkg.json', 'cmake/vcpkg-triplets/**/*.cmake') }}
+          restore-keys: vcpkg-qt-${{ matrix.os }}-
+
+      - name: Configure, build, test and package
+        run: cmake --workflow --preset vcpkg-qt
+
+      # Saved even when a step fails, so the hours spent building Qt are not lost.
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: .vcpkg-cache
+          key: vcpkg-qt-${{ matrix.os }}-${{ steps.vcpkg.outputs.commit }}-${{ hashFiles('vcpkg.json', 'cmake/vcpkg-triplets/**/*.cmake') }}

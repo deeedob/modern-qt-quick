@@ -1,57 +1,80 @@
 {
   "version": 10,
   "cmakeMinimumRequired": { "major": 3, "minor": 31, "patch": 0 },
+
+  "workflowPresets": [
+    {
+      "name": "dev",
+      "displayName": "Debug build and all tests",
+      "steps": [
+        { "type": "configure", "name": "dev" },
+        { "type": "build", "name": "dev" },
+        { "type": "test", "name": "dev" }
+      ]
+    },
+    {
+      "name": "asan",
+      "displayName": "Debug build and all tests with AddressSanitizer and UBSan",
+      "steps": [
+        { "type": "configure", "name": "asan" },
+        { "type": "build", "name": "asan" },
+        { "type": "test", "name": "asan" }
+      ]
+    },
+    {
+      "name": "release",
+      "displayName": "Release build, all tests and the package: what CI ships",
+      "steps": [
+        { "type": "configure", "name": "release" },
+        { "type": "build", "name": "release" },
+        { "type": "test", "name": "release" },
+        { "type": "package", "name": "release" }
+      ]
+    },
+    {
+      "name": "vcpkg-qt",
+      "displayName": "Like release, with Qt built by vcpkg (hours on the first run)",
+      "steps": [
+        { "type": "configure", "name": "vcpkg-qt" },
+        { "type": "build", "name": "vcpkg-qt" },
+        { "type": "test", "name": "vcpkg-qt" },
+        { "type": "package", "name": "vcpkg-qt" }
+      ]
+    }
+  ],
+
   "configurePresets": [
     {
       "name": "base",
       "hidden": true,
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}",
-      "toolchainFile": "${sourceDir}/3rdparty/vcpkg/scripts/buildsystems/vcpkg.cmake",
-      "environment": {
-        "$comment": "Oldest supported macOS (Qt 6.12's minimum), read by CMake and the vcpkg triplets.",
-        "MACOSX_DEPLOYMENT_TARGET": "14.4"
-      },
+      "toolchainFile": "${sourceDir}/external/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "environment": { "MACOSX_DEPLOYMENT_TARGET": "14.4" },
       "cacheVariables": {
         "CMAKE_PREFIX_PATH": "$env{QT_ROOT_DIR}",
         "CMAKE_EXPORT_COMPILE_COMMANDS": true,
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "VCPKG_INSTALL_OPTIONS": "--downloads-root=${sourceDir}/build/vcpkg-downloads;--x-buildtrees-root=${sourceDir}/build/vcpkg-buildtrees;--x-packages-root=${sourceDir}/build/vcpkg-packages;--clean-buildtrees-after-build;--clean-packages-after-build"
       }
     },
-    {
-      "name": "dev",
-      "inherits": "base",
-      "displayName": "Development (Debug)",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
-    },
-    {
-      "name": "release",
-      "inherits": "base",
-      "displayName": "Release with debug info (crash traces stay readable)",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" }
-    },
-    {
-      "name": "asan",
-      "inherits": "dev",
-      "displayName": "Debug with AddressSanitizer and UndefinedBehaviorSanitizer",
-      "cacheVariables": { "APP_SANITIZERS": "address;undefined" }
-    },
+    { "name": "dev", "inherits": "base", "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" } },
+    { "name": "asan", "inherits": "dev", "cacheVariables": { "APP_SANITIZERS": "address;undefined" } },
+    { "name": "release", "inherits": "base", "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" } },
     {
       "name": "vcpkg-qt",
       "inherits": "release",
-      "displayName": "Release, with Qt built from source by vcpkg (slow first run)",
-      "cacheVariables": {
-        "CMAKE_PREFIX_PATH": "",
-        "VCPKG_MANIFEST_FEATURES": "qt"
-      }
+      "cacheVariables": { "CMAKE_PREFIX_PATH": "", "VCPKG_MANIFEST_FEATURES": "qt" }
     }
   ],
+
   "buildPresets": [
     { "name": "dev", "configurePreset": "dev" },
-    { "name": "release", "configurePreset": "release" },
     { "name": "asan", "configurePreset": "asan" },
+    { "name": "release", "configurePreset": "release" },
     { "name": "vcpkg-qt", "configurePreset": "vcpkg-qt" }
   ],
+
   "testPresets": [
     {
       "name": "base",
@@ -61,7 +84,6 @@
       "environment": { "QT_QPA_PLATFORM": "offscreen" }
     },
     { "name": "dev", "inherits": "base", "configurePreset": "dev" },
-    { "name": "release", "inherits": "base", "configurePreset": "release" },
     {
       "name": "asan",
       "inherits": "base",
@@ -72,46 +94,12 @@
         "UBSAN_OPTIONS": "print_stacktrace=1"
       }
     },
+    { "name": "release", "inherits": "base", "configurePreset": "release" },
     { "name": "vcpkg-qt", "inherits": "base", "configurePreset": "vcpkg-qt" }
   ],
+
   "packagePresets": [
     { "name": "release", "configurePreset": "release" },
     { "name": "vcpkg-qt", "configurePreset": "vcpkg-qt" }
-  ],
-  "workflowPresets": [
-    {
-      "name": "dev",
-      "steps": [
-        { "type": "configure", "name": "dev" },
-        { "type": "build", "name": "dev" },
-        { "type": "test", "name": "dev" }
-      ]
-    },
-    {
-      "name": "asan",
-      "steps": [
-        { "type": "configure", "name": "asan" },
-        { "type": "build", "name": "asan" },
-        { "type": "test", "name": "asan" }
-      ]
-    },
-    {
-      "name": "release",
-      "steps": [
-        { "type": "configure", "name": "release" },
-        { "type": "build", "name": "release" },
-        { "type": "test", "name": "release" },
-        { "type": "package", "name": "release" }
-      ]
-    },
-    {
-      "name": "vcpkg-qt",
-      "steps": [
-        { "type": "configure", "name": "vcpkg-qt" },
-        { "type": "build", "name": "vcpkg-qt" },
-        { "type": "test", "name": "vcpkg-qt" },
-        { "type": "package", "name": "vcpkg-qt" }
-      ]
-    }
   ]
 }

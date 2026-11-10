@@ -1,4 +1,4 @@
-#include <shapes/Recognizer.hpp>
+#include <shapes/Recognizer.h>
 
 #include <algorithm>
 #include <cmath>

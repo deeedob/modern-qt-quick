@@ -16,9 +16,11 @@ Page {
         id: swatch
 
         required property color ink
+        signal picked(color ink)
 
         implicitWidth: 28
         implicitHeight: 28
+        onClicked: swatch.picked(swatch.ink)
         background: Rectangle {
             radius: width / 2
             color: swatch.ink
@@ -43,7 +45,7 @@ Page {
                     ink: modelData
                     text: qsTr("Ink %1").arg(modelData)
                     checked: Qt.colorEqual(root.penColor, ink)
-                    onClicked: root.penColor = ink
+                    onPicked: ink => root.penColor = ink
                 }
             }
 
@@ -159,6 +161,58 @@ Page {
         visible: root.store.empty
         text: qsTr("Draw here. Circles, rectangles and triangles snap into shape.")
         color: "#8a8a94"
+    }
+
+    Label {
+        id: snapHint
+
+        objectName: "snapHint"
+        anchors.horizontalCenter: viewport.horizontalCenter
+        anchors.bottom: viewport.bottom
+        anchors.bottomMargin: Theme.spacing
+        padding: Theme.spacing / 2
+        opacity: 0
+        background: Rectangle {
+            radius: Theme.radius
+            color: Theme.surface
+            border.color: Theme.border
+        }
+
+        SequentialAnimation on opacity {
+            id: fade
+
+            running: false
+            NumberAnimation {
+                to: 1
+                duration: 120
+            }
+            PauseAnimation {
+                duration: 1200
+            }
+            NumberAnimation {
+                to: 0
+                duration: 400
+            }
+        }
+    }
+
+    Connections {
+        target: root.store
+
+        function onShapeSnapped(shape: int): void {
+            switch (shape) {
+            case CanvasStore.Shape.Circle:
+                snapHint.text = qsTr("Snapped to a circle");
+                break;
+            case CanvasStore.Shape.Rectangle:
+                snapHint.text = qsTr("Snapped to a rectangle");
+                break;
+            case CanvasStore.Shape.Triangle:
+                snapHint.text = qsTr("Snapped to a triangle");
+                break;
+            }
+            fade.restart();
+        }
     }
 
     Shortcut {

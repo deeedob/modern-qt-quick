@@ -1,7 +1,7 @@
 # The shape of a Qt Quick application {#sec-shape}
 
-Before any detail, the big picture: which code goes where, and how the parts talk to each
-other. Every later chapter fills in one part of this picture.
+Before getting into details, let's look at the big picture: which code goes where, and how
+the parts talk to each other. Every later chapter fills in one part of this picture.
 
 ## QML composes, C++ implements {#sec-split}
 
@@ -39,7 +39,8 @@ and recompiling code. The split by language is also a split by responsibility, a
 the main reason to choose Qt Quick.
 
 ::: {.more}
-**Template:** `src/canvas/CanvasStore.hpp`, `src/canvas/CanvasPage.qml` ·
+**Template:** `src/canvas/CanvasStore.hpp`, `src/canvas/CanvasPage.qml`
+
 **Read more:** [Qt Quick best practices](https://doc.qt.io/qt-6/qtquick-bestpractices.html)
 :::
 
@@ -55,8 +56,8 @@ textbooks, so here are both:
 | Domain | **Core** or **Engine** | Plain C++ rules and algorithms | `shapes::Recognizer` |
 | Infrastructure | **Backend**, **Storage**, **Network** | Files, sockets, devices | `SketchStorage` |
 
-Only the view is QML. Only the view model knows that QML exists. The core knows neither,
-which is why it is the easiest code to test and to reuse.
+Only the view is QML. Only the view model knows that QML exists. The core knows about
+neither of them, which is why it is the easiest code to test and to reuse.
 
 ## Commands go down, notifications come up {#sec-flow}
 
@@ -97,6 +98,13 @@ target_link_libraries(app_sketchbook PUBLIC app_canvas)
 When `canvas` tries to include a `sketchbook` header, the compiler refuses. A broken rule
 fails the build on the spot, long before a code review would catch it.
 
+::: {.callout-important}
+## Lower layers never know their callers
+A lower layer never includes, links or calls anything above it; when it has news, it emits
+a signal (@sec-flow). If code only works with an upward include, it sits in the wrong layer:
+move it down, or pass the dependency in from `main()`.
+:::
+
 ::: {.more}
 **Template:** `src/CMakeLists.txt` and the `CMakeLists.txt` of each feature
 :::
@@ -104,7 +112,7 @@ fails the build on the spot, long before a code review would catch it.
 ## One place wires everything {#sec-composition-root}
 
 Some code has to know every concrete type and connect them. Keep that code in one place,
-`main()`, and nowhere else. It creates the long-lived objects, hands each its dependencies,
+`main()`, and nowhere else. It creates the long-lived objects, gives each one its dependencies,
 and passes them to QML.
 
 ```{.cpp filename="main.cpp"}
@@ -126,9 +134,10 @@ int main(int argc, char *argv[])
 }
 ```
 1. Objects receive their dependencies through the constructor. No globals.
-2. Created last, destroyed first: QML never sees an object that is already gone.
+2. The engine is created last and destroyed first, so QML never sees an object that is already gone.
 
-Every lifetime is visible in one function, and a test can build the same objects with fakes.
+Every lifetime is visible in one function, and a test can build the same objects with simple
+stand-ins for the real ones.
 
 ::: {.more}
 **Template:** `src/app/main.cpp`
@@ -137,8 +146,8 @@ Every lifetime is visible in one function, and a test can build the same objects
 ## Interfaces at the seams {#sec-interfaces}
 
 Where your code meets the outside world (a network, a device, the clock), put an abstract
-class between them. The rest of the app depends on the interface, and a test passes in a
-fake.
+class between them. The rest of the app depends on the interface, so a test can pass in a
+simple version of its own.
 
 ```{.cpp filename="Transport.hpp"}
 class Transport
@@ -149,16 +158,30 @@ public:
 };
 
 class TcpTransport final : public Transport { /* the real network */ };
-class FakeTransport final : public Transport { /* records what was sent */ };
+class RecordingTransport final : public Transport { /* records what was sent, for tests */ };
 ```
 
-Give the interface the plain noun, `Transport`, and let implementations say what they are:
-`TcpTransport`, `FakeTransport`. Avoid an `I` prefix such as `ITransport`; callers should not
-care that a type is abstract.
+Name the interface after what it is, `Transport`, and each implementation after how it
+works: `TcpTransport`, `RecordingTransport`. Callers only ever see `Transport` and never
+need to know whether it is abstract. Qt follows this rule for its own I/O: `QIODevice` is
+the
+abstract base of `QFile` and `QTcpSocket`.
 
-Add an interface when a second implementation exists, even if it is only a test fake. The
-template's storage has none: its tests write to a temporary folder instead.
+In real code you will meet two other conventions:
+
+- **An `Abstract` prefix**, as in `QAbstractItemModel` or `QAbstractButton`. Qt uses it for
+  base classes that already implement most of the behavior and are meant for you to
+  subclass.
+- **An `I` prefix**, as in `ITransport`. It comes from COM and C#, where every interface
+  carries it, and is common in C++ code that grew up on Windows.
+
+Each is fine where it is the house style. When you extend a framework, follow its
+convention; in your own code, start with the plain noun and stay consistent.
+
+Add an interface only once a second implementation exists, even if only a test uses it.
+Before that, it is indirection with nothing behind it. The template's storage has no
+interface: its tests write to a temporary folder instead.
 
 ::: {.more}
-**Read more:** [C++ Core Guidelines, NL.5](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#nl5-avoid-encoding-type-information-in-names)
+**Read more:** [C++ Core Guidelines, NL.5](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rl-name-type)
 :::

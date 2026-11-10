@@ -6,6 +6,13 @@ book:
   title: "Modern Qt Quick Applications"
   subtitle: "The concepts behind building, testing and shipping a Qt Quick app"
   author: "Dennis Oberst"
+  date: today
+  site-url: https://deeedob.github.io/modern-qt-quick/
+  repo-url: https://github.com/deeedob/modern-qt-quick
+  repo-subdir: docs
+  repo-branch: main
+  repo-actions: [source, issue]
+  downloads: [pdf]
   search: true
   output-file: modern-qt-quick-applications
   reader-mode: true
@@ -45,14 +52,16 @@ book:
     - part: "Beyond"
       chapters:
         - 16-learning.qmd
-  appendices:
-    - template.qmd
+
+filters:
+  - repo-links.lua
+  - typst.lua
 
 format:
   html:
     theme:
       light: [cosmo, styles.scss]
-      dark: [darkly, styles.scss]
+      dark: [darkly, styles.scss, dark.scss]
     toc: true
     toc-depth: 2
     number-depth: 2
@@ -62,9 +71,11 @@ format:
     highlight-style: github
     link-external-newwindow: true
     fig-align: center
+  typst:
+    template-partials:
+      - typst-show.typ
     mermaid:
       theme: neutral
-  typst:
     papersize: a4
     margin:
       x: 2.2cm

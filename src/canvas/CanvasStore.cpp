@@ -4,6 +4,7 @@
 #include <QtCore/QRectF>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <numbers>
 #include <ranges>
@@ -17,6 +18,17 @@ namespace {
     constexpr std::size_t MaxHistory = 100;
     // Real shapes score above 0.9, scribbles and open curves below 0.8.
     constexpr double SnapScore = 0.85;
+
+    struct NamedShape
+    {
+        std::string_view name;
+        CanvasStore::Shape shape;
+    };
+    constexpr std::array Shapes{
+        NamedShape{ .name = "circle",    .shape = CanvasStore::Shape::Circle    },
+        NamedShape{ .name = "rectangle", .shape = CanvasStore::Shape::Rectangle },
+        NamedShape{ .name = "triangle",  .shape = CanvasStore::Shape::Triangle  },
+    };
 
     QRectF bounds(std::span<const shapes::Point> points)
     {
@@ -50,12 +62,12 @@ namespace {
     shapes::Recognizer basicShapes()
     {
         shapes::Recognizer recognizer;
-        for (const auto *name : { "circle", "rectangle", "triangle" }) {
+        for (const auto &[name, shape] : Shapes) {
             auto outline = idealShape(name, QRectF(0, 0, 1, 1));
-            recognizer.addTemplate(name, outline);
+            recognizer.addTemplate(std::string(name), outline);
             // People draw both clockwise and counterclockwise.
             std::ranges::reverse(outline);
-            recognizer.addTemplate(name, outline);
+            recognizer.addTemplate(std::string(name), outline);
         }
         return recognizer;
     }
@@ -130,6 +142,7 @@ void CanvasStore::addStroke(const QList<QPointF> &points, const QColor &color)
         .points = idealShape(match->name, bounds(stroke->points)),
         .color = stroke->color,
     }) });
+    Q_EMIT shapeSnapped(std::ranges::find(Shapes, match->name, &NamedShape::name)->shape);
 }
 
 void CanvasStore::clear()

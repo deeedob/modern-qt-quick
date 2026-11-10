@@ -36,9 +36,12 @@ endif()
 
 set(_app_hardening_options "")
 set(_app_hardening_definitions "")
+set(_app_hardening_link_options "")
 if(APP_ENABLE_HARDENING)
     if(MSVC)
         list(APPEND _app_hardening_options /sdl /guard:cf)
+        # Control Flow Guard only takes effect when the linker emits the guard tables too.
+        list(APPEND _app_hardening_link_options /GUARD:CF)
     else()
         # Each define is ignored by the other standard library, so both are always safe to set.
         list(APPEND _app_hardening_definitions
@@ -83,6 +86,7 @@ function(app_target_defaults target)
         # names (glaze has a variable called emit). Write Q_EMIT, Q_SIGNALS and Q_SLOTS instead.
         QT_NO_KEYWORDS
     )
+    target_link_options(${target} PRIVATE ${_app_hardening_link_options})
     if(_app_sanitizer_options AND NOT MSVC)
         target_link_options(${target} PRIVATE ${_app_sanitizer_options})
     endif()

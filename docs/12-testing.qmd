@@ -41,7 +41,8 @@ QTEST_GUILESS_MAIN(tst_SketchbookViewModel)
 2. `QSignalSpy` records every emission of a signal.
 
 ::: {.more}
-**Template:** `tests/sketchbook/` ·
+**Template:** `tests/sketchbook/`
+
 **Read more:** [Qt Test overview](https://doc.qt.io/qt-6/qtest-overview.html)
 :::
 
@@ -86,11 +87,12 @@ TestCase {
 }
 ```
 
-Tests run without a screen with `QT_QPA_PLATFORM=offscreen`, which the template sets in its
-test presets.
+Setting `QT_QPA_PLATFORM=offscreen` lets tests run without a screen, and the template sets
+it in its test presets.
 
 ::: {.more}
-**Template:** `tests/canvas/tst_StrokeItem.qml` ·
+**Template:** `tests/canvas/tst_StrokeItem.qml`
+
 **Read more:** [Qt Quick Test](https://doc.qt.io/qt-6/qtquicktest-index.html)
 :::
 
@@ -100,8 +102,8 @@ A test that fails one run in twenty is worse than no test: people learn to ignor
 
 - **Never sleep for a fixed time.** Wait for the condition instead: `QTRY_VERIFY` and
   `QTRY_COMPARE` in C++, `tryVerify()` and `tryCompare()` in QML.
-- **Isolate state.** Temporary directories instead of real paths, fakes at the seams
-  (@sec-interfaces) instead of the network or the clock.
+- **Isolate state.** Use temporary directories instead of real paths, and simple test versions
+  at the seams (@sec-interfaces) instead of the network or the clock.
 - **No order dependence.** Each test sets up what it needs and cleans up after itself.
 
 ```cpp

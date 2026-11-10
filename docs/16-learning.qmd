@@ -27,10 +27,10 @@ question open, the test suite of that class often answers it.
 
 ## Recognize stale Qt {#sec-stale-qt}
 
-Most Qt code online, and in the data AI models learned from, is Qt 5. It often still
-compiles, but it is not how Qt 6 works. Learn its tells:
+Most Qt code online, and in the data AI models learned from, is written for Qt 5 or older.
+It often still compiles, but it is not how Qt 6 works. Learn to recognize the signs:
 
-| Qt 5 | Qt 6 |
+| Outdated | Qt 6 |
 |---|---|
 | `qmake` and `.pro` files | CMake with `qt_add_qml_module()` |
 | `qmlRegisterType<T>("Uri", 1, 0, "T")` | `QML_ELEMENT` in the class |
@@ -58,6 +58,11 @@ and add Qt-specific workflows:
 
 The same repository provides a **Qt documentation server** (an MCP server) that lets the
 agent look up the current API instead of guessing it.
+
+The skills cover Qt in general. What is specific to your project, such as its commands, its
+layout and its rules, goes into an [`AGENTS.md`](https://agents.md) at the root of the
+repository. Most coding agents read that file on their own at the start of every session, so
+it is the one place to tell all of them how your project works.
 
 ::: {.more}
 **Read more:** [Qt agent skills](https://github.com/TheQtCompanyRnD/agent-skills)

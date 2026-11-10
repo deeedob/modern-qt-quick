@@ -1,5 +1,7 @@
 #include "Logging.hpp"
 
+#include <BuildInfo.hpp>
+
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QLoggingCategory>
@@ -25,6 +27,16 @@ private Q_SLOTS:
         QVERIFY(file.open(QIODevice::ReadOnly));
         const auto contents = file.readAll();
         QVERIFY2(contents.contains("app.test: hello log file"), contents.constData());
+    }
+
+    void buildInfoPrintsAsOneLine()
+    {
+        QString text;
+        QDebug(&text) << app::buildInfo;
+
+        QVERIFY2(text.contains(QString::fromUtf8(app::buildInfo.version)), qPrintable(text));
+        QVERIFY2(text.contains(QString::fromUtf8(app::buildInfo.gitSha)), qPrintable(text));
+        QVERIFY(!text.contains(u'\n'));
     }
 
     void oldSessionsAreRemoved()
