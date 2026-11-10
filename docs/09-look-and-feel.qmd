@@ -1,8 +1,8 @@
 # Look and feel {#sec-look}
 
 An application's look belongs in one place, not scattered over its pages. This chapter
-covers a custom control style, design tokens with light and dark themes, and what to do when
-no built-in item can draw what you need.
+covers a custom control style and design tokens with light and dark themes. Drawing your own
+items in C++ is covered in the chapter on connecting C++ and QML (@sec-custom-items).
 
 ## Your own Qt Quick Controls style {#sec-style}
 
@@ -57,14 +57,16 @@ chosen at compile time, qmllint and the QML compiler know the exact type of ever
 Basic is the style made for customization; the native macOS and Windows styles are not.
 
 ::: {.more}
-**Template:** `src/style/` ·
+**Template:** `src/style/`
+
 **Read more:** [Customizing Qt Quick Controls](https://doc.qt.io/qt-6/qtquickcontrols-customize.html)
 :::
 
 ## Design tokens and dark mode {#sec-theme}
 
-Colors, spacing, radii and fonts are **design tokens**. Keep them in one QML singleton and
-let every control read from it, never from literals:
+Colors, spacing, radii and fonts are **design tokens**. Every control reads them from one
+place, never from literals. For an app with a light and a dark theme, a QML singleton is
+enough:
 
 ```{.qml filename="style/Theme.qml"}
 pragma Singleton
@@ -85,79 +87,33 @@ QtObject {
 ```
 
 The tokens follow the system's color scheme, so the whole app switches between light and dark
-with no code in the views. Mark the file as a singleton in CMake, before `qt_add_qml_module()`, with
-`set_source_files_properties(Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)`.
+with no code in the views.
 
-::: {layout-ncol=2}
+::: {.callout-note}
+## Register the singleton in CMake
+`pragma Singleton` alone is not enough. Mark the file before `qt_add_qml_module()`:
+
+```cmake
+set_source_files_properties(Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+```
+:::
+
+::: {#fig-themes layout-ncol=2}
 ![Light](images/canvas-light.png)
 
 ![Dark](images/canvas-dark.png)
+
+The same canvas in both themes.
 :::
 
 Set the window's `palette` from the tokens as well. The palette reaches every control,
 including the ones you did not restyle, so they match too.
 
+A theme system can grow beyond light and dark: brand themes, a high-contrast mode, colors the
+user picks or loads from a file. Then move the tokens into C++, into a `QML_SINGLETON` class
+whose properties notify on change. The views do not change: they bind to the same token
+names, and every binding updates when a theme is applied at run time.
+
 ::: {.more}
 **Template:** `src/style/Theme.qml`, `src/style/ApplicationWindow.qml`
-:::
-
-## Custom items and the scene graph {#sec-custom-items}
-
-When no built-in item can draw what you need, write one in C++. Qt Quick offers several
-levels:
-
-| Option | How it draws | Use it for |
-|---|---|---|
-| Qt Quick Shapes | vector paths declared in QML | static icons and diagrams |
-| `QQuickPaintedItem` | `QPainter` into a texture | simple custom drawing that rarely changes |
-| Scene graph item | geometry nodes on the GPU | content that changes often, such as strokes or charts |
-| `QQuickRhiItem` | your own GPU commands and shaders | 3D and heavy rendering |
-
-A scene graph item sets `ItemHasContents` and builds its geometry in `updatePaintNode()`:
-
-```{.cpp filename="LineItem.cpp"}
-LineItem::LineItem(QQuickItem *parent)
-    : QQuickItem(parent)
-{
-    setFlag(ItemHasContents);
-}
-
-QSGNode *LineItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
-{
-    auto *node = static_cast<QSGGeometryNode *>(oldNode);
-    if (!node) {                                                          // <1>
-        node = new QSGGeometryNode;
-        auto *geometry =
-            new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
-        geometry->setDrawingMode(QSGGeometry::DrawLineStrip);
-        node->setGeometry(geometry);
-        node->setFlag(QSGNode::OwnsGeometry);
-        auto *material = new QSGFlatColorMaterial;
-        material->setColor(Qt::black);
-        node->setMaterial(material);
-        node->setFlag(QSGNode::OwnsMaterial);
-    }
-    auto *geometry = node->geometry();                                    // <2>
-    geometry->allocate(static_cast<int>(m_points.size()));
-    auto *vertices = geometry->vertexDataAsPoint2D();
-    for (qsizetype i = 0; i < m_points.size(); ++i)
-        vertices[i].set(float(m_points[i].x()), float(m_points[i].y()));
-    node->markDirty(QSGNode::DirtyGeometry);
-    return node;
-}
-```
-1. The first call creates the node; later calls receive it back and update it.
-2. Only the vertices change on later calls. The node and its material stay.
-
-`updatePaintNode()` runs on the **render thread** while the GUI thread waits. It may read the
-item's members safely, but must only build scene graph nodes; it must not touch QML or other
-QObjects. To redraw, call `update()` from the GUI thread, and Qt schedules the next call.
-
-Reuse nodes between frames and change only what changed. That is where a scene graph item
-beats a painted item, which repaints its whole texture every time.
-
-::: {.more}
-**Template:** `src/canvas/StrokeItem.cpp`, which builds one node per stroke and keeps the
-nodes of strokes that did not change ·
-**Read more:** [The Qt Quick scene graph](https://doc.qt.io/qt-6/qtquick-visualcanvas-scenegraph.html)
 :::

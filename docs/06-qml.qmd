@@ -26,6 +26,13 @@ it. Most layout bugs in QML come from an assignment where a binding was meant. I
 should follow something, bind it. If the user changes it, change the *source* of the
 binding, usually a property in C++, instead of overwriting the binding.
 
+::: {.callout-important}
+## Never assign to a bound property
+An assignment from JavaScript removes the binding without any warning. To change a bound
+value, change its source. If a property really needs both, restore the binding with
+`Qt.binding()`, or better, move that state into C++.
+:::
+
 ::: {.more}
 **Read more:** [Property binding](https://doc.qt.io/qt-6/qtqml-syntax-propertybinding.html)
 :::
@@ -65,7 +72,8 @@ Swatch {
 A component written this way works anywhere, and a test can create it on its own.
 
 ::: {.more}
-**Template:** the `Swatch` inline component in `src/canvas/CanvasPage.qml` ·
+**Template:** the `Swatch` inline component in `src/canvas/CanvasPage.qml`
+
 **Read more:** [QML component design](https://www.kdab.com/qml-component-design/)
 :::
 
@@ -95,15 +103,16 @@ somewhere above, no untyped argument, no lookup that depends on where the compon
 Make qmllint fail on any warning and run it in CI, so a typo fails like a C++ typo does.
 
 ::: {.more}
-**Template:** `.qmllint.ini` ·
+**Template:** `.qmllint.ini`
+
 **Read more:** [qmllint](https://doc.qt.io/qt-6/qtquick-tool-qmllint.html)
 :::
 
 ## Lists come from models {#sec-lists}
 
 A `ListView` creates delegates only for the rows that are visible, and drops them as they
-scroll out of view (`reuseItems: true` recycles them instead). Its data comes from a **model**, and each delegate receives the data of its row
-as required properties:
+scroll out of view (`reuseItems: true` recycles them instead). Its data comes from a
+**model**, and each delegate receives the data of its row as required properties:
 
 ```qml
 ListView {
@@ -126,7 +135,8 @@ Expose collections as models (@sec-item-models), never as a property holding a w
 a model can report "row 3 changed", a list property can only say "everything changed".
 
 ::: {.more}
-**Template:** `src/sketchbook/SketchbookPage.qml` ·
+**Template:** `src/sketchbook/SketchbookPage.qml`
+
 **Read more:** [Models and views in Qt Quick](https://doc.qt.io/qt-6/qtquick-modelviewsdata-modelview.html)
 :::
 

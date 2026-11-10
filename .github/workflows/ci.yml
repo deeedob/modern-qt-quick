@@ -3,7 +3,9 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore: ["docs/**", ".github/workflows/docs.yml"]
   pull_request:
+    paths-ignore: ["docs/**", ".github/workflows/docs.yml"]
 
 env:
   QT_VERSION: "6.12.0"
@@ -47,7 +49,7 @@ jobs:
       - name: Key the vcpkg cache on the pinned vcpkg commit
         id: vcpkg
         shell: bash
-        run: echo "commit=$(git rev-parse HEAD:3rdparty/vcpkg)" >> "$GITHUB_OUTPUT"
+        run: echo "commit=$(git rev-parse HEAD:external/vcpkg)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/cache@v4
         with:

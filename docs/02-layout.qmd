@@ -1,13 +1,14 @@
 # Project layout {#sec-layout}
 
-A good layout tells a newcomer where things are before they read a line of code. C++ has no
-official standard, but it has a widely used convention, and Qt Quick adds a few rules of
-its own.
+A good layout shows where things are before anyone reads a line of code. C++ has no
+official standard for it, but it has a widely used convention, and Qt Quick adds a few rules
+of its own.
 
 ## A conventional top level {#sec-pitchfork}
 
-Base your layout on **Pitchfork**, the closest thing C++ has to a standard project layout.
-An application adapts it like this:
+Base your layout on **Pitchfork**, the most widely used convention for C++ project layouts.
+It is a guideline, not a standard: no tool enforces it, and projects adapt it to their needs.
+An application could look like this:
 
 ```{.default filename="my-app/"}
 my-app/
@@ -15,25 +16,33 @@ my-app/
 ├── CMakePresets.json
 ├── cmake/        build helpers
 ├── docs/         documentation
-├── external/     third-party code you embed, unchanged
+├── external/     third-party code kept in the repository
 ├── libs/         libraries that could live without the app
 ├── src/          the application
 └── tests/        tests for src/
 ```
 
-Pitchfork itself puts code either in `src/` or, split up, in `libs/`; an application with
-separable libraries commonly uses both, and adds `cmake/` for build helpers. Newcomers find
-code where they expect it, and the layout scales from one library to many.
+Pitchfork itself allows either a single `src/` or a split into `libs/`, but never both. An
+application with separable libraries often uses both anyway, as above: the app goes in
+`src/`, and anything that could live without it goes in `libs/`. Other names are common too:
+Qt and many older projects name this folder `3rdparty/` instead of `external/`, and Google's
+projects use `third_party/`. Which names you pick
+matters less than using them consistently, so that code is where a reader expects it.
 
 ::: {.more}
-**Template:** the repository root (`3rdparty/` plays the role of `external/`) ·
+**Template:** the repository root
+
 **Read more:** [Pitchfork](https://joholl.github.io/pitchfork-website/)
 :::
 
-## Public headers in `include/<name>/` {#sec-include-dirs}
+## Public and private headers {#sec-include-dirs}
 
-Every library splits its headers in two. Public headers, the library's API, go into
-`include/<name>/`. Private headers stay next to the sources in `src/`.
+A library's headers fall into two groups. **Public headers** are its API: other code includes
+them, and they ship when you install the library. **Private headers** hold implementation
+details that only the library's own sources include. Keep the two apart, so that nobody can
+depend on a detail by accident.
+
+The most common way is to give the public headers a folder of their own, `include/<name>/`:
 
 ```{.default filename="libs/core/"}
 core/
@@ -43,7 +52,7 @@ core/
 │       └── message.h        public: consumers include it
 └── src/
     ├── message.cpp
-    ├── peerregistry.h       private: invisible to consumers
+    ├── peerregistry.hpp     private: invisible to consumers
     └── peerregistry.cpp
 ```
 
@@ -55,16 +64,91 @@ target_include_directories(core
 )
 ```
 1. Consumers get `include/` on their include path and write `#include <core/message.h>`.
-2. Only the library itself can include `peerregistry.h`.
+2. Only the library itself can include `peerregistry.hpp`.
 
 The extra `core/` folder pays off at every include. `#include <core/message.h>` says where
-the header comes from and cannot collide with another library's `message.h`. Do this for
-every library, including those used only inside your project: the split shows at a glance
-what a library promises and what it keeps to itself.
+the header comes from and cannot collide with another library's `message.h`. The suffix can
+mark the split as well: this guide uses `.h` for public headers, which ship, and `.hpp` for
+everything else. Many projects use one suffix for both, which works just as well.
+
+It is not the only way. Qt keeps all of its headers next to the sources, and its build
+generates the public include folder (`include/QtCore/`) from them. Private headers end in
+`_p.h`, install into a separate folder, and carry no compatibility promise. The mechanism
+differs; the separation is the same.
+
+Code that never leaves the application can keep things simpler. The feature folders under `src/`
+(@sec-features) keep all their headers next to the sources and put that folder on their
+include path. Whatever links `app_canvas` can write `#include "CanvasStore.hpp"`; whatever
+does not, cannot. The build still enforces the boundary (@sec-direction); there is no
+separate public API.
 
 ::: {.more}
 **Template:** `libs/shapes/`, which declares its public headers as a `FILE_SET HEADERS`, the
-modern spelling of the same idea
+modern spelling of `PUBLIC include`; `src/canvas/` for a feature folder
+:::
+
+## Namespaces keep the global scope empty {#sec-namespaces}
+
+A name declared outside any namespace can collide with the same name in every other library
+of the program: two `Point` types, two `distance()` functions. At best the compiler stops
+with an error. At worst the linker quietly keeps one of two different definitions, and the
+program misbehaves at run time. Put all of your code into a namespace, named like the
+library and its include folder:
+
+```{.cpp filename="include/shapes/Recognizer.h"}
+namespace shapes {
+
+struct Point { double x = 0.0; double y = 0.0; };
+
+class Recognizer { /* ... */ };
+
+} // namespace shapes
+```
+
+```{.cpp filename="src/Recognizer.cpp"}
+namespace shapes {
+namespace {
+
+double distance(Point a, Point b);   // only this file sees it
+
+} // namespace
+} // namespace shapes
+```
+
+Three more rules keep names from leaking:
+
+- **File-local helpers go into an unnamed namespace.** Other files cannot see them, and two
+  files can each have their own `distance()`.
+- **No `using namespace` at file scope in a header.** It would apply to every file that
+  includes the header, now and later. Inside a `.cpp` file or a function it is fine.
+- **Macros ignore namespaces.** Give each one a prefix unique to your project, such as
+  `SHAPES_`, or use a `constexpr` variable or an inline function instead.
+
+For a library this is part of its API: a consumer cannot rename what your headers leak. An
+application shares its process with Qt and every other dependency, so the same rules apply
+to it, nested by feature: `app::canvas`, `app::sketchbook`.
+
+You can see two eras in Qt itself. Its classes start with `Q` because Qt is older than reliable
+namespace support in compilers; its newer APIs live in namespaces such as `Qt::` and
+`QtConcurrent::`. Classes with `Q_OBJECT` or `QML_ELEMENT` work inside namespaces, and QML
+sees the class name without the namespace. One catch: in `Q_PROPERTY`, signals and
+`Q_INVOKABLE` methods, write other types fully qualified (`app::canvas::CanvasStore *`).
+moc and the QML tools read those as text and do not resolve names from the enclosing
+namespace.
+
+::: {.callout-important}
+## A public header is a promise
+Everything in a public header becomes API: consumers include it, build against it, and break
+when it changes. Keep it to what they need, inside your namespace, with no `using namespace`
+and no unprefixed macros. Code that only your own sources share belongs in a private
+header, where you can change it freely. Before a header moves into `include/`, ask whether a
+consumer really has to see it.
+:::
+
+::: {.more}
+**Template:** `libs/shapes/include/shapes/Recognizer.h`, `src/canvas/Sketch.hpp`
+
+**Read more:** [C++ Core Guidelines, SF.20 to SF.22](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rs-namespace)
 :::
 
 ## Separable code becomes its own library {#sec-separable}
@@ -102,7 +186,8 @@ Adding a feature adds a folder; removing it deletes one. Split by role only once
 outgrows a single folder.
 
 ::: {.more}
-**Template:** `src/` ·
+**Template:** `src/`
+
 **Read more:** [Qt 6 QML project architecture](https://www.learnqt.guide/qt6-qml-project-architecture)
 :::
 

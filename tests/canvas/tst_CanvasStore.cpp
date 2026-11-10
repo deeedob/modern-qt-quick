@@ -130,6 +130,18 @@ private Q_SLOTS:
         QCOMPARE(store.sketch().front()->points.size(), drawn.size());
     }
 
+    void aSnapReportsTheShape()
+    {
+        CanvasStore store;
+        QSignalSpy snapped(&store, &CanvasStore::shapeSnapped);
+
+        store.addStroke(wobblyCircle({ 100, 100 }, 50), Qt::black);
+        store.addStroke(zigzag(), Qt::black);
+
+        QCOMPARE(snapped.count(), 1);
+        QCOMPARE(snapped.front().front().value<CanvasStore::Shape>(), CanvasStore::Shape::Circle);
+    }
+
     void unrecognizedStrokesStayAsDrawn()
     {
         CanvasStore store;

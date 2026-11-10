@@ -6,8 +6,8 @@ Flux for documents with a history.
 
 ## From MVC to MVVM {#sec-mvc-mvvm}
 
-Three patterns share the same goal, keeping the view free of logic, and differ in who
-updates the view:
+Three patterns share the same goal (keeping logic out of the view) but differ in who updates
+the view:
 
 | Pattern | How the view gets updated | Where you meet it in Qt |
 |---|---|---|
@@ -143,5 +143,5 @@ One app can mix them, one pattern per feature. The template does exactly that: t
 sketchbook is MVVM, the canvas is Flux.
 
 For very large documents, copying even a vector of pointers per edit becomes expensive.
-That is the point to look at persistent data structures, which share unchanged parts
+At that point, look into persistent data structures, which share unchanged parts
 automatically.

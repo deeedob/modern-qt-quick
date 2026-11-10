@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.31)
 
-project(QtAppTemplate
+project(Sketchbook
     VERSION 0.1.0
     DESCRIPTION "A sketchbook that recognizes shapes: a modern Qt Quick application template"
     LANGUAGES CXX
 )
 
 set(APP_DISPLAY_NAME "Sketchbook" CACHE STRING "Human-readable application name")
-set(APP_BUNDLE_ID "org.example.QtAppTemplate" CACHE STRING "Reverse-DNS application identifier")
+set(APP_BUNDLE_ID "org.example.Sketchbook" CACHE STRING "Reverse-DNS application identifier")
 option(BUILD_TESTING "Build the test suites" ON)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -36,15 +36,17 @@ qt_standard_project_setup(REQUIRES 6.12
 )
 # One QML import root in the build tree: source folders stay lowercase, URIs stay PascalCase.
 set(QT_QML_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/qml")
+# Writes a .qmlls.ini next to each QML module, so the QML language server finds this build.
+set(QT_QML_GENERATE_QMLLS_INI ON)
 
 find_package(cpptrace CONFIG REQUIRED)
-find_package(glaze CONFIG REQUIRED)
+find_package(glaze CONFIG REQUIRED) # demo
 
 if(BUILD_TESTING)
     enable_testing()
 endif()
 
-add_subdirectory(libs/shapes)
+add_subdirectory(libs/shapes) # demo
 add_subdirectory(src)
 if(BUILD_TESTING)
     add_subdirectory(tests)

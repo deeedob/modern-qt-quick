@@ -22,9 +22,9 @@ Apps distributed outside the Mac App Store need three things:
 3. **Notarization**: you upload the app to Apple, Apple scans it and issues a ticket, and you
    *staple* the ticket to the app so Gatekeeper accepts it even offline.
 
-Qt's deploy tool signs the bundle for you when you pass it an identity. Use the
-certificate's SHA-1 hash, which `security find-identity -v -p codesigning` lists: the deploy
-script would split a name with spaces into several arguments.
+Qt's deploy tool signs the bundle for you when you pass it an identity. Pass the
+certificate's SHA-1 hash (listed by `security find-identity -v -p codesigning`) instead of
+its name, because the deploy script would split a name with spaces into several arguments.
 
 ```{.cmake filename="src/app/CMakeLists.txt"}
 qt_generate_deploy_qml_app_script(TARGET app OUTPUT_SCRIPT deploy_script
@@ -82,18 +82,19 @@ flowchart LR
   signature.
 - **Sign inside out.** Libraries and plugins first, then the app, then the disk image or
   installer that contains it.
-- **Treat certificates as secrets.** They live in your CI's secret store, never in the
-  repository, and only release builds use them.
+- **Keep signing keys out of the repository.** Apple certificates go into your CI's secret
+  store. Windows code-signing keys must live in hardware since 2023, so CI signs through a
+  cloud signing service and stores only its credentials. Only release builds get signed.
 
 ## App stores {#sec-stores}
 
-App stores take over trust and updates, in exchange for their rules: a sandbox, a review, a
-store package format.
+App stores handle trust and updates for you, in exchange for following their rules: a
+sandbox, a review, a store package format.
 
 | Store | Platform | Notes |
 |---|---|---|
 | Mac App Store | macOS | App Sandbox required |
-| Microsoft Store | Windows | MSIX packages; `windeployqt --appx` prepares one (Qt 6.11+) |
+| Microsoft Store | Windows | MSI or EXE installers, or MSIX packages; `windeployqt --appx` prepares one (Qt 6.11+) |
 | Google Play, App Store | Android, iOS | the normal way to ship mobile apps (@sec-mobile) |
 
 ::: {.more}

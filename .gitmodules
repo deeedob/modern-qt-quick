@@ -1,4 +1,4 @@
-[submodule "3rdparty/vcpkg"]
-	path = 3rdparty/vcpkg
+[submodule "external/vcpkg"]
+	path = external/vcpkg
 	url = https://github.com/microsoft/vcpkg.git
 	shallow = true

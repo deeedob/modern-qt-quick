@@ -53,8 +53,8 @@ you have, the more that pays.
 
 ## `find_package` is the stable interface {#sec-find-package}
 
-However a dependency arrives, consume it the same way: `find_package()` plus the imported
-target it defines.
+Whichever package manager or system provides a dependency, consume it the same way:
+`find_package()` plus the imported target it defines.
 
 ```{.cmake filename="CMakeLists.txt"}
 find_package(glaze CONFIG REQUIRED)
@@ -75,8 +75,8 @@ toolchain file installs them while CMake configures:
 
 What you get:
 
-- **Pinned versions.** A vcpkg version (a `builtin-baseline` commit, or vcpkg itself as a git
-  submodule) fixes the version of every library.
+- **Pinned versions.** Pinning vcpkg itself, with a `builtin-baseline` commit or as a git
+  submodule, fixes the version of every library.
 - **Debug and release builds** of each library by default; a triplet can limit it to
   release, which halves build time.
 - **Control per library.** *Triplets* decide how libraries are built (static or dynamic,
@@ -85,8 +85,15 @@ What you get:
   project.
 - **Every platform with one setup**, from Windows, macOS and Linux to Android and iOS.
 
+The setup costs more than downloading a few libraries by hand, and the binary cache is what
+pays it back. Once CI builds every change on every platform (@sec-ci), each run would
+otherwise rebuild all dependencies from source. With the cache stored between runs, CI
+rebuilds a library only when its version or its triplet changes, and each run spends its time
+on your code.
+
 ::: {.more}
-**Template:** `vcpkg.json`, `cmake/vcpkg-triplets/`, and vcpkg as a submodule in `3rdparty/vcpkg` ·
+**Template:** `vcpkg.json`, `cmake/vcpkg-triplets/`, and vcpkg as a submodule in `external/vcpkg`
+
 **Read more:** [vcpkg manifest mode](https://learn.microsoft.com/en-us/vcpkg/concepts/manifest-mode),
 [triplets](https://learn.microsoft.com/en-us/vcpkg/concepts/triplets)
 :::

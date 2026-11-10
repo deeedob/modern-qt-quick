@@ -22,6 +22,9 @@ class CanvasStore : public QObject
     Q_PROPERTY(bool snapShapes READ snapShapes WRITE setSnapShapes NOTIFY snapShapesChanged FINAL)
 
 public:
+    enum class Shape : quint8 { Circle, Rectangle, Triangle };
+    Q_ENUM(Shape)
+
     explicit CanvasStore(QObject *parent = nullptr);
 
     [[nodiscard]] const Sketch &sketch() const;
@@ -45,6 +48,7 @@ Q_SIGNALS:
     // User edits only, including undo and redo: what needs saving.
     void edited();
     void snapShapesChanged();
+    void shapeSnapped(app::canvas::CanvasStore::Shape shape);
 
 private:
     void dispatch(const Action &action);

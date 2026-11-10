@@ -95,12 +95,7 @@ namespace {
     // With these lines, a log file from a user is enough to reproduce their setup.
     void logStartupInfo()
     {
-        const auto &info = buildInfo();
-        qCInfo(lcStartup).noquote().nospace()
-            << info.name << ' ' << info.version << " (" << info.gitSha << ", " << info.buildType
-            << ", built " << info.buildTimestamp << ')';
-        qCInfo(lcStartup).noquote().nospace()
-            << "Compiler " << info.compiler << ", target " << info.system;
+        qCInfo(lcStartup) << buildInfo;
         qCInfo(lcStartup).noquote() << QLibraryInfo::build();
         qCInfo(lcStartup).noquote()
             << "System" << QSysInfo::prettyProductName() << QSysInfo::currentCpuArchitecture();

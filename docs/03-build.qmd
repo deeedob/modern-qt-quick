@@ -61,7 +61,8 @@ You will meet `qt_add_qml_module()` again in @sec-cpp-qml. It is the one command
 C++ and QML together.
 
 ::: {.more}
-**Template:** `CMakeLists.txt`, `src/app/CMakeLists.txt` ·
+**Template:** `CMakeLists.txt`, `src/app/CMakeLists.txt`
+
 **Read more:** [Getting started with CMake (Qt)](https://doc.qt.io/qt-6/cmake-get-started.html)
 :::
 
@@ -93,24 +94,34 @@ A dynamic library that exists on your computer but not on the user's makes the p
 at start-up. Every dynamic dependency is something you must ship or require.
 :::
 
-## Presets: the build is one command {#sec-presets}
+## Presets: one command, everywhere {#sec-presets}
 
-`CMakePresets.json` records how to configure, build, test and package the project. Everyone,
-your CI included, runs the same command; nobody has to remember flags.
+`CMakePresets.json` writes down how the project is configured, built, tested and packaged.
+It holds one kind of preset per step, plus workflows that chain them:
 
-```{.json filename="CMakePresets.json"}
+| Preset | Describes |
+|---|---|
+| `configurePresets` | the generator, the build folder and the cache variables |
+| `buildPresets` | which configured folder to build |
+| `testPresets` | how `ctest` runs: output on failure, environment |
+| `packagePresets` | how `cpack` turns the build into a package |
+| `workflowPresets` | a fixed sequence of the steps above, run with one command |
+
+A workflow is the payoff. Your machine, CI and the release pipeline all run the same named
+sequence:
+
+```{mermaid}
+%%| fig-width: 6.5
+flowchart LR
+    D[your machine] --> W
+    CI[CI] --> W
+    R[release] --> W
+    W["cmake --workflow --preset release"] --> C[configure] --> B[build] --> T[test] --> P[package]
+```
+
+```{.json filename="CMakePresets.json (excerpt)"}
 {
-  "version": 6,
-  "configurePresets": [
-    {
-      "name": "dev",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
-    }
-  ],
-  "buildPresets": [{ "name": "dev", "configurePreset": "dev" }],
-  "testPresets": [{ "name": "dev", "configurePreset": "dev" }],
+  "version": 10,
   "workflowPresets": [
     {
       "name": "dev",
@@ -120,19 +131,42 @@ your CI included, runs the same command; nobody has to remember flags.
         { "type": "test", "name": "dev" }
       ]
     }
-  ]
+  ],
+  "configurePresets": [
+    {
+      "name": "dev",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    }
+  ],
+  "buildPresets": [{ "name": "dev", "configurePreset": "dev" }],
+  "testPresets": [{ "name": "dev", "configurePreset": "dev" }]
 }
 ```
 
 ```sh
-cmake --workflow --preset dev
+cmake --list-presets=workflow     # what you can run, with descriptions
+cmake --workflow --preset dev     # configure, build and test
 ```
 
-Settings that belong to one machine, such as the path to your Qt or a build folder outside a
-synced directory, go into `CMakeUserPresets.json`. It can inherit from the shared presets and
-stays out of version control.
+What differs between machines, such as where Qt is installed, comes from the environment.
+The template's presets read `$env{QT_ROOT_DIR}`, CI sets the same variable, and configure
+stops with a clear message when it is missing. Settings only you need can go into a
+`CMakeUserPresets.json` next to it, kept out of version control, whose presets build on the
+shared ones.
+
+::: {.callout-important}
+## The workflow is the only way the product is built
+CI, the release and every developer run the same named workflow, so the package CI ships is
+one you can rebuild at your desk with one command. A CI script that types its own flags is a
+second build system, and it drifts. When a step changes, change the preset, and it changes
+for everyone.
+:::
 
 ::: {.more}
-**Template:** `CMakePresets.json`, with `dev`, `asan`, `release` and `vcpkg-qt` workflows ·
+**Template:** `CMakePresets.json`, with `dev`, `asan`, `release` and `vcpkg-qt` workflows,
+and `.github/workflows/ci.yml`, which runs `cmake --workflow --preset release`
+
 **Read more:** [cmake-presets(7)](https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html)
 :::

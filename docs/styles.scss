@@ -18,18 +18,63 @@ pre code {
 
 // The closing line of a section: where the template shows it, and where to read more.
 .more {
-  margin-top: 0.8rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(128, 128, 128, 0.25);
-  font-size: 0.88em;
-  opacity: 0.85;
+  margin-block: 1.2rem;
+  padding: 0.6rem 0.9rem;
+  border-left: 3px solid $primary;
+  border-radius: 4px;
+  background-color: rgba($primary, 0.09);
+  font-size: 0.92em;
 }
 
 .more p {
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.15rem;
+}
+
+.more p:last-child {
+  margin-bottom: 0;
 }
 
 .quarto-figure img {
   border: 1px solid rgba(128, 128, 128, 0.3);
   border-radius: 8px;
+}
+
+// Code annotations: a filled badge in a left gutter instead of an outlined circle at the far
+// right edge, where long code blocks pushed it out of sight.
+div.sourceCode:has(.code-annotation-anchor) pre.sourceCode {
+  padding-left: 2.4rem;
+}
+
+.code-annotation-gutter,
+.code-annotation-gutter-bg {
+  display: none;
+}
+
+code.sourceCode a.code-annotation-anchor,
+dl.code-annotation-container-grid dt {
+  background-color: $primary;
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  width: 1.35rem;
+  height: 1.35rem;
+  line-height: 1.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  font-family: $font-family-sans-serif;
+}
+
+code.sourceCode a.code-annotation-anchor {
+  float: none;
+  position: absolute;
+  left: -1.85rem;
+  margin-top: 0.1rem;
+}
+
+code.sourceCode a.code-annotation-anchor.code-annotation-active,
+dl.code-annotation-container-grid dt[data-target-cell].code-annotation-active {
+  background-color: $primary;
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba($primary, 0.35);
 }

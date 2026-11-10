@@ -1,6 +1,7 @@
 /build/
 /CMakeUserPresets.json
 /.cache/
-/.qmlls.ini
+.qmlls.ini
 *.user
 .DS_Store
+__pycache__/

@@ -23,9 +23,8 @@ AppController::AppController(QString logFilePath, QObject *parent)
 
 QString AppController::buildDetails() const
 {
-    const auto &info = buildInfo();
     // u""_s, not _L1: the middle dot is two bytes in this UTF-8 file, but one character.
-    return u"%1 · %2 · %3 · Qt %4"_s.arg(info.gitSha, info.buildType, info.compiler,
+    return u"%1 · %2 · %3 · Qt %4"_s.arg(buildInfo.gitSha, buildInfo.buildType, buildInfo.compiler,
         QLatin1StringView(qVersion()));
 }
 

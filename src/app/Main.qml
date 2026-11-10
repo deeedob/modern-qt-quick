@@ -3,15 +3,15 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import AppStyle
-import App.Canvas
-import App.Sketchbook
+import App.Canvas // demo
+import App.Sketchbook // demo
 
 // main() injects the dependencies as required properties; only AppController is a singleton.
 ApplicationWindow {
     id: window
 
-    required property SketchbookViewModel sketchbook
-    required property CanvasStore canvas
+    required property SketchbookViewModel sketchbook // demo
+    required property CanvasStore canvas // demo
 
     width: 960
     height: 680
@@ -26,7 +26,7 @@ ApplicationWindow {
 
             ToolButton {
                 icon.source: Theme.icon("arrow-left")
-                text: qsTr("Back to the sketchbook")
+                text: qsTr("Back")
                 visible: stack.depth > 1
                 onClicked: stack.pop()
             }
@@ -34,7 +34,7 @@ ApplicationWindow {
             Label {
                 Layout.fillWidth: true
                 Layout.leftMargin: Theme.spacing / 2
-                text: stack.depth > 1 ? window.sketchbook.openName : Application.displayName
+                text: window.title
                 font.pixelSize: 16
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
@@ -58,12 +58,15 @@ ApplicationWindow {
         id: stack
 
         anchors.fill: parent
+        // demo:begin
         initialItem: SketchbookPage {
             viewModel: window.sketchbook
             onOpened: stack.push(canvasPage)
         }
+        // demo:end
     }
 
+    // demo:begin
     Component {
         id: canvasPage
 
@@ -71,6 +74,12 @@ ApplicationWindow {
             store: window.canvas
         }
     }
+
+    Binding {
+        window.title: window.sketchbook.openName
+        when: stack.depth > 1
+    }
+    // demo:end
 
     AboutDialog {
         id: about

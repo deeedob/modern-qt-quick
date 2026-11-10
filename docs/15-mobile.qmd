@@ -35,7 +35,7 @@ the same `vcpkg.json` (@sec-vcpkg).
 
 ## Permissions {#sec-permissions}
 
-The camera, location, microphone or Bluetooth need the user's consent, asked at run time.
+Using the camera, location, microphone or Bluetooth needs the user's consent, which the app asks for at run time.
 Qt offers one permission API for all platforms:
 
 ```qml
@@ -53,8 +53,8 @@ Button {
 }
 ```
 
-Each permission must also be declared: in the app's `AndroidManifest.xml` on Android, and
-with a usage description that tells the user why in `Info.plist` on iOS. Ask for as little as
+Each permission must also be declared: in the app's `AndroidManifest.xml` on Android, and in
+`Info.plist` on iOS, with a usage description that tells the user why. Ask for as little as
 you need, at the moment you need it, so the user understands why.
 
 ::: {.more}

@@ -1,7 +1,9 @@
 # Connecting C++ and QML {#sec-cpp-qml}
 
-C++ holds the state, QML shows it (@sec-split). This chapter is about the seam between them:
-how C++ types become QML types, how objects cross over, and who owns them afterwards.
+C++ holds the state, QML shows it (@sec-split). Between them is one contract: a C++ object
+offers properties, signals and invokable methods (@sec-properties), and QML binds to them
+and calls them. This chapter shows how your C++ types become QML types, how your objects get
+into QML, what crosses the boundary as a plain value, and when to draw with C++ yourself.
 
 ## QML modules and declarative registration {#sec-qml-modules}
 
@@ -33,23 +35,33 @@ qt_add_qml_module(app_canvas
 import App.Canvas   // CanvasStore and CanvasPage are now types
 ```
 
-The build generates the registration, and the QML tools learn every type, property and
-method of the module. That is what makes typed QML (@sec-typed-qml) possible.
+From this one call, the build generates the whole QML module, including a type description
+for the QML tools. The tools learn every type, property and method of the module, which is
+what makes typed QML (@sec-typed-qml) possible.
+
+`STATIC` builds the module into the executable instead of a plugin that Qt loads at run
+time. The app then ships with its QML inside, and nothing can go missing on the user's
+machine. For the modules of one application, that is the simpler choice.
 
 ::: {.callout-warning}
 ## Static modules need their plugin
-A `STATIC` QML module registers itself only when its plugin target is linked. Link
-`app_canvasplugin`, not just `app_canvas`, into the executable and into QML tests.
+The linker drops code from a static library that nothing calls, and nothing calls the
+registration. Link the plugin target, `app_canvasplugin`, not just `app_canvas`, into the
+executable and into QML tests; it makes sure the module registers itself.
 :::
 
 ::: {.more}
-**Template:** `src/canvas/CMakeLists.txt` ·
+**Template:** `src/canvas/CMakeLists.txt`
+
 **Read more:** [Defining QML types from C++](https://doc.qt.io/qt-6/qtqml-cppintegration-definetypes.html)
 :::
 
-## Passing objects in: required properties {#sec-required}
+## Passing objects in {#sec-required}
 
-The main QML file declares what it needs. `main()` provides it before loading the file:
+How an object gets into QML depends on who creates it. The important objects of an
+application (its view models, stores and services) are created by `main()`, which also
+connects them to each other (@sec-composition-root). QML receives them. The main QML file
+declares what it needs, and `main()` provides it before loading the file:
 
 ```{.qml filename="Main.qml"}
 ApplicationWindow {
@@ -69,11 +81,12 @@ engine.setInitialProperties({
 engine.loadFromModule("App", "Main");
 ```
 
-Every dependency is visible in the component's interface and has a type the tools can
-check. A test can load any page on its own and hand it a fake.
+Every page states what it depends on, with a type the tools can check. A test can load any
+page on its own and give it whatever objects the test needs.
 
 Mark such classes `QML_UNCREATABLE("Created in main()")`, so QML cannot create a second,
-unconnected instance by accident.
+unconnected instance by mistake. They are still QML types: QML can use them in property
+declarations and read their enums.
 
 ::: {.callout-warning}
 ## Never use context properties
@@ -82,7 +95,8 @@ or type-check. It is the Qt 5 way. Required properties replace it.
 :::
 
 ::: {.more}
-**Template:** `src/app/main.cpp`, `src/app/Main.qml` ·
+**Template:** `src/app/main.cpp`, `src/app/Main.qml`
+
 **Read more:** [Exposing C++ state to QML](https://doc.qt.io/qt-6/qtqml-cppintegration-exposecppstate.html)
 :::
 
@@ -113,12 +127,69 @@ engine.setExternalSingletonInstance("App", "AppController", &controller);
 onClicked: AppController.language = "de"
 ```
 
-Unlike a classic singleton, this one is not a global in C++. `main()` constructs it with its
-real dependencies, and a test can construct another. Keep singletons rare: most objects
-belong to a feature and arrive as required properties.
+`setExternalSingletonInstance()`, new in Qt 6.12, lets `main()` construct the singleton
+with its real dependencies, like any other object, and lets a test construct its own. Keep
+singletons rare: most objects belong to a feature and arrive as required properties.
 
 ::: {.more}
 **Template:** `src/app/AppController.hpp`
+:::
+
+## Objects that belong to one view {#sec-qml-types}
+
+Leave out `QML_UNCREATABLE`, and QML can create the type itself, like a `Timer`:
+
+```qml
+Stopwatch {
+    id: watch
+    running: recordButton.checked
+}
+```
+
+The object lives as long as the QML object that declares it, and every page that declares
+one gets its own. That suits helpers that belong to a single view and need C++, such as a
+parser or a wrapper around a platform API. As soon as several views share an object, or it
+has to outlive a page, create it in `main()` and pass it in instead.
+
+::: {.more}
+**Read more:** [Defining QML types from C++](https://doc.qt.io/qt-6/qtqml-cppintegration-definetypes.html)
+:::
+
+## Values cross as copies {#sec-value-types}
+
+Only `QObject`s cross the boundary by reference. Everything else is copied: numbers,
+strings, colors, points, and lists of them, such as the `QList<QPointF>` of a stroke. A
+copy has no identity and no signals, so QML cannot watch it change. When a value changes,
+the property that holds it notifies, and QML reads the new copy.
+
+Collections the user sees do not belong in such a list. Give them a model instead
+(@sec-item-models), so a view can update one row at a time.
+
+Enums come from `Q_ENUM` inside a registered class, and QML reads them by the class name:
+
+```{.cpp filename="CanvasStore.hpp"}
+enum class Shape : quint8 { Circle, Rectangle, Triangle };
+Q_ENUM(Shape)
+Q_SIGNAL void shapeSnapped(app::canvas::CanvasStore::Shape shape);
+```
+
+```qml
+function onShapeSnapped(shape: int): void {
+    if (shape === CanvasStore.Shape.Circle)
+        hint.text = qsTr("Snapped to a circle");
+}
+```
+
+In QML an enum value is a number, and an enum is not a type: annotate the parameter as
+`int`, or qmllint reports it.
+
+For a small struct of your own, register a value type: a `Q_GADGET` with
+`QML_VALUE_TYPE` and a name that starts with a lower-case letter, such as `sample`.
+
+::: {.more}
+**Template:** `src/canvas/CanvasStore.hpp`, and the snap hint in `src/canvas/CanvasPage.qml`
+
+**Read more:** [Data type conversion between QML and C++](https://doc.qt.io/qt-6/qtqml-cppintegration-data.html)
 :::
 
 ## Item models in C++ {#sec-item-models}
@@ -164,25 +235,110 @@ tells the view to throw everything away, so it loses scroll position, selection 
 running animation.
 
 ::: {.more}
-**Template:** `src/sketchbook/SketchListModel.cpp` ·
+**Template:** `src/sketchbook/SketchListModel.cpp`
+
 **Read more:** [Model/view programming](https://doc.qt.io/qt-6/model-view-programming.html)
+:::
+
+## Custom visual items {#sec-custom-items}
+
+Sometimes no built-in item can draw what you need: a waveform with thousands of samples, a
+live chart, a drawing canvas. Then write the item in C++. It is a `QQuickItem` subclass
+with `QML_ELEMENT`, so QML creates, positions and binds it like a `Rectangle`. Pick the
+simplest option that is fast enough:
+
+| Option | How it draws | Use it for |
+|---|---|---|
+| Qt Quick Shapes | vector paths declared in QML | icons and diagrams |
+| `QQuickPaintedItem` | `QPainter` into an image, uploaded as a texture | simple drawing that rarely changes |
+| Scene graph item | geometry nodes on the GPU | content that changes often, such as strokes or charts |
+| `QQuickRhiItem` | your own rendering code and shaders, on every graphics API Qt supports | 3D and custom rendering |
+
+A scene graph item sets `ItemHasContents` and builds its geometry in `updatePaintNode()`:
+
+```{.cpp filename="LineItem.cpp"}
+LineItem::LineItem(QQuickItem *parent)
+    : QQuickItem(parent)
+{
+    setFlag(ItemHasContents);
+}
+
+QSGNode *LineItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
+{
+    auto *node = static_cast<QSGGeometryNode *>(oldNode);
+    if (!node) {                                                          // <1>
+        node = new QSGGeometryNode;
+        auto *geometry =
+            new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
+        geometry->setDrawingMode(QSGGeometry::DrawLineStrip);
+        node->setGeometry(geometry);
+        node->setFlag(QSGNode::OwnsGeometry);
+        auto *material = new QSGFlatColorMaterial;
+        material->setColor(Qt::black);
+        node->setMaterial(material);
+        node->setFlag(QSGNode::OwnsMaterial);
+    }
+    auto *geometry = node->geometry();                                    // <2>
+    geometry->allocate(static_cast<int>(m_points.size()));
+    auto *vertices = geometry->vertexDataAsPoint2D();
+    for (qsizetype i = 0; i < m_points.size(); ++i)
+        vertices[i].set(float(m_points[i].x()), float(m_points[i].y()));
+    node->markDirty(QSGNode::DirtyGeometry);
+    return node;
+}
+```
+1. The first call creates the node; later calls receive it back and update it.
+2. Only the vertices change on later calls. The node and its material stay.
+
+To redraw, call `update()`, and Qt calls `updatePaintNode()` before the next frame. Reuse
+nodes between frames and change only what changed. That is where a scene graph item beats a
+painted item, which draws with `QPainter` on the CPU and uploads the image to the GPU after
+every change.
+
+::: {.callout-important}
+## The render thread only builds nodes
+`updatePaintNode()` runs on the render thread while the GUI thread waits. Reading the item's
+data there is safe, because the GUI thread is paused. Changing the item, calling into QML or
+touching any other QObject is not: that stays on the GUI thread.
+:::
+
+::: {.more}
+**Template:** `src/canvas/StrokeItem.cpp`, which builds one node per stroke and keeps the
+nodes of strokes that did not change
+
+**Read more:** [The Qt Quick scene graph](https://doc.qt.io/qt-6/qtquick-visualcanvas-scenegraph.html)
 :::
 
 ## Lifetimes across the boundary {#sec-lifetimes}
 
 QML holds plain pointers to your C++ objects. Make sure those objects outlive the engine:
-create them before it in `main()`, and C++ destroys them after it (@sec-composition-root).
+create them in `main()` before the engine, so C++ destroys them after it (@sec-composition-root).
 
-One rule surprises almost everyone. When a `Q_INVOKABLE` method returns a `QObject *` that
-has no parent, **QML takes ownership** of it and may delete it during garbage collection.
+One rule surprises almost everyone. Every `QObject *` that a `Q_INVOKABLE` method returns
+**belongs to QML**. The garbage collector deletes it once no JavaScript uses it, unless it
+has a parent.
 
 ```cpp
-Q_INVOKABLE Document *createDocument();   // a parentless result now belongs to QML
+Q_INVOKABLE Document *createDocument();   // the result now belongs to QML
 ```
 
 Give such objects a parent, or call
 `QQmlEngine::setObjectOwnership(object, QQmlEngine::CppOwnership)` before returning them.
+Objects that QML reads through a property stay owned by C++.
+
+Calls go one way, too: C++ never reaches into QML. Looking up QML objects with
+`findChild()` and calling their functions ties C++ to the structure of a view that changes
+all the time, and no tool checks it. The Qt documentation recommends it only for tests.
+Turn it around: C++ offers properties, signals and invokable methods, and QML uses them.
+
+::: {.callout-important}
+## Every object QML sees must outlive it
+QML does not keep your C++ objects alive. If one is destroyed while QML still points to it,
+the next binding reads freed memory. Create long-lived objects in `main()` before the engine,
+and decide explicitly who owns every object you return to QML.
+:::
 
 ::: {.more}
-**Read more:** [Data ownership](https://doc.qt.io/qt-6/qtqml-cppintegration-data.html)
+**Read more:** [Data ownership](https://doc.qt.io/qt-6/qtqml-cppintegration-data.html#data-ownership),
+[Interacting with QML objects from C++](https://doc.qt.io/qt-6/qtqml-cppintegration-interactqmlfromcpp.html)
 :::

@@ -1,0 +1,50 @@
+name: Guide
+
+on:
+  push:
+    branches: [main]
+    paths: ["docs/**", ".github/workflows/docs.yml"]
+  pull_request:
+    paths: ["docs/**", ".github/workflows/docs.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.10.18
+
+      # Quarto draws the PDF's Mermaid diagrams with headless Chrome, which the runner has.
+      - name: Render the website and the PDF
+        env:
+          QUARTO_CHROMIUM: /usr/bin/google-chrome
+        run: quarto render docs
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/_book
+
+  deploy:
+    # Only the original repository publishes the guide, not the ones created from the template.
+    if: github.repository == 'deeedob/modern-qt-quick' && github.event_name != 'pull_request'
+    needs: render
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

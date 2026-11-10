@@ -1,6 +1,5 @@
 # Logging, crash handling and build info, as a library so tests can link them.
 qt_add_library(app_support STATIC
-    BuildInfo.hpp
     Logging.cpp Logging.hpp
 )
 app_add_build_info(app_support)
@@ -48,14 +47,15 @@ target_link_libraries(app PRIVATE
     # Nothing calls QtSvg directly, but the deploy tool only ships the SVG icon plugin with it.
     Qt::Svg
     app_support
-    app_canvas
-    app_sketchbook
     # Static QML modules are registered by linking their plugins.
-    app_canvasplugin
-    app_sketchbookplugin
     app_styleplugin
+    app_canvas # demo
+    app_canvasplugin # demo
+    app_sketchbook # demo
+    app_sketchbookplugin # demo
 )
 app_target_defaults(app)
+add_custom_target(run COMMAND app USES_TERMINAL VERBATIM)
 
 qt_add_translations(app
     TS_FILE_BASE app
@@ -67,9 +67,13 @@ qt_add_translations(app
 )
 
 # Qt is linked dynamically under the LGPLv3, which asks for its license texts in the package.
-app_add_notice(qt "${PROJECT_SOURCE_DIR}/3rdparty/qt/NOTICE.txt")
-app_add_notice(qt-lgpl-3.0 "${PROJECT_SOURCE_DIR}/3rdparty/qt/LGPL-3.0-only.txt")
-app_add_notice(qt-gpl-3.0 "${PROJECT_SOURCE_DIR}/3rdparty/qt/GPL-3.0-only.txt")
+# A Qt built by vcpkg brings them in its own copyright file, which Packaging.cmake ships.
+app_add_notice(qt licenses/NOTICE.txt)
+cmake_path(IS_PREFIX VCPKG_INSTALLED_DIR "${Qt6_DIR}" NORMALIZE _qt_from_vcpkg)
+if(NOT _qt_from_vcpkg)
+    app_add_notice(qt-lgpl-3.0 licenses/LGPL-3.0-only.txt)
+    app_add_notice(qt-gpl-3.0 licenses/GPL-3.0-only.txt)
+endif()
 
 # Qt's deploy tool makes the installed app self-contained. It runs last, after every file is in place.
 install(TARGETS app

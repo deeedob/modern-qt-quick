@@ -1,7 +1,7 @@
 # Shipping {#sec-shipping}
 
-An app that only runs on your machine is not done. This chapter turns a build into
-something a user can download, with everything it needs and every license it owes.
+An app that only runs on your machine is not done. This chapter turns a build into something
+a user can download, with everything it needs to run and every license it has to include.
 
 ## Install, then deploy {#sec-deploy}
 
@@ -36,7 +36,8 @@ On Windows, the deploy script knows Qt's DLLs but not those of your other depend
 Install them too, with `install(FILES $<TARGET_RUNTIME_DLLS:app> ...)`.
 
 ::: {.more}
-**Template:** `src/app/CMakeLists.txt` ·
+**Template:** `src/app/CMakeLists.txt`
+
 **Read more:** [Deploying Qt applications with CMake](https://doc.qt.io/qt-6/cmake-deployment.html)
 :::
 
@@ -67,7 +68,8 @@ With a package preset, `cmake --workflow --preset release` configures, builds, t
 packages in one go. Before you hand the package to users, sign it (@sec-distribution).
 
 ::: {.more}
-**Template:** `cmake/Packaging.cmake` ·
+**Template:** `cmake/Packaging.cmake`
+
 **Read more:** [CPack](https://cmake.org/cmake/help/latest/module/CPack.html)
 :::
 
@@ -109,7 +111,8 @@ SPDX-License-Identifier = "OFL-1.1"
 This is a summary of obligations, not legal advice.
 
 ::: {.more}
-**Template:** `REUSE.toml`, `app_add_notice()` in `cmake/Packaging.cmake`, and the About dialog ·
+**Template:** `REUSE.toml`, `app_add_notice()` in `cmake/Packaging.cmake`, and the About dialog
+
 **Read more:** [Qt licensing](https://doc.qt.io/qt-6/licensing.html)
 :::
 
@@ -137,8 +140,8 @@ jobs:
 ```
 
 A complete workflow also sets up the compiler environment on Windows. Cache the dependency
-builds between runs (vcpkg's binary cache fits here), or every run
-rebuilds them from scratch. Upload the packages as build artifacts, so every change produces
+builds between runs (vcpkg's binary cache does this), or every run rebuilds them from
+scratch. Upload the packages as build artifacts, so every change produces
 something you can download and try.
 
 ::: {.more}
