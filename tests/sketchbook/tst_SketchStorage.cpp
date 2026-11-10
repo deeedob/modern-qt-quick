@@ -1,4 +1,4 @@
-#include "SketchStorage.hpp"
+#include "SketchStorage.h"
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -6,6 +6,7 @@
 #include <QtTest/QTest>
 
 using namespace Qt::StringLiterals;
+using app::canvas::PaperBackground;
 using app::canvas::Stroke;
 using app::sketchbook::SketchDocument;
 using app::sketchbook::SketchStorage;
@@ -21,6 +22,7 @@ SketchDocument twoStrokes()
                 .points = { { .x = 1, .y = 2 }, { .x = 3.5, .y = 4 } }, .color = "#ff0000" }),
             std::make_shared<const Stroke>(Stroke{ .points = { { .x = 0, .y = 0 } }, .color = "#000000" }),
         },
+        .page = { .width = 1200, .height = 1600, .background = PaperBackground::Dots },
     };
 }
 
@@ -31,6 +33,8 @@ class tst_SketchStorage : public QObject
     Q_OBJECT
 
 private Q_SLOTS:
+    void init() { QTest::failOnWarning(); }
+
     void savedSketchesLoadBack()
     {
         QTemporaryDir dir;
@@ -44,6 +48,31 @@ private Q_SLOTS:
         QCOMPARE(loaded->strokes.size(), 2);
         QCOMPARE(loaded->strokes.front()->points.back(), (shapes::Point{ .x = 3.5, .y = 4 }));
         QCOMPARE(loaded->strokes.front()->color, "#ff0000");
+        QCOMPARE(loaded->strokes.front()->width, 4.0);
+        QCOMPARE(loaded->page.width, 1200);
+        QCOMPARE(loaded->page.height, 1600);
+        QCOMPARE(loaded->page.background, PaperBackground::Dots);
+        storage.waitForSaves();
+        QFile saved(QDir(dir.path()).filePath("a.json"_L1));
+        QVERIFY(saved.open(QIODevice::ReadOnly));
+        QVERIFY(saved.readAll().contains("\"background\":\"dots\""));
+    }
+
+    void legacySketchesGetTheDefaultPage()
+    {
+        QTemporaryDir dir;
+        QFile file(QDir(dir.path()).filePath("old.json"_L1));
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.write(R"({"name":"Old","strokes":[]})");
+        file.close();
+        SketchStorage storage(dir.path());
+
+        const auto loaded = storage.load("old"_L1);
+
+        QVERIFY2(loaded, qPrintable(loaded.error_or({})));
+        QCOMPARE(loaded->page.width, 1600);
+        QCOMPARE(loaded->page.height, 1200);
+        QCOMPARE(loaded->page.background, PaperBackground::Plain);
     }
 
     void listDescribesEachSketch()

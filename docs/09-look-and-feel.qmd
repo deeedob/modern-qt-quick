@@ -73,8 +73,8 @@ pragma Singleton
 import QtQuick
 
 QtObject {
-    readonly property bool dark: Application.styleHints.colorScheme ===
-                                 Qt.ColorScheme.Dark
+    property bool dark: Application.styleHints.colorScheme ===
+                        Qt.ColorScheme.Dark
 
     readonly property color window: dark ? "#17171c" : "#f6f6f8"
     readonly property color surface: dark ? "#22222a" : "#ffffff"
@@ -87,7 +87,22 @@ QtObject {
 ```
 
 The tokens follow the system's color scheme, so the whole app switches between light and dark
-with no code in the views.
+with no code in the views. This is the right default.
+
+Some professional applications also let people choose a light or dark appearance explicitly.
+Keep that preference in app state, not in the controls module. The composition root can bind the
+preference to the tokens without making `App.Controls` import the app module:
+
+```{.qml filename="app/Main.qml"}
+Binding {
+    target: Theme
+    property: "dark"
+    value: AppController.darkTheme
+}
+```
+
+Persist that choice with `QSettings`. If no choice exists yet, initialize it from the system
+scheme. A product that needs people to return to system behavior adds a third, `System` mode.
 
 ::: {.callout-note}
 ## Register the singleton in CMake

@@ -18,6 +18,12 @@ ApplicationWindow {
     visible: true
     title: Application.displayName
 
+    Binding {
+        target: Theme
+        property: "dark"
+        value: AppController.darkTheme
+    }
+
     header: ToolBar {
         RowLayout {
             anchors.fill: parent
@@ -38,6 +44,12 @@ ApplicationWindow {
                 font.pixelSize: 16
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
+            }
+
+            Button {
+                flat: true
+                text: AppController.darkTheme ? qsTr("Light") : qsTr("Dark")
+                onClicked: AppController.darkTheme = !AppController.darkTheme
             }
 
             ToolButton {
@@ -72,6 +84,8 @@ ApplicationWindow {
 
         CanvasPage {
             store: window.canvas
+            sketchName: window.sketchbook.openName
+            onRenameRequested: name => window.sketchbook.renameOpen(name)
         }
     }
 

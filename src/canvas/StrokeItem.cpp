@@ -14,7 +14,6 @@ namespace app::canvas {
 
 namespace {
 
-    constexpr double StrokeWidth = 4.0;
     constexpr double MiterLimit = 2.0;
     constexpr double MinPointDistance = 1.5;
 
@@ -35,9 +34,10 @@ namespace {
     }
 
     // Two vertices per point, offset along the miter of the adjoining segments, so corners stay sharp.
-    QSGGeometryNode *createStrokeNode(std::span<const shapes::Point> points, const QColor &color)
+    QSGGeometryNode *createStrokeNode(std::span<const shapes::Point> points, const QColor &color,
+        double width)
     {
-        const double half = StrokeWidth / 2.0;
+        const double half = width / 2.0;
         // A single point, from a click, becomes a dot.
         std::vector<shapes::Point> dot;
         if (points.size() == 1) {
@@ -127,6 +127,20 @@ void StrokeItem::setPenColor(const QColor &color)
     Q_EMIT penColorChanged();
 }
 
+double StrokeItem::penWidth() const
+{
+    return m_penWidth;
+}
+
+void StrokeItem::setPenWidth(double width)
+{
+    if (qFuzzyCompare(width, m_penWidth))
+        return;
+    m_penWidth = width;
+    Q_EMIT penWidthChanged();
+    update();
+}
+
 void StrokeItem::mousePressEvent(QMouseEvent *event)
 {
     const auto position = event->position();
@@ -171,26 +185,28 @@ QSGNode *StrokeItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     auto *root = oldNode;
     if (!root) {
         root = new QSGNode;
-        m_rendered.clear();
+        m_rendered.strokes.clear();
     }
     static const Sketch none;
     const Sketch &strokes = m_store ? m_store->sketch() : none;
 
     // A stroke never changes, so its node stays valid while the same stroke is in its place.
-    const auto keep = static_cast<int>(std::ranges::mismatch(m_rendered, strokes).in1
-        - m_rendered.begin());
+    const auto keep = static_cast<int>(
+        std::ranges::mismatch(m_rendered.strokes, strokes.strokes).in1
+        - m_rendered.strokes.begin());
     while (root->childCount() > keep) {
         auto *node = root->lastChild();
         root->removeChildNode(node);
         delete node;
     }
-    for (const auto &stroke : strokes | std::views::drop(keep))
-        root->appendChildNode(createStrokeNode(stroke->points, QColor::fromString(stroke->color)));
+    for (const auto &stroke : strokes.strokes | std::views::drop(keep))
+        root->appendChildNode(createStrokeNode(stroke->points, QColor::fromString(stroke->color),
+            stroke->width));
     m_rendered = strokes;
 
     // The stroke being drawn is rebuilt on every update and removed on the next one.
     if (!m_live.empty())
-        root->appendChildNode(createStrokeNode(m_live, m_penColor));
+        root->appendChildNode(createStrokeNode(m_live, m_penColor, m_penWidth));
     return root;
 }
 

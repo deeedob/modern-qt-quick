@@ -6,8 +6,11 @@
 #include <QtCore/QFileInfo>
 #include <QtCore/QLocale>
 #include <QtCore/QLoggingCategory>
+#include <QtCore/QSettings>
 #include <QtCore/QUrl>
 #include <QtGui/QDesktopServices>
+#include <QtGui/QGuiApplication>
+#include <QtGui/QStyleHints>
 
 using namespace Qt::StringLiterals;
 
@@ -15,8 +18,26 @@ Q_STATIC_LOGGING_CATEGORY(lcApp, "app.controller")
 
 namespace app {
 
-AppController::AppController(QString logFilePath, QObject *parent)
-    : QObject(parent), m_logFilePath(std::move(logFilePath))
+namespace {
+
+    bool systemUsesDarkTheme()
+    {
+        if (!qobject_cast<QGuiApplication *>(QCoreApplication::instance()))
+            return false;
+        return QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+    }
+
+} // namespace
+
+AppController::AppController(QString logFilePath, QString licensesDirectory, QSettings &settings,
+    QObject *parent)
+    : QObject(parent)
+    , m_logFilePath(std::move(logFilePath))
+    , m_licensesDirectory(std::move(licensesDirectory))
+    , m_darkTheme(settings.contains("theme/dark"_L1)
+              ? settings.value("theme/dark"_L1).toBool()
+              : systemUsesDarkTheme())
+    , m_settings(settings)
 {
     setLanguage(QLocale::system().language() == QLocale::German ? "de"_L1 : "en"_L1);
 }
@@ -31,6 +52,11 @@ QString AppController::buildDetails() const
 QString AppController::language() const
 {
     return m_language;
+}
+
+bool AppController::darkTheme() const
+{
+    return m_darkTheme;
 }
 
 void AppController::setLanguage(const QString &language)
@@ -53,9 +79,33 @@ void AppController::setLanguage(const QString &language)
     Q_EMIT languageChanged();
 }
 
+void AppController::setDarkTheme(bool darkTheme)
+{
+    if (darkTheme == m_darkTheme)
+        return;
+    m_darkTheme = darkTheme;
+    m_settings.setValue("theme/dark"_L1, darkTheme);
+    Q_EMIT darkThemeChanged();
+}
+
 void AppController::openLogDirectory() const
 {
-    QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(m_logFilePath).absolutePath()));
+    openDirectory(QFileInfo(m_logFilePath).absolutePath());
+}
+
+void AppController::openLicensesDirectory() const
+{
+    openDirectory(m_licensesDirectory);
+}
+
+void AppController::openDirectory(const QString &directory) const
+{
+    if (!QFileInfo(directory).isDir()) {
+        qCWarning(lcApp) << "Directory does not exist" << directory;
+        return;
+    }
+    if (!QDesktopServices::openUrl(QUrl::fromLocalFile(directory)))
+        qCWarning(lcApp) << "Could not open directory" << directory;
 }
 
 } // namespace app

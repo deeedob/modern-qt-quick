@@ -11,13 +11,16 @@ include(GNUInstallDirs)
 
 if(APPLE)
     set(APP_LICENSES_DIR "${PROJECT_NAME}.app/Contents/Resources/licenses")
+    set(APP_LICENSES_RELATIVE_TO_EXECUTABLE "../Resources/licenses")
 else()
     set(APP_LICENSES_DIR "${CMAKE_INSTALL_DOCDIR}/licenses")
+    set(APP_LICENSES_RELATIVE_TO_EXECUTABLE "../${APP_LICENSES_DIR}")
 endif()
 
 function(app_add_notice name file)
     cmake_path(ABSOLUTE_PATH file BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
     install(FILES "${file}" DESTINATION "${APP_LICENSES_DIR}" RENAME "${name}.txt")
+    set_property(GLOBAL APPEND PROPERTY APP_NOTICE_FILES "${name}|${file}")
 endfunction()
 
 # vcpkg installs each port's license as share/<port>/copyright.

@@ -4,10 +4,14 @@
 #include "BuildInfo.hpp"
 #include "Logging.hpp"
 
-#include <CanvasStore.hpp>         // demo
-#include <SketchStorage.hpp>       // demo
-#include <SketchbookViewModel.hpp> // demo
+#include <CanvasStore.h>         // demo
+#include <SketchStorage.h>       // demo
+#include <SketchbookViewModel.h> // demo
 
+#include <QtCore/QCoreApplication>
+#include <QtCore/QDir>
+#include <QtCore/QFileInfo>
+#include <QtCore/QSettings>
 #include <QtCore/QStandardPaths>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QSurfaceFormat>
@@ -32,12 +36,19 @@ int main(int argc, char *argv[])
 
     const auto dataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     const auto logFile = app::installLogging(dataDir + "/logs"_L1);
+    const auto installedLicensesDirectory = QDir::cleanPath(
+        QDir(QCoreApplication::applicationDirPath())
+            .filePath(QString::fromUtf8(APP_LICENSES_RELATIVE_TO_EXECUTABLE)));
+    const auto licensesDirectory = QFileInfo(installedLicensesDirectory).isDir()
+        ? installedLicensesDirectory
+        : QString::fromUtf8(APP_DEV_LICENSES_DIRECTORY);
 
     // Declared before the engine, so they outlive it: QML only holds non-owning references.
     app::sketchbook::SketchStorage storage(dataDir + "/sketches"_L1); // demo
     app::canvas::CanvasStore canvas;                                  // demo
     app::sketchbook::SketchbookViewModel sketchbook(storage, canvas); // demo
-    app::AppController controller(logFile);
+    QSettings settings;
+    app::AppController controller(logFile, licensesDirectory, settings);
 
     QQmlApplicationEngine engine;
     QObject::connect(&controller, &app::AppController::languageChanged, &engine,

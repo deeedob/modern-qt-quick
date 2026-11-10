@@ -9,7 +9,7 @@ Qt Quick splits an application by language. C++ holds the state and the logic an
 them as properties, signals and methods. QML arranges the visual components and wires their
 properties to that state.
 
-```{.cpp filename="CanvasStore.hpp"}
+```{.cpp filename="CanvasStore.h"}
 class CanvasStore : public QObject
 {
     Q_OBJECT
@@ -39,7 +39,7 @@ and recompiling code. The split by language is also a split by responsibility, a
 the main reason to choose Qt Quick.
 
 ::: {.more}
-**Template:** `src/canvas/CanvasStore.hpp`, `src/canvas/CanvasPage.qml`
+**Template:** `src/canvas/CanvasStore.h`, `src/canvas/CanvasPage.qml`
 
 **Read more:** [Qt Quick best practices](https://doc.qt.io/qt-6/qtquick-bestpractices.html)
 :::

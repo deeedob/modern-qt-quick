@@ -20,6 +20,7 @@ qt_add_qml_module(app_controls
     RESOURCES
         fonts/InterVariable.ttf
         icons/arrow-left.svg
+        icons/copy.svg
         icons/eraser.svg
         icons/info.svg
         icons/languages.svg

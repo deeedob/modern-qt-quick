@@ -78,7 +78,7 @@ differs; the separation is the same.
 
 Code that never leaves the application can keep things simpler. The feature folders under `src/`
 (@sec-features) keep all their headers next to the sources and put that folder on their
-include path. Whatever links `app_canvas` can write `#include "CanvasStore.hpp"`; whatever
+include path. Whatever links `app_canvas` can write `#include "CanvasStore.h"`; whatever
 does not, cannot. The build still enforces the boundary (@sec-direction); there is no
 separate public API.
 
@@ -146,7 +146,7 @@ consumer really has to see it.
 :::
 
 ::: {.more}
-**Template:** `libs/shapes/include/shapes/Recognizer.h`, `src/canvas/Sketch.hpp`
+**Template:** `libs/shapes/include/shapes/Recognizer.h`, `src/canvas/Sketch.h`
 
 **Read more:** [C++ Core Guidelines, SF.20 to SF.22](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rs-namespace)
 :::

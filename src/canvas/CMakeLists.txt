@@ -6,8 +6,8 @@ qt_add_qml_module(app_canvas
     QML_FILES
         CanvasPage.qml
     SOURCES
-        CanvasStore.cpp CanvasStore.hpp
-        Sketch.hpp
+        CanvasStore.cpp CanvasStore.h
+        Sketch.h
         StrokeItem.cpp StrokeItem.hpp
 )
 target_include_directories(app_canvas PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

@@ -2,6 +2,17 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en" sourcelanguage="en">
 <context>
+    <name>CanvasPage</name>
+    <message numerus="yes">
+        <location filename="../src/canvas/CanvasPage.qml" line="101"/>
+        <source>%n stroke(s)</source>
+        <translation>
+            <numerusform>%n stroke</numerusform>
+            <numerusform>%n strokes</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>SketchbookPage</name>
     <message numerus="yes">
         <location filename="../src/sketchbook/SketchbookPage.qml" line="73"/>

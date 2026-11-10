@@ -1,4 +1,4 @@
-#include "CanvasStore.hpp"
+#include "CanvasStore.h"
 
 #include <QtCore/QLoggingCategory>
 #include <QtCore/QRectF>
@@ -106,6 +106,26 @@ bool CanvasStore::isEmpty() const
     return sketch().empty();
 }
 
+int CanvasStore::strokeCount() const
+{
+    return static_cast<int>(sketch().strokes.size());
+}
+
+int CanvasStore::pageWidth() const
+{
+    return sketch().page.width;
+}
+
+int CanvasStore::pageHeight() const
+{
+    return sketch().page.height;
+}
+
+int CanvasStore::paperBackgroundValue() const
+{
+    return static_cast<int>(sketch().page.background);
+}
+
 bool CanvasStore::snapShapes() const
 {
     return m_snapShapes;
@@ -119,7 +139,7 @@ void CanvasStore::setSnapShapes(bool snap)
     Q_EMIT snapShapesChanged();
 }
 
-void CanvasStore::addStroke(const QList<QPointF> &points, const QColor &color)
+void CanvasStore::addStroke(const QList<QPointF> &points, const QColor &color, double width)
 {
     if (points.isEmpty())
         return;
@@ -129,6 +149,7 @@ void CanvasStore::addStroke(const QList<QPointF> &points, const QColor &color)
     auto stroke = std::make_shared<const Stroke>(Stroke{
         .points = points | std::views::transform(toPoint) | std::ranges::to<std::vector>(),
         .color = color.name().toStdString(),
+        .width = std::clamp(width, 1.0, 12.0),
     });
     dispatch(action::AddStroke{ stroke });
 
@@ -141,6 +162,7 @@ void CanvasStore::addStroke(const QList<QPointF> &points, const QColor &color)
     dispatch(action::ReplaceLastStroke{ std::make_shared<const Stroke>(Stroke{
         .points = idealShape(match->name, bounds(stroke->points)),
         .color = stroke->color,
+        .width = stroke->width,
     }) });
     Q_EMIT shapeSnapped(std::ranges::find(Shapes, match->name, &NamedShape::name)->shape);
 }
@@ -150,16 +172,45 @@ void CanvasStore::clear()
     dispatch(action::Clear{});
 }
 
+void CanvasStore::setPageSize(int width, int height)
+{
+    if (width <= 0 || height <= 0)
+        return;
+    auto page = sketch().page;
+    page.width = width;
+    page.height = height;
+    dispatch(action::SetPage{ page });
+}
+
+void CanvasStore::setPaperBackground(int background)
+{
+    if (background < static_cast<int>(PaperBackground::Plain)
+        || background > static_cast<int>(PaperBackground::Ruled))
+        return;
+    setPaperBackground(static_cast<PaperBackground>(background));
+}
+
+void CanvasStore::setPaperBackground(PaperBackground background)
+{
+    auto page = sketch().page;
+    page.background = background;
+    dispatch(action::SetPage{ page });
+}
+
 void CanvasStore::undo()
 {
-    if (canUndo())
+    if (canUndo()) {
         moveTo(m_current - 1);
+        Q_EMIT historyMoved(false);
+    }
 }
 
 void CanvasStore::redo()
 {
-    if (canRedo())
+    if (canRedo()) {
         moveTo(m_current + 1);
+        Q_EMIT historyMoved(true);
+    }
 }
 
 void CanvasStore::dispatch(const Action &action)

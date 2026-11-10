@@ -1,4 +1,4 @@
-#include "SketchbookViewModel.hpp"
+#include "SketchbookViewModel.h"
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -38,12 +38,14 @@ class tst_SketchbookViewModel : public QObject
     Q_OBJECT
 
 private Q_SLOTS:
+    void init() { QTest::failOnWarning(); }
+
     void listsSavedSketchesNewestFirst()
     {
         QTemporaryDir dir;
         SketchStorage storage(dir.path());
-        storage.save("old"_L1, { .name = "Old", .strokes = {} });
-        storage.save("new"_L1, { .name = "New", .strokes = {} });
+        storage.save("old"_L1, { .name = "Old", .strokes = {}, .page = {} });
+        storage.save("new"_L1, { .name = "New", .strokes = {}, .page = {} });
         storage.waitForSaves();
         QFile old(QDir(dir.path()).filePath("old.json"_L1));
         QVERIFY(old.open(QIODevice::ReadWrite));
@@ -65,7 +67,7 @@ private Q_SLOTS:
         QTemporaryDir dir;
         SketchStorage storage(dir.path());
         CanvasStore canvas;
-        canvas.load({ std::make_shared<const Stroke>() });
+        canvas.load({ .strokes = { std::make_shared<const Stroke>() }, .page = {} });
         SketchbookViewModel viewModel(storage, canvas);
 
         viewModel.create();
@@ -94,14 +96,15 @@ private Q_SLOTS:
     {
         QTemporaryDir dir;
         SketchStorage storage(dir.path());
-        storage.save("a"_L1, { .name = "A", .strokes = { std::make_shared<const Stroke>() } });
+        storage.save("a"_L1,
+            { .name = "A", .strokes = { std::make_shared<const Stroke>() }, .page = {} });
         CanvasStore canvas;
         SketchbookViewModel viewModel(storage, canvas);
         QSignalSpy edited(&canvas, &CanvasStore::edited);
 
         viewModel.open(0);
 
-        QCOMPARE(canvas.sketch().size(), 1);
+        QCOMPARE(canvas.sketch().strokes.size(), 1);
         QCOMPARE(viewModel.openName(), "A"_L1);
         QCOMPARE(edited.count(), 0);
     }
@@ -120,6 +123,41 @@ private Q_SLOTS:
         QCOMPARE(data(viewModel, 0, SketchListModel::NameRole), "Garden"_L1);
         QCOMPARE(viewModel.openName(), "Garden"_L1);
         QCOMPARE(storage.list().front().name, "Garden"_L1);
+    }
+
+    void renameOpenUpdatesTheOpenSketch()
+    {
+        QTemporaryDir dir;
+        SketchStorage storage(dir.path());
+        CanvasStore canvas;
+        SketchbookViewModel viewModel(storage, canvas);
+        viewModel.create();
+
+        viewModel.renameOpen("Canvas title"_L1);
+
+        QCOMPARE(viewModel.openName(), "Canvas title"_L1);
+        QCOMPARE(storage.list().front().name, "Canvas title"_L1);
+    }
+
+    void duplicateCopiesTheDocumentWithoutOpeningIt()
+    {
+        QTemporaryDir dir;
+        SketchStorage storage(dir.path());
+        CanvasStore canvas;
+        SketchbookViewModel viewModel(storage, canvas);
+        viewModel.create();
+        canvas.addStroke(zigzag(), Qt::black, 7.0);
+
+        viewModel.duplicate(0);
+
+        QCOMPARE(viewModel.model()->rowCount(), 2);
+        QCOMPARE(data(viewModel, 0, SketchListModel::NameRole), "Sketch 1 copy"_L1);
+        QCOMPARE(data(viewModel, 0, SketchListModel::StrokeCountRole), 1);
+        QCOMPARE(viewModel.openName(), "Sketch 1"_L1);
+
+        viewModel.open(0);
+        QCOMPARE(canvas.sketch().strokes.size(), 1);
+        QCOMPARE(canvas.sketch().strokes.front()->width, 7.0);
     }
 
     void removeDeletesAndClosesTheOpenSketch()

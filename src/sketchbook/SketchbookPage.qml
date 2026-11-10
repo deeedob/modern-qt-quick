@@ -78,6 +78,12 @@ Page {
                     }
 
                     ToolButton {
+                        icon.source: Theme.icon("copy")
+                        text: qsTr("Duplicate")
+                        onClicked: root.viewModel.duplicate(row.index)
+                    }
+
+                    ToolButton {
                         icon.source: Theme.icon("pencil")
                         text: qsTr("Rename")
                         onClicked: renameDialog.show(row.index, row.name)

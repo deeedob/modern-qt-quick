@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CanvasStore.hpp"
+#include "CanvasStore.h"
 
 #include <QtCore/QPointer>
 #include <QtGui/QColor>
@@ -16,6 +16,7 @@ class StrokeItem : public QQuickItem
     // Fully qualified: moc records the type as written, and QML tooling looks up the full name.
     Q_PROPERTY(app::canvas::CanvasStore *store READ store WRITE setStore NOTIFY storeChanged FINAL)
     Q_PROPERTY(QColor penColor READ penColor WRITE setPenColor NOTIFY penColorChanged FINAL)
+    Q_PROPERTY(double penWidth READ penWidth WRITE setPenWidth NOTIFY penWidthChanged FINAL)
 
 public:
     explicit StrokeItem(QQuickItem *parent = nullptr);
@@ -24,10 +25,13 @@ public:
     void setStore(CanvasStore *store);
     [[nodiscard]] QColor penColor() const;
     void setPenColor(const QColor &color);
+    [[nodiscard]] double penWidth() const;
+    void setPenWidth(double width);
 
 Q_SIGNALS:
     void storeChanged();
     void penColorChanged();
+    void penWidthChanged();
     void strokeFinished(const QList<QPointF> &points);
 
 protected:
@@ -40,6 +44,7 @@ protected:
 private:
     QPointer<CanvasStore> m_store;
     QColor m_penColor = Qt::black;
+    double m_penWidth = 4.0;
     std::vector<shapes::Point> m_live;
     // Kept alive so a freed stroke's address cannot be reused and fool updatePaintNode()'s check.
     Sketch m_rendered;

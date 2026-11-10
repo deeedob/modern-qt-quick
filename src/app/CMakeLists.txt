@@ -27,6 +27,9 @@ set_target_properties(app PROPERTIES
     MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
     MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
 )
+target_compile_definitions(app PRIVATE
+    APP_LICENSES_RELATIVE_TO_EXECUTABLE="${APP_LICENSES_RELATIVE_TO_EXECUTABLE}"
+)
 
 # The executable is a QML module too (URI App), holding the window and the app-wide controller.
 # The About dialog shows app.svg, the same artwork as the application icon.
@@ -74,6 +77,27 @@ if(NOT _qt_from_vcpkg)
     app_add_notice(qt-lgpl-3.0 licenses/LGPL-3.0-only.txt)
     app_add_notice(qt-gpl-3.0 licenses/GPL-3.0-only.txt)
 endif()
+
+get_property(_notice_files GLOBAL PROPERTY APP_NOTICE_FILES)
+set(_dev_licenses_directory "${CMAKE_CURRENT_BINARY_DIR}/licenses")
+set(_copy_notice_commands
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${_dev_licenses_directory}"
+)
+foreach(_notice IN LISTS _notice_files)
+    string(REPLACE "|" ";" _notice_parts "${_notice}")
+    list(GET _notice_parts 0 _notice_name)
+    list(GET _notice_parts 1 _notice_file)
+    list(APPEND _copy_notice_commands
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${_notice_file}" "${_dev_licenses_directory}/${_notice_name}.txt"
+    )
+endforeach()
+add_custom_command(TARGET app POST_BUILD
+    ${_copy_notice_commands}
+    COMMENT "Copying license notices for the development build"
+    VERBATIM
+)
+target_compile_definitions(app PRIVATE APP_DEV_LICENSES_DIRECTORY="${_dev_licenses_directory}")
 
 # Qt's deploy tool makes the installed app self-contained. It runs last, after every file is in place.
 install(TARGETS app

@@ -1,13 +1,15 @@
-#include "CanvasStore.hpp"
+#include "CanvasStore.h"
 
 #include <QtTest/QSignalSpy>
 #include <QtTest/QTest>
 
 #include <cmath>
 #include <numbers>
+#include <optional>
 
+using namespace Qt::StringLiterals;
 using app::canvas::CanvasStore;
-using app::canvas::Sketch;
+using app::canvas::PaperBackground;
 using app::canvas::Stroke;
 
 namespace {
@@ -41,6 +43,8 @@ class tst_CanvasStore : public QObject
     Q_OBJECT
 
 private Q_SLOTS:
+    void init() { QTest::failOnWarning(); }
+
     void addStrokeRecordsAnEdit()
     {
         CanvasStore store;
@@ -54,9 +58,9 @@ private Q_SLOTS:
         },
             Qt::red);
 
-        QCOMPARE(store.sketch().size(), 1);
-        QCOMPARE(store.sketch().front()->color, "#ff0000");
-        QCOMPARE(store.sketch().front()->points.back(), (shapes::Point{ .x = 3, .y = 4 }));
+        QCOMPARE(store.sketch().strokes.size(), 1);
+        QCOMPARE(store.sketch().strokes.front()->color, "#ff0000");
+        QCOMPARE(store.sketch().strokes.front()->points.back(), (shapes::Point{ .x = 3, .y = 4 }));
         QVERIFY(store.canUndo());
         QCOMPARE(edited.count(), 1);
     }
@@ -68,10 +72,10 @@ private Q_SLOTS:
         store.addStroke(zigzag(), Qt::blue);
 
         store.undo();
-        QCOMPARE(store.sketch().size(), 1);
+        QCOMPARE(store.sketch().strokes.size(), 1);
         QVERIFY(store.canRedo());
         store.redo();
-        QCOMPARE(store.sketch().size(), 2);
+        QCOMPARE(store.sketch().strokes.size(), 2);
         QVERIFY(!store.canRedo());
     }
 
@@ -84,7 +88,7 @@ private Q_SLOTS:
         store.addStroke(zigzag(), Qt::blue);
 
         QVERIFY(!store.canRedo());
-        QCOMPARE(store.sketch().front()->color, "#0000ff");
+        QCOMPARE(store.sketch().strokes.front()->color, "#0000ff");
     }
 
     void clearIsUndoable()
@@ -98,7 +102,7 @@ private Q_SLOTS:
         store.clear();
         QVERIFY(store.isEmpty());
         store.undo();
-        QCOMPARE(store.sketch().size(), 1);
+        QCOMPARE(store.sketch().strokes.size(), 1);
     }
 
     void loadStartsANewHistory()
@@ -108,9 +112,12 @@ private Q_SLOTS:
         QSignalSpy edited(&store, &CanvasStore::edited);
         QSignalSpy changed(&store, &CanvasStore::changed);
 
-        store.load({ std::make_shared<const Stroke>(), std::make_shared<const Stroke>() });
+        store.load({
+            .strokes = { std::make_shared<const Stroke>(), std::make_shared<const Stroke>() },
+            .page = {},
+        });
 
-        QCOMPARE(store.sketch().size(), 2);
+        QCOMPARE(store.sketch().strokes.size(), 2);
         QVERIFY(!store.canUndo());
         QCOMPARE(changed.count(), 1);
         QCOMPARE(edited.count(), 0);
@@ -123,11 +130,11 @@ private Q_SLOTS:
 
         store.addStroke(drawn, Qt::black);
 
-        QCOMPARE(store.sketch().size(), 1);
-        for (const auto point : store.sketch().front()->points)
+        QCOMPARE(store.sketch().strokes.size(), 1);
+        for (const auto point : store.sketch().strokes.front()->points)
             QVERIFY(qAbs(std::hypot(point.x - 100.0, point.y - 100.0) - 53.0) < 0.5);
         store.undo();
-        QCOMPARE(store.sketch().front()->points.size(), drawn.size());
+        QCOMPARE(store.sketch().strokes.front()->points.size(), drawn.size());
     }
 
     void aSnapReportsTheShape()
@@ -146,7 +153,7 @@ private Q_SLOTS:
     {
         CanvasStore store;
         store.addStroke(zigzag(), Qt::black);
-        QCOMPARE(store.sketch().front()->points.size(), zigzag().size());
+        QCOMPARE(store.sketch().strokes.front()->points.size(), zigzag().size());
     }
 
     void snappingCanBeTurnedOff()
@@ -155,7 +162,7 @@ private Q_SLOTS:
         store.setSnapShapes(false);
         const auto drawn = wobblyCircle({ 100, 100 }, 50);
         store.addStroke(drawn, Qt::black);
-        QCOMPARE(store.sketch().front()->points.size(), drawn.size());
+        QCOMPARE(store.sketch().strokes.front()->points.size(), drawn.size());
     }
 
     void emptyStrokesAreIgnored()
@@ -165,6 +172,43 @@ private Q_SLOTS:
         QVERIFY(!store.canUndo());
     }
 
+    void strokesKeepTheirWidth()
+    {
+        CanvasStore store;
+        store.setSnapShapes(false);
+
+        store.addStroke(zigzag(), Qt::black, 9.0);
+
+        QCOMPARE(store.sketch().strokes.front()->width, 9.0);
+    }
+
+    void pageChangesAreUndoable()
+    {
+        CanvasStore store;
+
+        store.setPageSize(1200, 1600);
+        store.setPaperBackground(PaperBackground::Dots);
+
+        QCOMPARE(store.sketch().page.width, 1200);
+        QCOMPARE(store.sketch().page.height, 1600);
+        QCOMPARE(store.sketch().page.background, PaperBackground::Dots);
+        store.undo();
+        QCOMPARE(store.sketch().page.background, PaperBackground::Plain);
+        store.undo();
+        QCOMPARE(store.sketch().page.width, 1600);
+        QCOMPARE(store.sketch().page.height, 1200);
+    }
+
+    void paperBackgroundsUseStableNames()
+    {
+        QCOMPARE(app::canvas::paperBackgroundName(PaperBackground::Plain), "plain");
+        QCOMPARE(app::canvas::paperBackgroundName(PaperBackground::Dots), "dots");
+        QCOMPARE(app::canvas::paperBackgroundName(PaperBackground::Ruled), "ruled");
+        QCOMPARE(app::canvas::paperBackgroundFromName("dots"),
+            std::optional{ PaperBackground::Dots });
+        QVERIFY(!app::canvas::paperBackgroundFromName("graph"));
+    }
+
     void historyIsBounded()
     {
         CanvasStore store;
@@ -172,7 +216,7 @@ private Q_SLOTS:
             store.addStroke(zigzag(), Qt::black);
         while (store.canUndo())
             store.undo();
-        QCOMPARE_GT(store.sketch().size(), 0);
+        QCOMPARE_GT(store.sketch().strokes.size(), 0);
     }
 };
 

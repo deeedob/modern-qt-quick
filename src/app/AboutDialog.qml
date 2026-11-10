@@ -54,6 +54,13 @@ Dialog {
 
         Button {
             Layout.alignment: Qt.AlignHCenter
+            text: qsTr("Open licenses folder")
+            flat: true
+            onClicked: AppController.openLicensesDirectory()
+        }
+
+        Button {
+            Layout.alignment: Qt.AlignHCenter
             text: qsTr("Open log folder")
             flat: true
             onClicked: AppController.openLogDirectory()

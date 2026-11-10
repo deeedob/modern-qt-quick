@@ -4,7 +4,7 @@ import QtQuick
 
 // Design tokens: the one place for colors, sizes and type. Basic's controls get them via the palette.
 QtObject {
-    readonly property bool dark: Application.styleHints.colorScheme === Qt.ColorScheme.Dark
+    property bool dark: Application.styleHints.colorScheme === Qt.ColorScheme.Dark
 
     readonly property color window: dark ? "#17171c" : "#f6f6f8"
     readonly property color surface: dark ? "#22222a" : "#ffffff"

@@ -41,7 +41,7 @@ another thread (@sec-threads).
 A `Q_PROPERTY` with a `NOTIFY` signal is state that others can observe. Change the value,
 emit the signal, and every QML binding that reads the property updates itself.
 
-```{.cpp filename="CanvasStore.hpp"}
+```{.cpp filename="CanvasStore.h"}
 class CanvasStore : public QObject
 {
     Q_OBJECT
@@ -72,7 +72,7 @@ Mark a property `CONSTANT` when it never changes, and `FINAL` so that no subclas
 override it; the QML tools can then rely on its type.
 
 ::: {.more}
-**Template:** `src/canvas/CanvasStore.hpp`
+**Template:** `src/canvas/CanvasStore.h`
 
 **Read more:** [The property system](https://doc.qt.io/qt-6/properties.html)
 :::

@@ -10,7 +10,7 @@ into QML, what crosses the boundary as a plain value, and when to draw with C++ 
 Mark a C++ class `QML_ELEMENT`, list it in a QML module, and QML can use it under the
 module's name. There is no registration code in `main()`.
 
-```{.cpp filename="CanvasStore.hpp"}
+```{.cpp filename="CanvasStore.h"}
 #include <QtCore/QObject>
 #include <QtQmlIntegration/qqmlintegration.h>
 
@@ -26,7 +26,7 @@ class CanvasStore : public QObject
 qt_add_qml_module(app_canvas
     URI App.Canvas
     STATIC
-    SOURCES CanvasStore.cpp CanvasStore.hpp
+    SOURCES CanvasStore.cpp CanvasStore.h
     QML_FILES CanvasPage.qml
 )
 ```
@@ -167,7 +167,7 @@ Collections the user sees do not belong in such a list. Give them a model instea
 
 Enums come from `Q_ENUM` inside a registered class, and QML reads them by the class name:
 
-```{.cpp filename="CanvasStore.hpp"}
+```{.cpp filename="CanvasStore.h"}
 enum class Shape : quint8 { Circle, Rectangle, Triangle };
 Q_ENUM(Shape)
 Q_SIGNAL void shapeSnapped(app::canvas::CanvasStore::Shape shape);
@@ -187,7 +187,7 @@ For a small struct of your own, register a value type: a `Q_GADGET` with
 `QML_VALUE_TYPE` and a name that starts with a lower-case letter, such as `sample`.
 
 ::: {.more}
-**Template:** `src/canvas/CanvasStore.hpp`, and the snap hint in `src/canvas/CanvasPage.qml`
+**Template:** `src/canvas/CanvasStore.h`, and the snap hint in `src/canvas/CanvasPage.qml`
 
 **Read more:** [Data type conversion between QML and C++](https://doc.qt.io/qt-6/qtqml-cppintegration-data.html)
 :::

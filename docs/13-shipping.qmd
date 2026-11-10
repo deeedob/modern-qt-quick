@@ -88,6 +88,8 @@ the LGPL asks you to:
 
 **Every other dependency and asset** needs its license shipped as well: libraries, but also
 fonts and icons. Put one text file per component into a `licenses/` folder of the package.
+Install that folder in the platform's package-data location, then let people open it from the
+About dialog.
 
 **Your own repository** should say clearly what is yours and under which terms. The
 [REUSE](https://reuse.software/) convention does that in one file:
@@ -143,6 +145,14 @@ A complete workflow also sets up the compiler environment on Windows. Cache the 
 builds between runs (vcpkg's binary cache does this), or every run rebuilds them from
 scratch. Upload the packages as build artifacts, so every change produces
 something you can download and try.
+
+::: {.callout-tip}
+## Package for an empty machine
+
+Before shipping, picture a machine with none of your development environment: no installed
+fonts, libraries, tools, or configuration. Package every required runtime component, then test
+the result on such a machine.
+:::
 
 ::: {.more}
 **Template:** `.github/workflows/ci.yml`

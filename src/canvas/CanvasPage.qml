@@ -11,6 +11,10 @@ Page {
     required property CanvasStore store
     readonly property list<color> inks: ["#1c1c22", "#e5484d", "#30a46c", "#0090ff"]
     property color penColor: inks[0]
+    property real penWidth: 4.0
+    property string sketchName: ""
+
+    signal renameRequested(string name)
 
     component Swatch: AbstractButton {
         id: swatch
@@ -30,61 +34,137 @@ Page {
     }
 
     header: ToolBar {
-        RowLayout {
+        implicitHeight: controls.implicitHeight + (Theme.spacing * 2)
+
+        ColumnLayout {
+            id: controls
+
             anchors.fill: parent
             anchors.leftMargin: Theme.spacing
             anchors.rightMargin: Theme.spacing / 2
             spacing: Theme.spacing / 2
 
-            Repeater {
-                model: root.inks
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spacing / 2
 
-                delegate: Swatch {
-                    required property color modelData
+                TextField {
+                    id: titleField
 
-                    ink: modelData
-                    text: qsTr("Ink %1").arg(modelData)
-                    checked: Qt.colorEqual(root.penColor, ink)
-                    onPicked: ink => root.penColor = ink
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 120
+                    placeholderText: qsTr("Sketch name")
+                    onEditingFinished: root.renameRequested(text)
+                }
+
+                Binding {
+                    target: titleField
+                    property: "text"
+                    value: root.sketchName
+                    when: !titleField.activeFocus
+                }
+
+                ComboBox {
+                    id: pageSize
+
+                    Layout.preferredWidth: 170
+                    model: [qsTr("Square · 1200 × 1200"), qsTr("Landscape · 1600 × 1200"), qsTr("Portrait · 1200 × 1600")]
+                    currentIndex: root.store.pageWidth === 1200 && root.store.pageHeight === 1200 ? 0 : root.store.pageWidth === 1200 ? 2 : 1
+                    onActivated: index => {
+                        switch (index) {
+                        case 0:
+                            root.store.setPageSize(1200, 1200);
+                            break;
+                        case 1:
+                            root.store.setPageSize(1600, 1200);
+                            break;
+                        case 2:
+                            root.store.setPageSize(1200, 1600);
+                            break;
+                        }
+                        root.fitPage();
+                    }
+                }
+
+                ComboBox {
+                    Layout.preferredWidth: 100
+                    model: [qsTr("Plain"), qsTr("Dots"), qsTr("Ruled")]
+                    currentIndex: root.store.paperBackground
+                    onActivated: index => root.store.setPaperBackground(index)
+                }
+
+                Label {
+                    text: qsTr("%n stroke(s)", "", root.store.strokeCount)
+                    color: Theme.mutedText
+                }
+
+                ToolButton {
+                    icon.source: Theme.icon("undo-2")
+                    text: qsTr("Undo")
+                    enabled: root.store.canUndo
+                    onClicked: root.store.undo()
+                }
+
+                ToolButton {
+                    icon.source: Theme.icon("redo-2")
+                    text: qsTr("Redo")
+                    enabled: root.store.canRedo
+                    onClicked: root.store.redo()
+                }
+
+                ToolButton {
+                    icon.source: Theme.icon("eraser")
+                    text: qsTr("Clear")
+                    enabled: !root.store.empty
+                    onClicked: root.store.clear()
                 }
             }
 
-            Switch {
-                Layout.leftMargin: Theme.spacing
-                text: qsTr("Snap shapes")
-                checked: root.store.snapShapes
-                onToggled: root.store.snapShapes = checked
-            }
+            RowLayout {
+                spacing: Theme.spacing / 2
 
-            Item {
-                Layout.fillWidth: true
-            }
+                Repeater {
+                    model: root.inks
 
-            ToolButton {
-                icon.source: Theme.icon("undo-2")
-                text: qsTr("Undo")
-                enabled: root.store.canUndo
-                onClicked: root.store.undo()
-            }
+                    delegate: Swatch {
+                        required property color modelData
 
-            ToolButton {
-                icon.source: Theme.icon("redo-2")
-                text: qsTr("Redo")
-                enabled: root.store.canRedo
-                onClicked: root.store.redo()
-            }
+                        ink: modelData
+                        text: qsTr("Ink %1").arg(modelData)
+                        checked: Qt.colorEqual(root.penColor, ink)
+                        onPicked: ink => root.penColor = ink
+                    }
+                }
 
-            ToolButton {
-                icon.source: Theme.icon("eraser")
-                text: qsTr("Clear")
-                enabled: !root.store.empty
-                onClicked: root.store.clear()
+                Slider {
+                    Layout.leftMargin: Theme.spacing
+                    Layout.preferredWidth: 120
+                    from: 1
+                    to: 12
+                    stepSize: 1
+                    value: root.penWidth
+                    onMoved: root.penWidth = value
+                }
+
+                Label {
+                    text: qsTr("%1 px").arg(Math.round(root.penWidth))
+                    color: Theme.mutedText
+                }
+
+                Switch {
+                    Layout.leftMargin: Theme.spacing
+                    text: qsTr("Snap shapes")
+                    checked: root.store.snapShapes
+                    onToggled: root.store.snapShapes = checked
+                }
             }
         }
     }
 
     // Zoom belongs to this view, not to the sketch, so it lives here instead of in the store.
     property real zoom: 1.0
+    readonly property real fitZoom: Math.min(viewport.width / paper.width, viewport.height / paper.height)
+    readonly property real minimumZoom: fitZoom * 0.85
 
     // Clamps directly: Flickable.returnToBounds() would start an animation on every pinch step.
     function scrollTo(x: real, y: real): void {
@@ -94,10 +174,15 @@ Page {
 
     // Keeps the paper point under `position`, in viewport coordinates, where it is.
     function zoomBy(factor: real, position: point): void {
-        const next = Math.min(Math.max(root.zoom * factor, 0.25), 4);
+        const next = Math.min(Math.max(root.zoom * factor, root.minimumZoom), 4);
         const ratio = next / root.zoom;
         root.zoom = next;
         root.scrollTo((viewport.contentX + position.x) * ratio - position.x, (viewport.contentY + position.y) * ratio - position.y);
+    }
+
+    function fitPage(): void {
+        root.zoom = root.fitZoom;
+        root.scrollTo((viewport.contentWidth - viewport.width) / 2, (viewport.contentHeight - viewport.height) / 2);
     }
 
     // One finger or the mouse draws. The wheel, the trackpad, the scroll bars and two fingers
@@ -117,8 +202,8 @@ Page {
         Rectangle {
             id: paper
 
-            width: 1600
-            height: 1200
+            width: root.store.pageWidth
+            height: root.store.pageHeight
             scale: root.zoom
             transformOrigin: Item.TopLeft
             color: "#fdfdfb" // paper stays light in dark mode, so saved ink colors keep working
@@ -126,11 +211,55 @@ Page {
             // StrokeItem keeps the pointer while drawing, even past the edge: hide what is off the paper.
             clip: true
 
+            Item {
+                id: dots
+
+                anchors.fill: parent
+                visible: root.store.paperBackground === 1
+
+                readonly property int columns: Math.ceil(paper.width / 32)
+                readonly property int rows: Math.ceil(paper.height / 32)
+
+                Repeater {
+                    model: parent.columns * parent.rows
+
+                    delegate: Rectangle {
+                        required property int index
+
+                        x: (index % dots.columns) * 32
+                        y: Math.floor(index / dots.columns) * 32
+                        width: 1
+                        height: 1
+                        color: "#d5d5dc"
+                    }
+                }
+            }
+
+            Item {
+                anchors.fill: parent
+                visible: root.store.paperBackground === 2
+
+                Repeater {
+                    model: Math.ceil(paper.height / 32)
+
+                    delegate: Rectangle {
+                        required property int index
+
+                        x: 0
+                        y: index * 32
+                        width: paper.width
+                        height: 1
+                        color: "#d5d5dc"
+                    }
+                }
+            }
+
             StrokeItem {
                 anchors.fill: parent
                 store: root.store
                 penColor: root.penColor
-                onStrokeFinished: points => root.store.addStroke(points, root.penColor)
+                penWidth: root.penWidth
+                onStrokeFinished: points => root.store.addStroke(points, root.penColor, root.penWidth)
             }
         }
     }
@@ -161,6 +290,15 @@ Page {
         visible: root.store.empty
         text: qsTr("Draw here. Circles, rectangles and triangles snap into shape.")
         color: "#8a8a94"
+    }
+
+    Button {
+        anchors.horizontalCenter: viewport.horizontalCenter
+        anchors.top: viewport.top
+        anchors.topMargin: Theme.spacing
+        text: qsTr("%1%").arg(Math.round(root.zoom * 100))
+        flat: true
+        onClicked: root.fitPage()
     }
 
     Label {
@@ -211,6 +349,11 @@ Page {
                 snapHint.text = qsTr("Snapped to a triangle");
                 break;
             }
+            fade.restart();
+        }
+
+        function onHistoryMoved(redo: bool): void {
+            snapHint.text = redo ? qsTr("Redone") : qsTr("Undone");
             fade.restart();
         }
     }

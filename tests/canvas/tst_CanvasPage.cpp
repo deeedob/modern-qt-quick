@@ -1,5 +1,6 @@
-#include "CanvasStore.hpp"
+#include "CanvasStore.h"
 
+#include <QtCore/QRegularExpression>
 #include <QtGui/QPointingDevice>
 #include <QtGui/qpa/qwindowsysteminterface.h>
 #include <QtQuick/QQuickItem>
@@ -102,9 +103,15 @@ private:
     }
 
 private Q_SLOTS:
+    void init() { QTest::failOnWarning(); }
+
     void aSnappedShapeShowsAHint()
     {
         Page page;
+        // Qt's offscreen macOS font fallback requests an unavailable generic family.
+        QTest::ignoreMessage(QtWarningMsg,
+            QRegularExpression(
+                uR"(Populating font family aliases took .*Replace uses of missing font family "Sans Serif".*)"_s));
         QVERIFY(load(page));
         QList<QPointF> circle;
         for (int i = 0; i <= 40; ++i) {
@@ -146,6 +153,16 @@ private Q_SLOTS:
             return;
 
         QCOMPARE_LT(page.zoom(), 1.0);
+    }
+
+    void fitPageUsesTheReportedZoom()
+    {
+        Page page;
+        QVERIFY(load(page));
+
+        QVERIFY(QMetaObject::invokeMethod(page.root, "fitPage"));
+
+        QCOMPARE(page.zoom(), page.root->property("fitZoom").toDouble());
     }
 };
 

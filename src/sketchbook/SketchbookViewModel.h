@@ -1,9 +1,9 @@
 #pragma once
 
 #include "SketchListModel.hpp"
-#include "SketchStorage.hpp"
+#include "SketchStorage.h"
 
-#include <CanvasStore.hpp>
+#include <CanvasStore.h>
 
 #include <QtCore/QObject>
 #include <QtQmlIntegration/qqmlintegration.h>
@@ -30,6 +30,8 @@ public:
     Q_INVOKABLE void create();
     Q_INVOKABLE void open(int row);
     Q_INVOKABLE void rename(int row, const QString &name);
+    Q_INVOKABLE void renameOpen(const QString &name);
+    Q_INVOKABLE void duplicate(int row);
     Q_INVOKABLE void remove(int row);
 
 Q_SIGNALS:
@@ -37,6 +39,7 @@ Q_SIGNALS:
 
 private:
     void saveOpenSketch();
+    [[nodiscard]] QString copyName(const QString &name) const;
 
     SketchStorage &m_storage;
     canvas::CanvasStore &m_canvas;

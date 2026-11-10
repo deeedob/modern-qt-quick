@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Sketch.hpp>
+#include <Sketch.h>
 
 #include <QtCore/QDateTime>
 #include <QtCore/QString>
@@ -16,7 +16,8 @@ namespace app::sketchbook {
 struct SketchDocument
 {
     std::string name;
-    canvas::Sketch strokes;
+    std::vector<canvas::StrokePtr> strokes;
+    canvas::Page page;
 };
 
 struct SketchEntry

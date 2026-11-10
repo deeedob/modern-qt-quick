@@ -1,10 +1,11 @@
 #pragma once
 
-#include "Sketch.hpp"
+#include "Sketch.h"
 
 #include <QtCore/QList>
 #include <QtCore/QObject>
 #include <QtCore/QPointF>
+#include <QtCore/QString>
 #include <QtGui/QColor>
 #include <QtQmlIntegration/qqmlintegration.h>
 
@@ -21,6 +22,10 @@ class CanvasStore : public QObject
     Q_PROPERTY(bool canUndo READ canUndo NOTIFY changed FINAL)
     Q_PROPERTY(bool canRedo READ canRedo NOTIFY changed FINAL)
     Q_PROPERTY(bool empty READ isEmpty NOTIFY changed FINAL)
+    Q_PROPERTY(int strokeCount READ strokeCount NOTIFY changed FINAL)
+    Q_PROPERTY(int pageWidth READ pageWidth NOTIFY changed FINAL)
+    Q_PROPERTY(int pageHeight READ pageHeight NOTIFY changed FINAL)
+    Q_PROPERTY(int paperBackground READ paperBackgroundValue NOTIFY changed FINAL)
     Q_PROPERTY(bool snapShapes READ snapShapes WRITE setSnapShapes NOTIFY snapShapesChanged FINAL)
 
 public:
@@ -36,12 +41,20 @@ public:
     [[nodiscard]] bool canUndo() const;
     [[nodiscard]] bool canRedo() const;
     [[nodiscard]] bool isEmpty() const;
+    [[nodiscard]] int strokeCount() const;
+    [[nodiscard]] int pageWidth() const;
+    [[nodiscard]] int pageHeight() const;
+    [[nodiscard]] int paperBackgroundValue() const;
     [[nodiscard]] bool snapShapes() const;
     void setSnapShapes(bool snap);
 
     // A recognized shape is replaced by its clean version, as a second undoable step.
-    Q_INVOKABLE void addStroke(const QList<QPointF> &points, const QColor &color);
+    Q_INVOKABLE void addStroke(const QList<QPointF> &points, const QColor &color,
+        double width = 4.0);
     Q_INVOKABLE void clear();
+    Q_INVOKABLE void setPageSize(int width, int height);
+    Q_INVOKABLE void setPaperBackground(int background);
+    void setPaperBackground(PaperBackground background);
     Q_INVOKABLE void undo();
     Q_INVOKABLE void redo();
 
@@ -51,6 +64,7 @@ Q_SIGNALS:
     void edited();
     void snapShapesChanged();
     void shapeSnapped(app::canvas::CanvasStore::Shape shape);
+    void historyMoved(bool redo);
 
 private:
     void dispatch(const Action &action);
