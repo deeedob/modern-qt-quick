@@ -2,13 +2,14 @@
 
 #include <BuildInfo.hpp>
 
+#include <QtCore/QDir>
 #include <QtCore/QObject>
-#include <QtCore/QTranslator>
 #include <QtQmlIntegration/qqmlintegration.h>
 
 #include <memory>
 
-class QSettings;
+QT_FORWARD_DECLARE_CLASS(QSettings)
+QT_FORWARD_DECLARE_CLASS(QTranslator)
 
 namespace app {
 
@@ -24,8 +25,14 @@ class AppController : public QObject
     Q_PROPERTY(bool darkTheme READ darkTheme WRITE setDarkTheme NOTIFY darkThemeChanged FINAL)
 
 public:
-    explicit AppController(QString logFilePath, QString licensesDirectory, QSettings &settings,
-        QObject *parent = nullptr);
+    struct Directories
+    {
+        QDir logs;
+        QDir licenses;
+    };
+
+    explicit AppController(Directories directories, QSettings &settings, QObject *parent = nullptr);
+    ~AppController() override;
 
     [[nodiscard]] BuildInfo buildDetails() const;
     [[nodiscard]] QString language() const;
@@ -42,10 +49,9 @@ Q_SIGNALS:
     void darkThemeChanged();
 
 private:
-    void openDirectory(const QString &directory) const;
+    void openDirectory(const QDir &directory) const;
 
-    QString m_logFilePath;
-    QString m_licensesDirectory;
+    Directories m_directories;
     QString m_language;
     bool m_darkTheme = false;
     QSettings &m_settings;

@@ -22,10 +22,13 @@ private Q_SLOTS:
     void messagesReachTheSessionLog()
     {
         QTemporaryDir dir;
-        const auto logFile = app::installLogging(dir.path(), 3);
+        const QDir logDirectory(dir.path());
+        app::installLogging(logDirectory, 3);
         qCInfo(lcTest) << "hello log file";
 
-        QFile file(logFile);
+        const auto logs = logDirectory.entryList({ "*.log"_L1 }, QDir::Files, QDir::Name);
+        QCOMPARE(logs.size(), 1);
+        QFile file(logDirectory.filePath(logs.constFirst()));
         QVERIFY(file.open(QIODevice::ReadOnly));
         const auto contents = file.readAll();
         QVERIFY2(contents.contains("app.test: hello log file"), contents.constData());
@@ -36,8 +39,8 @@ private Q_SLOTS:
         QString text;
         QDebug(&text) << app::buildInfo;
 
-        QVERIFY2(text.contains(QString::fromUtf8(app::buildInfo.version)), qPrintable(text));
-        QVERIFY2(text.contains(QString::fromUtf8(app::buildInfo.gitSha)), qPrintable(text));
+        QVERIFY2(text.contains(app::buildInfo.version()), qPrintable(text));
+        QVERIFY2(text.contains(app::buildInfo.gitSha()), qPrintable(text));
         QVERIFY(!text.contains(u'\n'));
     }
 
@@ -50,7 +53,7 @@ private Q_SLOTS:
             QVERIFY(file.open(QIODevice::WriteOnly));
         }
 
-        app::installLogging(dir.path(), 3);
+        app::installLogging(QDir(dir.path()), 3);
 
         const auto logs = QDir(dir.path()).entryList({ "*.log"_L1 }, QDir::Files, QDir::Name);
         QCOMPARE(logs.size(), 3);

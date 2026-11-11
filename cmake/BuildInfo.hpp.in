@@ -4,7 +4,7 @@
 #include <QtCore/QString>
 #include <QtQmlIntegration/qqmlintegration.h>
 
-#include <string_view>
+#include <utility>
 
 namespace app {
 
@@ -12,49 +12,65 @@ struct BuildInfo
 {
     Q_GADGET
     QML_VALUE_TYPE(buildInfo)
-    Q_PROPERTY(QString gitSha READ gitShaText CONSTANT FINAL)
-    Q_PROPERTY(QString buildType READ buildTypeText CONSTANT FINAL)
-    Q_PROPERTY(QString timestamp READ timestampText CONSTANT FINAL)
-    Q_PROPERTY(QString compiler READ compilerText CONSTANT FINAL)
-    Q_PROPERTY(QString system READ systemText CONSTANT FINAL)
-    Q_PROPERTY(QString qtVersion READ qtVersionText CONSTANT FINAL)
+    Q_PROPERTY(QString gitSha READ gitSha CONSTANT FINAL)
+    Q_PROPERTY(QString buildType READ buildType CONSTANT FINAL)
+    Q_PROPERTY(QString timestamp READ buildTimestamp CONSTANT FINAL)
+    Q_PROPERTY(QString compiler READ compiler CONSTANT FINAL)
+    Q_PROPERTY(QString system READ system CONSTANT FINAL)
+    Q_PROPERTY(QString qtVersion READ qtVersion CONSTANT FINAL)
 
 public:
-    QString gitShaText() const { return QString::fromUtf8(gitSha); }
-    QString buildTypeText() const { return QString::fromUtf8(buildType); }
-    QString timestampText() const { return QString::fromUtf8(buildTimestamp); }
-    QString compilerText() const { return QString::fromUtf8(compiler); }
-    QString systemText() const { return QString::fromUtf8(system); }
-    QString qtVersionText() const { return QString::fromLatin1(qVersion()); }
+    BuildInfo() = default;
+    BuildInfo(QString name, QString displayName, QString version, QString gitSha, QString buildType,
+        QString buildTimestamp, QString compiler, QString system)
+        : m_name(std::move(name))
+        , m_displayName(std::move(displayName))
+        , m_version(std::move(version))
+        , m_gitSha(std::move(gitSha))
+        , m_buildType(std::move(buildType))
+        , m_buildTimestamp(std::move(buildTimestamp))
+        , m_compiler(std::move(compiler))
+        , m_system(std::move(system))
+    {
+    }
 
-    std::string_view name;
-    std::string_view displayName;
-    std::string_view version;
-    std::string_view gitSha;
-    std::string_view buildType;
-    std::string_view buildTimestamp;
-    std::string_view compiler;
-    std::string_view system;
+    [[nodiscard]] const QString &name() const { return m_name; }
+    [[nodiscard]] const QString &displayName() const { return m_displayName; }
+    [[nodiscard]] const QString &version() const { return m_version; }
+    [[nodiscard]] const QString &gitSha() const { return m_gitSha; }
+    [[nodiscard]] const QString &buildType() const { return m_buildType; }
+    [[nodiscard]] const QString &buildTimestamp() const { return m_buildTimestamp; }
+    [[nodiscard]] const QString &compiler() const { return m_compiler; }
+    [[nodiscard]] const QString &system() const { return m_system; }
+    [[nodiscard]] QString qtVersion() const { return QString::fromLatin1(qVersion()); }
+
+private:
+    friend QDebug operator<<(QDebug debug, const BuildInfo &info)
+    {
+        const QDebugStateSaver saver(debug);
+        debug.noquote().nospace() << info.m_name << ' ' << info.m_version << " (" << info.m_gitSha
+                                  << ", " << info.m_buildType << ", built " << info.m_buildTimestamp
+                                  << ", " << info.m_compiler << ", " << info.m_system << ')';
+        return debug;
+    }
+
+    QString m_name;
+    QString m_displayName;
+    QString m_version;
+    QString m_gitSha;
+    QString m_buildType;
+    QString m_buildTimestamp;
+    QString m_compiler;
+    QString m_system;
 };
 
-inline constexpr BuildInfo buildInfo{
-    .name = "@PROJECT_NAME@",
-    .displayName = "@APP_DISPLAY_NAME@",
-    .version = "@PROJECT_VERSION@",
-    .gitSha = "@APP_GIT_SHA@",
-    .buildType = "$<CONFIG>",
-    .buildTimestamp = "@APP_BUILD_TIMESTAMP@",
-    .compiler = "@CMAKE_CXX_COMPILER_ID@ @CMAKE_CXX_COMPILER_VERSION@",
-    .system = "@CMAKE_SYSTEM_NAME@ @CMAKE_SYSTEM_PROCESSOR@",
-};
-
-inline QDebug operator<<(QDebug debug, const BuildInfo &info)
-{
-    const QDebugStateSaver saver(debug);
-    debug.noquote().nospace() << info.name << ' ' << info.version << " (" << info.gitSha << ", "
-                              << info.buildType << ", built " << info.buildTimestamp << ", "
-                              << info.compiler << ", " << info.system << ')';
-    return debug;
-}
+inline const BuildInfo buildInfo{QString::fromUtf8("@PROJECT_NAME@"),
+    QString::fromUtf8("@APP_DISPLAY_NAME@"),
+    QString::fromUtf8("@PROJECT_VERSION@"),
+    QString::fromUtf8("@APP_GIT_SHA@"),
+    QString::fromUtf8("$<CONFIG>"),
+    QString::fromUtf8("@APP_BUILD_TIMESTAMP@"),
+    QString::fromUtf8("@CMAKE_CXX_COMPILER_ID@ @CMAKE_CXX_COMPILER_VERSION@"),
+    QString::fromUtf8("@CMAKE_SYSTEM_NAME@ @CMAKE_SYSTEM_PROCESSOR@")};
 
 } // namespace app

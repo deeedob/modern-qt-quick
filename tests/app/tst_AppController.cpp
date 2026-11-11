@@ -3,6 +3,7 @@
 
 #include <QtCore/QMetaProperty>
 
+#include <QtCore/QDir>
 #include <QtCore/QRegularExpression>
 #include <QtCore/QSettings>
 #include <QtCore/QTemporaryDir>
@@ -13,6 +14,18 @@
 #include <QtTest/QTest>
 
 using namespace Qt::StringLiterals;
+
+namespace {
+
+app::AppController::Directories directories(const QTemporaryDir &dir)
+{
+    return {
+        .logs = QDir(dir.filePath("logs"_L1)),
+        .licenses = QDir(dir.path()),
+    };
+}
+
+} // namespace
 
 class tst_AppController : public QObject
 {
@@ -30,12 +43,28 @@ private Q_SLOTS:
         settings.setValue("theme/dark"_L1, false);
         // This test links the controller without the application's translation resource.
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"No translation for language.*"_s));
-        app::AppController controller(dir.filePath("session.log"_L1), dir.path(), settings);
+        app::AppController controller(directories(dir), settings);
         QDesktopServices::setUrlHandler("file"_L1, this, "recordOpenedUrl");
 
         controller.openLicensesDirectory();
 
         QCOMPARE(m_openedUrl, QUrl::fromLocalFile(dir.path()));
+    }
+
+    void opensTheLogsDirectory()
+    {
+        QTemporaryDir dir;
+        const auto appDirectories = directories(dir);
+        QVERIFY(appDirectories.logs.mkpath("."_L1));
+        QSettings settings(dir.filePath("settings.ini"_L1), QSettings::IniFormat);
+        settings.setValue("theme/dark"_L1, false);
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"No translation for language.*"_s));
+        app::AppController controller(appDirectories, settings);
+        QDesktopServices::setUrlHandler("file"_L1, this, "recordOpenedUrl");
+
+        controller.openLogDirectory();
+
+        QCOMPARE(m_openedUrl, QUrl::fromLocalFile(appDirectories.logs.absolutePath()));
     }
 
     void persistsTheThemeChoice()
@@ -44,7 +73,7 @@ private Q_SLOTS:
         QSettings settings(dir.filePath("settings.ini"_L1), QSettings::IniFormat);
         settings.setValue("theme/dark"_L1, false);
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"No translation for language.*"_s));
-        app::AppController controller(dir.filePath("session.log"_L1), dir.path(), settings);
+        app::AppController controller(directories(dir), settings);
 
         controller.setDarkTheme(true);
 
@@ -57,15 +86,15 @@ private Q_SLOTS:
         QTemporaryDir dir;
         QSettings settings(dir.filePath("settings.ini"_L1), QSettings::IniFormat);
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"No translation for language.*"_s));
-        app::AppController controller(dir.filePath("session.log"_L1), dir.path(), settings);
+        app::AppController controller(directories(dir), settings);
 
         const auto details = controller.buildDetails();
-        QVERIFY(!details.gitShaText().isEmpty());
-        QVERIFY(!details.buildTypeText().isEmpty());
-        QVERIFY(!details.timestampText().isEmpty());
-        QVERIFY(!details.compilerText().isEmpty());
-        QVERIFY(!details.systemText().isEmpty());
-        QVERIFY(!details.qtVersionText().isEmpty());
+        QVERIFY(!details.gitSha().isEmpty());
+        QVERIFY(!details.buildType().isEmpty());
+        QVERIFY(!details.buildTimestamp().isEmpty());
+        QVERIFY(!details.compiler().isEmpty());
+        QVERIFY(!details.system().isEmpty());
+        QVERIFY(!details.qtVersion().isEmpty());
     }
 
     void exposesGeneratedBuildInfo()
@@ -80,7 +109,7 @@ private Q_SLOTS:
         QTemporaryDir dir;
         QSettings settings(dir.filePath("settings.ini"_L1), QSettings::IniFormat);
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"No translation for language.*"_s));
-        app::AppController controller(dir.filePath("session.log"_L1), dir.path(), settings);
+        app::AppController controller(directories(dir), settings);
         QQmlEngine engine;
         engine.rootContext()->setContextProperty("controller"_L1, &controller);
         QQmlComponent component(&engine);
@@ -89,7 +118,7 @@ private Q_SLOTS:
             QUrl());
         const std::unique_ptr<QObject> object(component.create());
         QVERIFY2(object, qPrintable(component.errorString()));
-        QCOMPARE(object->property("sha").toString(), QString::fromUtf8(app::buildInfo.gitSha));
+        QCOMPARE(object->property("sha").toString(), app::buildInfo.gitSha());
     }
 
     void recordOpenedUrl(const QUrl &url) { m_openedUrl = url; }

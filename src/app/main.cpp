@@ -10,7 +10,6 @@
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
-#include <QtCore/QFileInfo>
 #include <QtCore/QLoggingCategory>
 #include <QtCore/QSettings>
 #include <QtCore/QStandardPaths>
@@ -26,9 +25,9 @@ Q_STATIC_LOGGING_CATEGORY(lcMain, "app.main")
 
 int main(int argc, char *argv[])
 {
-    QGuiApplication::setApplicationName(QString::fromUtf8(app::buildInfo.name));
-    QGuiApplication::setApplicationDisplayName(QString::fromUtf8(app::buildInfo.displayName));
-    QGuiApplication::setApplicationVersion(QString::fromUtf8(app::buildInfo.version));
+    QGuiApplication::setApplicationName(app::buildInfo.name());
+    QGuiApplication::setApplicationDisplayName(app::buildInfo.displayName());
+    QGuiApplication::setApplicationVersion(app::buildInfo.version());
 
     // Multisampling smooths the edges of the strokes the canvas draws as scene graph geometry.
     auto format = QSurfaceFormat::defaultFormat();
@@ -37,23 +36,25 @@ int main(int argc, char *argv[])
 
     const QGuiApplication application(argc, argv);
 
-    const auto dataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
-    const auto logFile = app::installLogging(dataDir + "/logs"_L1);
-    const auto installedLicensesDirectory = QDir::cleanPath(
-        QDir(QCoreApplication::applicationDirPath())
+    const QDir dataDirectory(
+        QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation));
+    const QDir logsDirectory(dataDirectory.filePath("logs"_L1));
+    app::installLogging(logsDirectory);
+    const QDir installedLicensesDirectory(QDir(QCoreApplication::applicationDirPath())
             .filePath(QString::fromUtf8(APP_LICENSES_RELATIVE_TO_EXECUTABLE)));
-    const auto licensesDirectory = QFileInfo(installedLicensesDirectory).isDir()
+    const QDir licensesDirectory = installedLicensesDirectory.exists()
         ? installedLicensesDirectory
-        : QString::fromUtf8(APP_DEV_LICENSES_DIRECTORY);
+        : QDir(QString::fromUtf8(APP_DEV_LICENSES_DIRECTORY));
 
     // Declared before the engine, so they outlive it: QML only holds non-owning references.
-    const auto sketchDirectory = dataDir + "/sketches"_L1;           // demo
+    const auto sketchDirectory = dataDirectory.filePath("sketches"_L1); // demo
     qCInfo(lcMain) << "Sketchbook directory:" << sketchDirectory;     // demo
     app::sketchbook::SketchStorage storage(sketchDirectory);           // demo
     app::canvas::CanvasStore canvas;                                  // demo
     app::sketchbook::SketchbookViewModel sketchbook(storage, canvas); // demo
     QSettings settings;
-    app::AppController controller(logFile, licensesDirectory, settings);
+    app::AppController controller({ .logs = logsDirectory, .licenses = licensesDirectory },
+        settings);
 
     QQmlApplicationEngine engine;
     QObject::connect(&controller, &app::AppController::languageChanged, &engine,

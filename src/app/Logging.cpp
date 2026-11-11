@@ -103,7 +103,7 @@ namespace {
 
 } // namespace
 
-QString installLogging(const QString &directory, qsizetype keepSessions)
+void installLogging(const QDir &directory, qsizetype keepSessions)
 {
     Q_ASSERT(keepSessions > 0);
     std::set_terminate(onTerminate);
@@ -112,10 +112,9 @@ QString installLogging(const QString &directory, qsizetype keepSessions)
         "%{if-debug}D%{endif}%{if-info}I%{endif}%{if-warning}W%{endif}"
         "%{if-critical}C%{endif}%{if-fatal}F%{endif} %{category}: %{message}"_L1);
 
-    const QDir dir(directory);
-    dir.mkpath("."_L1);
+    directory.mkpath("."_L1);
     // Make room for the session that is about to start.
-    removeOldSessions(dir, keepSessions - 1);
+    removeOldSessions(directory, keepSessions - 1);
 
     const auto fileName = QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss"_L1) + ".log"_L1;
     auto &s = sink();
@@ -123,7 +122,7 @@ QString installLogging(const QString &directory, qsizetype keepSessions)
     {
         const QMutexLocker lock(&s.mutex);
         s.file.close();
-        s.file.setFileName(dir.filePath(fileName));
+        s.file.setFileName(directory.filePath(fileName));
         opened = s.file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
     }
     // Chain to the previous handler so the console keeps working.
@@ -133,7 +132,6 @@ QString installLogging(const QString &directory, qsizetype keepSessions)
     if (!opened)
         qWarning("Cannot open log file %ls", qUtf16Printable(s.file.fileName()));
     logStartupInfo();
-    return s.file.fileName();
 }
 
 } // namespace app

@@ -3,14 +3,16 @@
 #include <BuildInfo.hpp>
 
 #include <QtCore/QCoreApplication>
-#include <QtCore/QFileInfo>
 #include <QtCore/QLocale>
 #include <QtCore/QLoggingCategory>
 #include <QtCore/QSettings>
+#include <QtCore/QTranslator>
 #include <QtCore/QUrl>
 #include <QtGui/QDesktopServices>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QStyleHints>
+
+#include <utility>
 
 using namespace Qt::StringLiterals;
 
@@ -29,11 +31,9 @@ namespace {
 
 } // namespace
 
-AppController::AppController(QString logFilePath, QString licensesDirectory, QSettings &settings,
-    QObject *parent)
+AppController::AppController(Directories directories, QSettings &settings, QObject *parent)
     : QObject(parent)
-    , m_logFilePath(std::move(logFilePath))
-    , m_licensesDirectory(std::move(licensesDirectory))
+    , m_directories(std::move(directories))
     , m_darkTheme(settings.contains("theme/dark"_L1)
               ? settings.value("theme/dark"_L1).toBool()
               : systemUsesDarkTheme())
@@ -45,6 +45,8 @@ AppController::AppController(QString logFilePath, QString licensesDirectory, QSe
             ? "es"_L1
             : "en"_L1);
 }
+
+AppController::~AppController() = default;
 
 BuildInfo AppController::buildDetails() const
 {
@@ -93,22 +95,23 @@ void AppController::setDarkTheme(bool darkTheme)
 
 void AppController::openLogDirectory() const
 {
-    openDirectory(QFileInfo(m_logFilePath).absolutePath());
+    openDirectory(m_directories.logs);
 }
 
 void AppController::openLicensesDirectory() const
 {
-    openDirectory(m_licensesDirectory);
+    openDirectory(m_directories.licenses);
 }
 
-void AppController::openDirectory(const QString &directory) const
+void AppController::openDirectory(const QDir &directory) const
 {
-    if (!QFileInfo(directory).isDir()) {
-        qCWarning(lcApp) << "Directory does not exist" << directory;
+    if (!directory.exists()) {
+        qCWarning(lcApp) << "Directory does not exist" << directory.absolutePath();
         return;
     }
-    if (!QDesktopServices::openUrl(QUrl::fromLocalFile(directory)))
-        qCWarning(lcApp) << "Could not open directory" << directory;
+    const auto path = directory.absolutePath();
+    if (!QDesktopServices::openUrl(QUrl::fromLocalFile(path)))
+        qCWarning(lcApp) << "Could not open directory" << path;
 }
 
 } // namespace app
