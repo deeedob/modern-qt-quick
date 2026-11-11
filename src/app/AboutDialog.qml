@@ -90,6 +90,7 @@ Dialog {
             Layout.fillWidth: true
         }
 
+        // template:begin
         RowLayout {
             Layout.alignment: Qt.AlignHCenter
             Button {
@@ -109,6 +110,7 @@ Dialog {
                 }
             }
         }
+        // template:end
 
         Label {
             Layout.fillWidth: true

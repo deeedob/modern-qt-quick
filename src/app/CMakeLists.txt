@@ -76,7 +76,9 @@ qt_add_qml_module(app_ui
 )
 target_link_libraries(app_ui
     PUBLIC app_support Qt::Quick
-    PRIVATE app_controls app_canvas app_sketchbook
+    PRIVATE app_controls
+    app_canvas # demo
+    app_sketchbook # demo
 )
 app_target_defaults(app_ui)
 

@@ -102,10 +102,11 @@ def source_files(files):
     return [f for f in files if f.suffix in SOURCE_SUFFIXES or f.name == "CMakeLists.txt"]
 
 
-def replace_in(path, pattern, replacement):
+def replace_in(path, pattern, replacement, count=0):
     file = ROOT / path
-    text, count = re.subn(pattern, replacement, file.read_text(encoding="utf-8"), flags=re.MULTILINE)
-    if count == 0:
+    text, replaced = re.subn(pattern, lambda _: replacement, file.read_text(encoding="utf-8"),
+                             count=count, flags=re.MULTILINE)
+    if replaced == 0:
         raise Abort(f"{path}: found nothing matching {pattern!r}. Has the template changed?")
     file.write_text(text, encoding="utf-8")
 
@@ -118,24 +119,23 @@ def remove(path):
         target.unlink()
 
 
-def strip_demo(file):
-    """Removes the marked demo lines and blocks; returns how many it removed."""
+def strip_marked(file, marker_begin, marker_end, marked_line=None):
     kept, block_start, removed = [], None, 0
     for number, line in enumerate(file.read_text(encoding="utf-8").splitlines(keepends=True), 1):
-        if MARKER_BEGIN in line:
+        if marker_begin in line:
             if block_start:
-                raise Abort(f"{file.relative_to(ROOT)}:{number}: nested {MARKER_BEGIN}")
+                raise Abort(f"{file.relative_to(ROOT)}:{number}: nested {marker_begin}")
             block_start = number
-        elif MARKER_END in line:
+        elif marker_end in line:
             if not block_start:
-                raise Abort(f"{file.relative_to(ROOT)}:{number}: {MARKER_END} without {MARKER_BEGIN}")
+                raise Abort(f"{file.relative_to(ROOT)}:{number}: {marker_end} without {marker_begin}")
             block_start, removed = None, removed + 1
-        elif not block_start and MARKED_LINE.search(line):
+        elif not block_start and marked_line and marked_line.search(line):
             removed += 1
         elif not block_start:
             kept.append(line)
     if block_start:
-        raise Abort(f"{file.relative_to(ROOT)}:{block_start}: {MARKER_BEGIN} is never closed")
+        raise Abort(f"{file.relative_to(ROOT)}:{block_start}: {marker_begin} is never closed")
     if removed:
         # Removed lines can leave blank lines next to each other.
         text = re.sub(r"\n(?:[ \t]*\n){2,}", "\n\n", "".join(kept))
@@ -151,11 +151,12 @@ def set_identity(plan):
     year = datetime.date.today().year
     replace_in("LICENSE", r"^Copyright .*$", f"Copyright {year} {plan.holder}")
     replace_in("REUSE.toml", r'^SPDX-FileCopyrightText = "[^"]*"',
-               f'SPDX-FileCopyrightText = "{year} {plan.holder}"')
+               f'SPDX-FileCopyrightText = {json.dumps(f"{year} {plan.holder}", ensure_ascii=False)}', count=1)
 
 
 def remove_demo():
-    removed = sum(strip_demo(f) for f in source_files(tracked_files()))
+    removed = sum(strip_marked(f, MARKER_BEGIN, MARKER_END, MARKED_LINE)
+                  for f in source_files(tracked_files()))
     if removed == 0:
         raise Abort("found no demo markers. Has the template changed?")
     for folder in DEMO_FOLDERS:
@@ -195,7 +196,7 @@ def rename_prefix(prefix):
         (r"\bapp::", f"{namespace}::"),
         (r"\bnamespace app\b", f"namespace {namespace}"),
     ]
-    folders = ("src", "tests", "libs", "cmake")
+    folders = ("src", "tests", "libs", "cmake", "tools")
     renamed = 0
     files = [f for f in source_files(tracked_files())
              if f.relative_to(ROOT).parts[0] in folders] + [ROOT / "AGENTS.md"]
@@ -216,10 +217,11 @@ def collect_plan():
     print("Make the template yours. Press Enter to accept a [default].\n")
     name = ask("Project name, a CMake identifier such as Acme", "Sketchbook",
                r"[A-Za-z][A-Za-z0-9_]*", "Use a letter, then letters, digits or _.")
-    display_name = ask("Display name", name)
+    display_name = ask("Display name", name, r'[^"\\$;]+', "No quotes, backslashes, dollar signs or semicolons.")
     bundle_id = ask("Bundle id (reverse DNS)", f"org.example.{name}",
                     r"[A-Za-z][A-Za-z0-9-]*(\.[A-Za-z][A-Za-z0-9-]*)+", "Use a form like com.example.App.")
-    description = ask("One-line description", display_name, r'[^"\\]+', "No quotes or backslashes.")
+    description = ask("One-line description", display_name, r'[^"\\$;]+',
+                      "No quotes, backslashes, dollar signs or semicolons.")
     holder = ask("Copyright holder", (git("config", "user.name") or "").strip())
     prefix = ask("QML prefix (App); the C++ namespace becomes its lower case", "App",
                  r"[A-Z][A-Za-z0-9]*", "Start with an upper-case letter, then letters or digits.")
@@ -245,6 +247,7 @@ def print_plan(plan):
 
 def apply(plan):
     set_identity(plan)
+    strip_marked(ROOT / "src/app/AboutDialog.qml", "template:begin", "template:end")
     if plan.remove_demo:
         print(f"Removed the demo ({remove_demo()} marked lines and blocks).")
     if plan.remove_guide:
@@ -252,6 +255,7 @@ def apply(plan):
         print("Removed the guide.")
     if plan.prefix != "App":
         print(f"Renamed the prefix in {rename_prefix(plan.prefix)} files.")
+    remove("tools/test_make_it_yours.py")
     if plan.remove_script:
         remove("tools/make_it_yours.py")
         if (ROOT / "tools").is_dir() and not any((ROOT / "tools").iterdir()):

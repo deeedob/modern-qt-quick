@@ -19,9 +19,10 @@ TestCase {
 
     Component {
         id: fixtureComponent
-        Item {
+        Control {
             width: 350
             height: 120
+            font.family: Theme.fontFamily
             Canvas.SketchTitle {
                 objectName: "title"
                 width: 200
