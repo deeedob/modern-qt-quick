@@ -1,9 +1,15 @@
 #include "AppController.hpp"
+#include <BuildInfo.hpp>
+
+#include <QtCore/QMetaProperty>
 
 #include <QtCore/QRegularExpression>
 #include <QtCore/QSettings>
 #include <QtCore/QTemporaryDir>
 #include <QtGui/QDesktopServices>
+#include <QtQml/QQmlComponent>
+#include <QtQml/QQmlContext>
+#include <QtQml/QQmlEngine>
 #include <QtTest/QTest>
 
 using namespace Qt::StringLiterals;
@@ -54,12 +60,36 @@ private Q_SLOTS:
         app::AppController controller(dir.filePath("session.log"_L1), dir.path(), settings);
 
         const auto details = controller.buildDetails();
-        QVERIFY(!details.gitSha.isEmpty());
-        QVERIFY(!details.buildType.isEmpty());
-        QVERIFY(!details.timestamp.isEmpty());
-        QVERIFY(!details.compiler.isEmpty());
-        QVERIFY(!details.system.isEmpty());
-        QVERIFY(!details.qtVersion.isEmpty());
+        QVERIFY(!details.gitShaText().isEmpty());
+        QVERIFY(!details.buildTypeText().isEmpty());
+        QVERIFY(!details.timestampText().isEmpty());
+        QVERIFY(!details.compilerText().isEmpty());
+        QVERIFY(!details.systemText().isEmpty());
+        QVERIFY(!details.qtVersionText().isEmpty());
+    }
+
+    void exposesGeneratedBuildInfo()
+    {
+        const auto &meta = app::BuildInfo::staticMetaObject;
+        QVERIFY(meta.indexOfProperty("gitSha") >= 0);
+        QVERIFY(meta.indexOfProperty("qtVersion") >= 0);
+    }
+
+    void qmlReadsGeneratedBuildInfo()
+    {
+        QTemporaryDir dir;
+        QSettings settings(dir.filePath("settings.ini"_L1), QSettings::IniFormat);
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"No translation for language.*"_s));
+        app::AppController controller(dir.filePath("session.log"_L1), dir.path(), settings);
+        QQmlEngine engine;
+        engine.rootContext()->setContextProperty("controller"_L1, &controller);
+        QQmlComponent component(&engine);
+        component.setData(
+            "import QtQml; QtObject { property string sha: controller.buildDetails.gitSha }",
+            QUrl());
+        const std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        QCOMPARE(object->property("sha").toString(), QString::fromUtf8(app::buildInfo.gitSha));
     }
 
     void recordOpenedUrl(const QUrl &url) { m_openedUrl = url; }

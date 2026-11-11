@@ -42,16 +42,9 @@ AppController::AppController(QString logFilePath, QString licensesDirectory, QSe
     setLanguage(QLocale::system().language() == QLocale::German ? "de"_L1 : "en"_L1);
 }
 
-BuildDetails AppController::buildDetails() const
+BuildInfo AppController::buildDetails() const
 {
-    BuildDetails details;
-    details.gitSha = QString::fromUtf8(buildInfo.gitSha);
-    details.buildType = QString::fromUtf8(buildInfo.buildType);
-    details.timestamp = QString::fromUtf8(buildInfo.buildTimestamp);
-    details.compiler = QString::fromUtf8(buildInfo.compiler);
-    details.system = QString::fromUtf8(buildInfo.system);
-    details.qtVersion = QLatin1StringView(qVersion());
-    return details;
+    return buildInfo;
 }
 
 QString AppController::language() const

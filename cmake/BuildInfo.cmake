@@ -47,6 +47,6 @@ function(app_add_build_info target)
     configure_file("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/BuildInfo.hpp.in" "${_dir}/BuildInfo.hpp.in" @ONLY)
     # Second pass resolves $<CONFIG>, so multi-config generators get one file per configuration.
     file(GENERATE OUTPUT "${_dir}/$<CONFIG>/BuildInfo.hpp" INPUT "${_dir}/BuildInfo.hpp.in")
-    target_sources(${target} PRIVATE "${_dir}/$<CONFIG>/BuildInfo.hpp")
+    set_property(TARGET ${target} PROPERTY APP_BUILD_INFO_HEADER "${_dir}/$<CONFIG>/BuildInfo.hpp")
     target_include_directories(${target} PUBLIC "${_dir}/$<CONFIG>")
 endfunction()

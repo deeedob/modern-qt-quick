@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QtCore/QDebug>
+#include <QtCore/QString>
+#include <QtQmlIntegration/qqmlintegration.h>
 
 #include <string_view>
 
@@ -8,6 +10,23 @@ namespace app {
 
 struct BuildInfo
 {
+    Q_GADGET
+    QML_VALUE_TYPE(buildInfo)
+    Q_PROPERTY(QString gitSha READ gitShaText CONSTANT FINAL)
+    Q_PROPERTY(QString buildType READ buildTypeText CONSTANT FINAL)
+    Q_PROPERTY(QString timestamp READ timestampText CONSTANT FINAL)
+    Q_PROPERTY(QString compiler READ compilerText CONSTANT FINAL)
+    Q_PROPERTY(QString system READ systemText CONSTANT FINAL)
+    Q_PROPERTY(QString qtVersion READ qtVersionText CONSTANT FINAL)
+
+public:
+    QString gitShaText() const { return QString::fromUtf8(gitSha); }
+    QString buildTypeText() const { return QString::fromUtf8(buildType); }
+    QString timestampText() const { return QString::fromUtf8(buildTimestamp); }
+    QString compilerText() const { return QString::fromUtf8(compiler); }
+    QString systemText() const { return QString::fromUtf8(system); }
+    QString qtVersionText() const { return QString::fromLatin1(qVersion()); }
+
     std::string_view name;
     std::string_view displayName;
     std::string_view version;

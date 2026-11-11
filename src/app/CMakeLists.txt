@@ -5,7 +5,7 @@ qt_add_library(app_support STATIC
 app_add_build_info(app_support)
 target_include_directories(app_support PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(app_support
-    PUBLIC Qt::Core
+    PUBLIC Qt::Core Qt::Qml
     PRIVATE cpptrace::cpptrace
 )
 app_target_defaults(app_support)
@@ -33,6 +33,7 @@ target_compile_definitions(app PRIVATE
 
 # The executable is a QML module too (URI App), holding the window and the app-wide controller.
 # The About dialog shows app.svg, the same artwork as the application icon.
+get_target_property(_build_info_header app_support APP_BUILD_INFO_HEADER)
 qt_add_qml_module(app
     URI App
     QML_FILES
@@ -41,6 +42,7 @@ qt_add_qml_module(app
         Main.qml
     SOURCES
         AppController.cpp AppController.hpp
+        "${_build_info_header}"
     RESOURCES
         app.svg
 )
