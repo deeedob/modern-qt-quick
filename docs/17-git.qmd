@@ -68,8 +68,9 @@ Here `fix` says this is a bug fix and `sketchbook` names the area. `Closes: #42`
 **trailer**, a labelled piece of metadata at the end of the message. Other examples include
 `Co-authored-by:` and links to a review.
 
-A trailer can also point to related work, but names such as `Amends:` have no universal Git
-meaning. Follow the convention your team or tools understand. For backports,
+This project uses `Amends: <sha>` to point to an earlier related commit, for example
+`Amends: 1a2b3c4`. The trailer does not change either commit. To fold a correction into an
+earlier commit, use `git revise` or another history-rewriting tool. For backports,
 `git cherry-pick -x` records the original commit automatically when the pick applies cleanly
 (@sec-backports).
 
@@ -163,7 +164,8 @@ Keep build and test checks there too.
 
 ::: {.more}
 **Template:** `.githooks/pre-commit`, `.githooks/prepare-commit-msg`,
-`.githooks/commit-msg`, `tools/check_commit_message.sh`, `.github/workflows/git-policy.yml`
+`.githooks/commit-msg`, `.githooks/check_commit_message.sh`,
+`.githooks/check_git_history.sh`, `.github/workflows/git-policy.yml`
 
 **Read more:** [Git hooks](https://git-scm.com/docs/githooks)
 :::
