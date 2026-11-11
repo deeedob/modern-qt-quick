@@ -46,5 +46,8 @@
         }
       ]
     }
+  },
+  "configuration": {
+    "overlay-triplets": ["cmake/vcpkg-triplets"]
   }
 }
