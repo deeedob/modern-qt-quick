@@ -31,11 +31,6 @@ AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: Yes
 AttributeMacros:
   [
-    Q_GRPC_EXPORT,
-    Q_GRPCQUICK_EXPORT,
-    Q_PROTOBUF_EXPORT,
-    Q_PROTOBUFQTCORETYPES_EXPORT,
-    Q_PROTOBUFQTGUITYPES_EXPORT,
     Q_IMPLICIT,
     Q_INVOKABLE,
   ]
