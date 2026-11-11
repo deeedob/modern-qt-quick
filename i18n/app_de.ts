@@ -210,17 +210,42 @@
 <context>
     <name>Main</name>
     <message>
-        <location filename="../src/app/Main.qml" line="26"/>
-        <source>Some sketches have not been saved.</source>
-        <translation>Einige Skizzen wurden nicht gespeichert.</translation>
+        <location filename="../src/app/Main.qml" line="28"/>
+        <source>Open sketch</source>
+        <translation>Skizze öffnen</translation>
     </message>
     <message>
-        <location filename="../src/app/Main.qml" line="52"/>
+        <location filename="../src/app/Main.qml" line="30"/>
+        <source>Rename sketch</source>
+        <translation>Skizze umbenennen</translation>
+    </message>
+    <message>
+        <location filename="../src/app/Main.qml" line="32"/>
+        <source>Duplicate sketch</source>
+        <translation>Skizze duplizieren</translation>
+    </message>
+    <message>
+        <location filename="../src/app/Main.qml" line="34"/>
+        <source>Save sketch</source>
+        <translation>Skizze speichern</translation>
+    </message>
+    <message>
+        <location filename="../src/app/Main.qml" line="36"/>
+        <source>Delete sketch</source>
+        <translation>Skizze löschen</translation>
+    </message>
+    <message>
+        <location filename="../src/app/Main.qml" line="38"/>
+        <source>Error</source>
+        <translation>Fehler</translation>
+    </message>
+    <message>
+        <location filename="../src/app/Main.qml" line="85"/>
         <source>Back</source>
         <translation>Zurück</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/Main.qml" line="82"/>
+        <location filename="../src/app/Main.qml" line="115"/>
         <source>%n stroke(s)</source>
         <translation>
             <numerusform>%n Strich</numerusform>
@@ -228,7 +253,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/Main.qml" line="82"/>
+        <location filename="../src/app/Main.qml" line="115"/>
         <source>%n point(s)</source>
         <translation>
             <numerusform>%n Punkt</numerusform>
@@ -236,24 +261,19 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/app/Main.qml" line="90"/>
+        <location filename="../src/app/Main.qml" line="123"/>
         <source>Switch to light theme</source>
         <translation>Helles Design aktivieren</translation>
     </message>
     <message>
-        <location filename="../src/app/Main.qml" line="90"/>
+        <location filename="../src/app/Main.qml" line="123"/>
         <source>Switch to dark theme</source>
         <translation>Dunkles Design aktivieren</translation>
     </message>
     <message>
-        <location filename="../src/app/Main.qml" line="102"/>
+        <location filename="../src/app/Main.qml" line="135"/>
         <source>About</source>
         <translation>Über</translation>
-    </message>
-    <message>
-        <location filename="../src/app/Main.qml" line="174"/>
-        <source>Sketchbook error</source>
-        <translation>Skizzenbuchfehler</translation>
     </message>
 </context>
 <context>

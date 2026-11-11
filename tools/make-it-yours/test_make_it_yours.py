@@ -72,6 +72,15 @@ class TemplateSetupTest(unittest.TestCase):
         self.assertNotIn("app_sketchbook", cmake.read_text())
         self.assertFalse((self.root / "tests/canvas").exists())
 
+    def test_demo_removal_strips_sketchbook_error_state(self):
+        main = self.copy("src/app/Main.qml")
+        self.copy("vcpkg.json")
+        setup.remove_demo()
+        text = main.read_text()
+        self.assertNotIn("SketchbookViewModel", text)
+        self.assertNotIn("hasFailedChanges", text)
+        self.assertNotIn("storageLog", text)
+
     def test_customization_removes_template_about_links(self):
         for path in ("CMakeLists.txt", "LICENSE", "REUSE.toml"):
             self.copy(path)

@@ -4,7 +4,6 @@
 #include <QtCore/QMetaProperty>
 
 #include <QtCore/QDir>
-#include <QtCore/QRegularExpression>
 #include <QtCore/QSettings>
 #include <QtCore/QTemporaryDir>
 #include <QtGui/QDesktopServices>
@@ -41,8 +40,6 @@ private Q_SLOTS:
         QTemporaryDir dir;
         QSettings settings(dir.filePath("settings.ini"_L1), QSettings::IniFormat);
         settings.setValue("theme/dark"_L1, false);
-        // This test links the controller without the application's translation resource.
-        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"No translation for language.*"_s));
         app::AppController controller(directories(dir), settings);
         QDesktopServices::setUrlHandler("file"_L1, this, "recordOpenedUrl");
 
@@ -58,7 +55,6 @@ private Q_SLOTS:
         QVERIFY(appDirectories.logs.mkpath("."_L1));
         QSettings settings(dir.filePath("settings.ini"_L1), QSettings::IniFormat);
         settings.setValue("theme/dark"_L1, false);
-        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"No translation for language.*"_s));
         app::AppController controller(appDirectories, settings);
         QDesktopServices::setUrlHandler("file"_L1, this, "recordOpenedUrl");
 
@@ -72,7 +68,6 @@ private Q_SLOTS:
         QTemporaryDir dir;
         QSettings settings(dir.filePath("settings.ini"_L1), QSettings::IniFormat);
         settings.setValue("theme/dark"_L1, false);
-        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"No translation for language.*"_s));
         app::AppController controller(directories(dir), settings);
 
         controller.setDarkTheme(true);
@@ -85,7 +80,6 @@ private Q_SLOTS:
     {
         QTemporaryDir dir;
         QSettings settings(dir.filePath("settings.ini"_L1), QSettings::IniFormat);
-        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"No translation for language.*"_s));
         app::AppController controller(directories(dir), settings);
 
         const auto details = controller.buildDetails();
@@ -108,7 +102,6 @@ private Q_SLOTS:
     {
         QTemporaryDir dir;
         QSettings settings(dir.filePath("settings.ini"_L1), QSettings::IniFormat);
-        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"No translation for language.*"_s));
         app::AppController controller(directories(dir), settings);
         QQmlEngine engine;
         engine.rootContext()->setContextProperty("controller"_L1, &controller);

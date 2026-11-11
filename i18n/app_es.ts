@@ -210,17 +210,42 @@
 <context>
     <name>Main</name>
     <message>
-        <location filename="../src/app/Main.qml" line="26"/>
-        <source>Some sketches have not been saved.</source>
-        <translation>Algunos bocetos no se han guardado.</translation>
+        <location filename="../src/app/Main.qml" line="28"/>
+        <source>Open sketch</source>
+        <translation>Abrir boceto</translation>
     </message>
     <message>
-        <location filename="../src/app/Main.qml" line="52"/>
+        <location filename="../src/app/Main.qml" line="30"/>
+        <source>Rename sketch</source>
+        <translation>Renombrar boceto</translation>
+    </message>
+    <message>
+        <location filename="../src/app/Main.qml" line="32"/>
+        <source>Duplicate sketch</source>
+        <translation>Duplicar boceto</translation>
+    </message>
+    <message>
+        <location filename="../src/app/Main.qml" line="34"/>
+        <source>Save sketch</source>
+        <translation>Guardar boceto</translation>
+    </message>
+    <message>
+        <location filename="../src/app/Main.qml" line="36"/>
+        <source>Delete sketch</source>
+        <translation>Eliminar boceto</translation>
+    </message>
+    <message>
+        <location filename="../src/app/Main.qml" line="38"/>
+        <source>Error</source>
+        <translation>Error</translation>
+    </message>
+    <message>
+        <location filename="../src/app/Main.qml" line="85"/>
         <source>Back</source>
         <translation>Volver</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/Main.qml" line="82"/>
+        <location filename="../src/app/Main.qml" line="115"/>
         <source>%n stroke(s)</source>
         <translation>
             <numerusform>%n trazo</numerusform>
@@ -228,7 +253,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/Main.qml" line="82"/>
+        <location filename="../src/app/Main.qml" line="115"/>
         <source>%n point(s)</source>
         <translation>
             <numerusform>%n punto</numerusform>
@@ -236,24 +261,19 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/app/Main.qml" line="90"/>
+        <location filename="../src/app/Main.qml" line="123"/>
         <source>Switch to light theme</source>
         <translation>Cambiar al tema claro</translation>
     </message>
     <message>
-        <location filename="../src/app/Main.qml" line="90"/>
+        <location filename="../src/app/Main.qml" line="123"/>
         <source>Switch to dark theme</source>
         <translation>Cambiar al tema oscuro</translation>
     </message>
     <message>
-        <location filename="../src/app/Main.qml" line="102"/>
+        <location filename="../src/app/Main.qml" line="135"/>
         <source>About</source>
         <translation>Acerca de</translation>
-    </message>
-    <message>
-        <location filename="../src/app/Main.qml" line="174"/>
-        <source>Sketchbook error</source>
-        <translation>Error del cuaderno de bocetos</translation>
     </message>
 </context>
 <context>
