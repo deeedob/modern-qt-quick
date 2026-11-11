@@ -24,7 +24,7 @@ Q_STATIC_LOGGING_CATEGORY(lcStorage, "app.storage")
 
 namespace app::sketchbook {
 
-struct ReadableDocument
+struct ParsedSketchDocument
 {
     std::string name;
     std::vector<std::shared_ptr<canvas::Stroke>> strokes;
@@ -67,7 +67,7 @@ std::expected<SketchDocument, QString> SketchStorage::load(const QString &id)
         return std::unexpected(file.errorString());
     const auto json = file.readAll().toStdString();
 
-    ReadableDocument parsed;
+    ParsedSketchDocument parsed;
     if (const auto error = glz::read<glz::opts{ .error_on_missing_keys = true }>(parsed, json))
         return std::unexpected(QString::fromStdString(glz::format_error(error, json)));
     parsed.page.spacing = std::clamp(parsed.page.spacing, 8, 128);
