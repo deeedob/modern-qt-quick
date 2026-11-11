@@ -22,37 +22,33 @@ book:
     collapse-level: 1
   chapters:
     - index.qmd
-    - part: "Foundations"
+    - part: "Understand the project"
       chapters:
         - 01-shape.qmd
         - 02-layout.qmd
-    - part: "Building"
+    - part: "Build the project"
       chapters:
         - 03-build.qmd
         - 04-dependencies.qmd
-    - part: "Qt and QML"
+    - part: "Develop the application"
       chapters:
         - 05-qt-runtime.qmd
         - 06-qml.qmd
         - 07-cpp-qml.qmd
         - 08-patterns.qmd
-    - part: "The application"
-      chapters:
         - 09-look-and-feel.qmd
         - 10-essentials.qmd
-    - part: "Quality"
+    - part: "Test and maintain"
       chapters:
-        - 11-quality.qmd
         - 12-testing.qmd
-    - part: "Collaboration"
-      chapters:
+        - 11-quality.qmd
         - 17-git.qmd
-    - part: "Shipping"
+    - part: "Release the application"
       chapters:
         - 13-shipping.qmd
         - 14-distribution.qmd
         - 15-mobile.qmd
-    - part: "Beyond"
+    - part: "Keep learning"
       chapters:
         - 16-learning.qmd
 

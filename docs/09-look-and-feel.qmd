@@ -114,9 +114,9 @@ set_source_files_properties(Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 :::
 
 ::: {#fig-themes layout-ncol=2}
-![Light](images/canvas-light.png)
+![Light theme](images/canvas-light.png)
 
-![Dark](images/canvas-dark.png)
+![Dark theme with canvas settings open](images/canvas-dark.png)
 
 The same canvas in both themes.
 :::

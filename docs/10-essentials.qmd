@@ -1,4 +1,4 @@
-# What every real application needs {#sec-essentials}
+# Application essentials {#sec-essentials}
 
 A demo can skip these. A real application cannot: it speaks the user's language, keeps its
 files in the right place, never loses data, and leaves a trail when something goes wrong.

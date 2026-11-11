@@ -13,7 +13,7 @@ on a canvas, and circles, rectangles and triangles snap into clean shapes. The a
 but it is built, tested and packaged the way a product would be, so each section can point
 to working code.
 
-![](images/canvas-light.png){fig-alt="Sketchbook's canvas with a circle, a rectangle and a triangle that snapped into shape, and a free line." width=85%}
+![](images/canvas-light.png){fig-alt="Sketchbook's canvas with a triangle, a rectangle, an ellipse and handwritten letters." width=85%}
 
 The app and this guide share one repository,
 [deeedob/qt-kickstart](https://github.com/deeedob/qt-kickstart). Its README explains
@@ -22,8 +22,8 @@ how to build and run the app and how to start your own project from it.
 ## How to read this guide
 
 Read it front to back once. The chapters build on each other: first the shape of an
-application, then the build, then Qt and QML, then quality and shipping. Afterwards, come
-back to single sections when you need them.
+application and its build, then Qt and QML, testing and maintenance, and releasing the app.
+Afterwards, come back to single sections when you need them.
 
 Most sections end with a box like this one:
 

@@ -1,4 +1,4 @@
-# Shipping {#sec-shipping}
+# Packaging and deployment {#sec-shipping}
 
 An app that only runs on your machine is not done. This chapter turns a build into something
 a user can download, with everything it needs to run and every license it has to include.
@@ -156,4 +156,55 @@ the result on such a machine.
 
 ::: {.more}
 **Template:** `.github/workflows/ci.yml`
+:::
+
+## Versions, releases and backports {#sec-versions-and-backports}
+
+A **version** tells a user which release they have. With
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html), a version has three numbers:
+
+| Change | Example | Meaning |
+|---|---|---|
+| Patch | `1.2.0` → `1.2.1` | a backward-compatible bug fix |
+| Minor | `1.2.1` → `1.3.0` | backward-compatible functionality |
+| Major | `1.3.0` → `2.0.0` | an incompatible public change |
+
+These promises need a defined public contract: for an app that might include a file format,
+an API or commands used by scripts. Before `1.0.0`, SemVer treats the public API as unstable.
+A **tag** such as `v1.2.0` names the exact commit used for a release; a branch can continue
+moving as more fixes are added.
+
+Now imagine users run both version `1.2` and the newer `2.2`. You discover a serious bug in
+both. Fix and test it on `main` for the next release, then bring the same fix to the
+`release/1.2` maintenance branch. That branch starts at the old release and contains only
+the fixes the team chooses to support there. Test the backport and release `1.2.1`, tagged
+at its own commit. Users can receive the fix without upgrading to version 2.
+
+```{mermaid}
+%%| fig-width: 6.5
+flowchart LR
+    A["v1.2.0<br/>released"] --> B["v2.2.0<br/>released"] --> C["Fix on main"]
+    A --> D["release/1.2<br/>maintenance"] --> E["Backport fix<br/>tag v1.2.1"]
+    C -. "copy the fix" .-> E
+```
+
+Copying a commit to another branch is called **cherry-picking** or **backporting**. An atomic
+fix is easier to pick because it brings the fix and its test without unrelated features:
+
+```sh
+git switch release/1.2
+git cherry-pick -x <fix-commit>
+```
+
+The result is a new commit on the maintenance branch. The `-x` option records the original
+commit when the pick applies without conflicts; after resolving a conflict, check the message
+and add that reference if needed. A fix may need adaptation if version 1 has different code.
+Maintain older branches only for releases you have chosen to support.
+
+::: {.more}
+**Template:** `CMakeLists.txt` sets the app version; the release build puts it in the package
+
+**Read more:** [Semantic Versioning](https://semver.org/spec/v2.0.0.html),
+[Git tags](https://git-scm.com/book/en/v2/Git-Basics-Tagging),
+[Git cherry-pick](https://git-scm.com/docs/git-cherry-pick)
 :::
