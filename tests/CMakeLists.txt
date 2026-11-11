@@ -29,6 +29,7 @@ function(app_add_quick_test name)
 endfunction()
 
 add_subdirectory(app)
+add_subdirectory(showcase)
 add_subdirectory(canvas) # demo
 add_subdirectory(sketchbook) # demo
 add_subdirectory(controls)

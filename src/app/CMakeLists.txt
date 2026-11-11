@@ -31,11 +31,10 @@ target_compile_definitions(app PRIVATE
     APP_LICENSES_RELATIVE_TO_EXECUTABLE="${APP_LICENSES_RELATIVE_TO_EXECUTABLE}"
 )
 
-# The executable is a QML module too (URI App), holding the window and the app-wide controller.
-# The About dialog shows app.svg, the same artwork as the application icon.
 get_target_property(_build_info_header app_support APP_BUILD_INFO_HEADER)
-qt_add_qml_module(app
+qt_add_qml_module(app_ui
     URI App
+    STATIC
     QML_FILES
         AboutDialog.qml
         Main.qml
@@ -45,6 +44,18 @@ qt_add_qml_module(app
     RESOURCES
         app.svg
 )
+target_link_libraries(app_ui
+    PUBLIC app_support Qt::Quick
+    PRIVATE app_controls app_canvas app_sketchbook
+)
+app_target_defaults(app_ui)
+
+qt_add_translations(app_ui
+    TS_FILE_BASE app
+    TS_FILE_DIR "${PROJECT_SOURCE_DIR}/i18n"
+    MERGE_QT_TRANSLATIONS
+    LUPDATE_OPTIONS -no-obsolete
+)
 
 target_link_libraries(app PRIVATE
     Qt::Gui
@@ -52,6 +63,8 @@ target_link_libraries(app PRIVATE
     # Nothing calls QtSvg directly, but the deploy tool only ships the SVG icon plugin with it.
     Qt::Svg
     app_support
+    app_ui
+    app_uiplugin
     # Static QML modules are registered by linking their plugins.
     app_controlsplugin
     app_canvas # demo
@@ -61,15 +74,6 @@ target_link_libraries(app PRIVATE
 )
 app_target_defaults(app)
 add_custom_target(run COMMAND app USES_TERMINAL VERBATIM)
-
-qt_add_translations(app
-    TS_FILE_BASE app
-    TS_FILE_DIR "${PROJECT_SOURCE_DIR}/i18n"
-    # Qt's own strings, such as the OK and Cancel buttons of a dialog, translated as well.
-    MERGE_QT_TRANSLATIONS
-    # Drop strings that no longer exist in the sources instead of keeping them as "vanished".
-    LUPDATE_OPTIONS -no-obsolete
-)
 
 # Qt is linked dynamically under the LGPLv3, which asks for its license texts in the package.
 # A Qt built by vcpkg brings them in its own copyright file, which Packaging.cmake ships.

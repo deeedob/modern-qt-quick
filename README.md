@@ -68,6 +68,19 @@ The first Qt build can take hours; later builds can use vcpkg's binary cache. Ou
 install autotools first. Set `APP_USE_VCPKG_QT=OFF` to use an installed Qt again. Set the
 option separately for the `asan` or `release` preset when needed.
 
+## Documentation screenshots
+
+Build the showcase utility and give it an existing output directory:
+
+```sh
+cmake --build --preset dev --target showcase
+./build/dev/tests/showcase/showcase /path/to/output
+```
+
+It writes four PNG files, replacing files with the same names. Run it in a native Qt graphics
+session: the software renderer cannot capture the canvas strokes. The showcase uses temporary
+application data. Fonts, display scaling, timestamps and build details can differ between runs.
+
 ## Git hooks
 
 After initializing a project from this template, enable its local Git policy before your
