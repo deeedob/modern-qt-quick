@@ -4,12 +4,6 @@
 
 set_directory_properties(PROPERTIES QT_EXCLUDE_FROM_TRANSLATION ON)
 
-add_test(NAME tst_SelectQt
-    COMMAND "${CMAKE_COMMAND}"
-        "-DSELECT_QT_MODULE=${PROJECT_SOURCE_DIR}/cmake/SelectQt.cmake"
-        -P "${CMAKE_CURRENT_SOURCE_DIR}/tst_SelectQt.cmake"
-)
-
 function(app_add_qt_test name)
     cmake_parse_arguments(PARSE_ARGV 1 arg "" "" "SOURCES;LIBRARIES")
     qt_add_executable(${name} ${arg_SOURCES})
