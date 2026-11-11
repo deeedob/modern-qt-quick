@@ -6,8 +6,10 @@ import QtQuick.Templates as T
 T.Button {
     id: control
 
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth
+                            + leftPadding + rightPadding)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
+                             implicitContentHeight + topPadding + bottomPadding)
 
     padding: 8
     horizontalPadding: 16
@@ -32,7 +34,9 @@ T.Button {
         implicitHeight: Theme.controlHeight
         radius: Theme.radius
         visible: !control.flat || control.down || control.hovered
-        color: control.highlighted ? (control.down ? Theme.accentPressed : Theme.accent) : control.down ? Theme.pressed : control.hovered ? Theme.hover : Theme.surface
+        color: control.highlighted ? (control.down ? Theme.accentPressed : Theme.accent) :
+                                     control.down ? Theme.pressed : control.hovered ? Theme.hover :
+                                                                                      Theme.surface
         border.width: control.visualFocus ? 2 : control.highlighted || control.flat ? 0 : 1
         border.color: control.visualFocus ? Theme.accent : Theme.border
         opacity: control.enabled ? 1.0 : 0.5

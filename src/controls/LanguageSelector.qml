@@ -7,6 +7,7 @@ import App.Controls
 ToolButton {
     id: root
 
+    readonly property list<string> languageCodes: ["en", "de", "es"]
     required property string language
     signal languageSelected(string language)
 
@@ -47,7 +48,7 @@ ToolButton {
         focus: !hoverOpened
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
         onOpened: {
-            highlightedIndex = root.language === "de" ? 1 : 0;
+            highlightedIndex = Math.max(0, root.languageCodes.indexOf(root.language));
             if (!hoverOpened)
                 menuContent.forceActiveFocus();
         }
@@ -68,25 +69,30 @@ ToolButton {
 
             Keys.onPressed: event => {
                 if (event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
-                    languageMenu.highlightedIndex = 1 - languageMenu.highlightedIndex;
+                    languageMenu.highlightedIndex = (languageMenu.highlightedIndex + (event.key
+                                                                                      === Qt.Key_Down
+                                                                                      ? 1 : 2))
+                            % root.languageCodes.length;
                     event.accepted = true;
-                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
-                    root.languageSelected(languageMenu.highlightedIndex === 0 ? "en" : "de");
+                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key
+                           === Qt.Key_Space) {
+                    root.languageSelected(root.languageCodes[languageMenu.highlightedIndex]);
                     languageMenu.close();
                     event.accepted = true;
                 }
             }
 
             Repeater {
-                model: 2
+                model: root.languageCodes.length
                 delegate: ItemDelegate {
                     id: languageItem
                     required property int index
-                    readonly property string languageCode: index === 0 ? "en" : "de"
+                    readonly property string languageCode: root.languageCodes[index]
                     objectName: "language_" + languageCode
                     Layout.fillWidth: true
                     implicitWidth: 180
-                    text: index === 0 ? qsTr("English") : qsTr("Deutsch")
+                    text: index === 0 ? qsTr("English") : index === 1 ? qsTr("Deutsch") : qsTr(
+                                                                            "Español")
                     highlighted: menuContent.activeFocus && index === languageMenu.highlightedIndex
                     onClicked: {
                         root.languageSelected(languageItem.languageCode);
@@ -121,7 +127,8 @@ ToolButton {
 
         Timer {
             interval: 600
-            running: languageMenu.visible && languageMenu.hoverOpened && !root.hovered && !menuHover.hovered
+            running: languageMenu.visible && languageMenu.hoverOpened && !root.hovered &&
+                     !menuHover.hovered
             onTriggered: languageMenu.close()
         }
     }

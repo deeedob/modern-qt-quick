@@ -5,8 +5,12 @@ import QtQuick.Templates as T
 T.TextField {
     id: control
 
-    implicitWidth: implicitBackgroundWidth + leftInset + rightInset || Math.max(contentWidth, placeholder.implicitWidth) + leftPadding + rightPadding
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding, placeholder.implicitHeight + topPadding + bottomPadding)
+    implicitWidth: implicitBackgroundWidth + leftInset + rightInset || Math.max(contentWidth,
+                                                                                placeholder.implicitWidth)
+                   + leftPadding + rightPadding
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight
+                             + topPadding + bottomPadding, placeholder.implicitHeight + topPadding
+                             + bottomPadding)
 
     padding: 8
     leftPadding: 12

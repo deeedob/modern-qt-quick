@@ -9,8 +9,10 @@ T.ToolButton {
     property bool showToolTip: true
     focusPolicy: Qt.StrongFocus
 
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth
+                            + leftPadding + rightPadding)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
+                             implicitContentHeight + topPadding + bottomPadding)
 
     padding: 8
     spacing: 6
@@ -33,7 +35,9 @@ T.ToolButton {
         implicitWidth: Theme.controlHeight
         implicitHeight: Theme.controlHeight
         radius: Theme.radius
-        color: control.down || control.checked ? Theme.pressed : control.hovered ? Theme.hover : "transparent"
+        color: control.down || control.checked ? Theme.pressed : control.hovered ? Theme.hover :
+                                                                                   "transparent"
+
         border.width: control.visualFocus ? 2 : 0
         border.color: Theme.accent
     }
@@ -41,7 +45,8 @@ T.ToolButton {
     ToolTip {
         objectName: "toolTip"
         text: control.text
-        visible: control.showToolTip && control.display === T.AbstractButton.IconOnly && control.text !== "" && control.hovered
+        visible: control.showToolTip && control.display === T.AbstractButton.IconOnly
+                 && control.text !== "" && control.hovered
         delay: 600
     }
 }

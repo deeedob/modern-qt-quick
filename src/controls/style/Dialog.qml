@@ -4,8 +4,12 @@ import QtQuick.Templates as T
 T.Dialog {
     id: control
 
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding, implicitHeaderWidth, implicitFooterWidth)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding + (implicitHeaderHeight > 0 ? implicitHeaderHeight + spacing : 0) + (implicitFooterHeight > 0 ? implicitFooterHeight + spacing : 0))
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth
+                            + leftPadding + rightPadding, implicitHeaderWidth, implicitFooterWidth)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
+                             implicitContentHeight + topPadding + bottomPadding + (
+                                 implicitHeaderHeight > 0 ? implicitHeaderHeight + spacing : 0) + (
+                                 implicitFooterHeight > 0 ? implicitFooterHeight + spacing : 0))
 
     anchors.centerIn: T.Overlay.overlay
     modal: true

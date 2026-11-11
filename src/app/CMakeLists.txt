@@ -38,7 +38,6 @@ qt_add_qml_module(app
     URI App
     QML_FILES
         AboutDialog.qml
-        LanguageSelector.qml
         Main.qml
     SOURCES
         AppController.cpp AppController.hpp

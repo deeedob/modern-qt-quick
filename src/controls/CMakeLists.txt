@@ -1,6 +1,17 @@
 # A Qt Quick Controls style. Views import it instead of QtQuick.Controls: a compile-time choice,
 # so bindings on controls compile to C++. Controls it does not define come from Basic.
 
+set_source_files_properties(style/ApplicationWindow.qml PROPERTIES QT_RESOURCE_ALIAS ApplicationWindow.qml)
+set_source_files_properties(style/Button.qml PROPERTIES QT_RESOURCE_ALIAS Button.qml)
+set_source_files_properties(style/ComboBox.qml PROPERTIES QT_RESOURCE_ALIAS ComboBox.qml)
+set_source_files_properties(style/Dialog.qml PROPERTIES QT_RESOURCE_ALIAS Dialog.qml)
+set_source_files_properties(style/DialogButtonBox.qml PROPERTIES QT_RESOURCE_ALIAS DialogButtonBox.qml)
+set_source_files_properties(style/ItemDelegate.qml PROPERTIES QT_RESOURCE_ALIAS ItemDelegate.qml)
+set_source_files_properties(style/SpinBox.qml PROPERTIES QT_RESOURCE_ALIAS SpinBox.qml)
+set_source_files_properties(style/TextField.qml PROPERTIES QT_RESOURCE_ALIAS TextField.qml)
+set_source_files_properties(style/ToolButton.qml PROPERTIES QT_RESOURCE_ALIAS ToolButton.qml)
+set_source_files_properties(style/ToolTip.qml PROPERTIES QT_RESOURCE_ALIAS ToolTip.qml)
+
 set_source_files_properties(Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(app_controls
@@ -8,17 +19,18 @@ qt_add_qml_module(app_controls
     STATIC
     IMPORTS QtQuick.Controls.Basic
     QML_FILES
-        ApplicationWindow.qml
-        Button.qml
-        ComboBox.qml
-        Dialog.qml
-        DialogButtonBox.qml
-        ItemDelegate.qml
-        SpinBox.qml
-        TextField.qml
+        style/ApplicationWindow.qml
+        style/Button.qml
+        style/ComboBox.qml
+        style/Dialog.qml
+        style/DialogButtonBox.qml
+        style/ItemDelegate.qml
+        style/SpinBox.qml
+        style/TextField.qml
         Theme.qml
-        ToolButton.qml
-        ToolTip.qml
+        LanguageSelector.qml
+        style/ToolButton.qml
+        style/ToolTip.qml
     RESOURCES
         fonts/InterVariable.ttf
         icons/arrow-left.svg

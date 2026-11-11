@@ -130,5 +130,5 @@ whose properties notify on change. The views do not change: they bind to the sam
 names, and every binding updates when a theme is applied at run time.
 
 ::: {.more}
-**Template:** `src/controls/Theme.qml`, `src/controls/ApplicationWindow.qml`
+**Template:** `src/controls/Theme.qml`, `src/controls/style/ApplicationWindow.qml`
 :::

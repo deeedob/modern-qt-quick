@@ -39,7 +39,11 @@ AppController::AppController(QString logFilePath, QString licensesDirectory, QSe
               : systemUsesDarkTheme())
     , m_settings(settings)
 {
-    setLanguage(QLocale::system().language() == QLocale::German ? "de"_L1 : "en"_L1);
+    const auto systemLanguage = QLocale::system().language();
+    setLanguage(systemLanguage == QLocale::German ? "de"_L1
+            : systemLanguage == QLocale::Spanish
+            ? "es"_L1
+            : "en"_L1);
 }
 
 BuildInfo AppController::buildDetails() const

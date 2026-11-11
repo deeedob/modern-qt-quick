@@ -39,7 +39,9 @@ T.SpinBox {
             anchors.centerIn: parent
             text: "+"
             font.pixelSize: 20
-            color: control.enabled && (control.wrap || control.value < Math.max(control.from, control.to)) ? Theme.text : Theme.mutedText
+            color: control.enabled && (control.wrap || control.value < Math.max(control.from,
+                                                                                control.to))
+                   ? Theme.text : Theme.mutedText
         }
     }
 
@@ -48,12 +50,15 @@ T.SpinBox {
         width: 34
         height: control.height
         radius: Theme.radius
-        color: control.down.pressed ? Theme.pressed : control.down.hovered ? Theme.hover : "transparent"
+        color: control.down.pressed ? Theme.pressed : control.down.hovered ? Theme.hover :
+                                                                             "transparent"
         Text {
             anchors.centerIn: parent
             text: "−"
             font.pixelSize: 20
-            color: control.enabled && (control.wrap || control.value > Math.min(control.from, control.to)) ? Theme.text : Theme.mutedText
+            color: control.enabled && (control.wrap || control.value > Math.min(control.from,
+                                                                                control.to))
+                   ? Theme.text : Theme.mutedText
         }
     }
 
