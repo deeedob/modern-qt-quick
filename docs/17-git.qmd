@@ -36,6 +36,15 @@ a `revert:` message explaining why.
 **Read more:** [Recording changes to the repository](https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository)
 :::
 
+## Keep large media out of history {#sec-large-media}
+
+Git retains committed files in history, including old versions after you delete or replace
+them. For large images or videos used in a README, consider hosting them outside the
+repository and linking to them. On GitHub, you can upload an image to an issue or pull
+request comment and use the resulting attachment URL. Keep a copy under your control and
+check that the link remains accessible to your readers. For large files the project must
+version, consider [Git LFS](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage).
+
 ## A message for the next reader {#sec-commit-messages}
 
 The diff shows *what* changed. The commit message gives a future reader the reason and the
@@ -120,8 +129,9 @@ change, not every internal commit.
 
 A **hook** is a program Git runs at a particular point in a command. The template's hooks
 check the staged C++ and QML formatting and whitespace, then check the commit message. They
-report problems without changing your files. They cannot judge whether the explanation is
-useful or replace a build and tests.
+also warn about staged files over 50 KB without blocking the commit. They report problems
+without changing your files. They cannot judge whether the explanation is useful or replace a
+build and tests.
 
 Git does not enable hooks from a cloned repository automatically. Once you have initialized
 your project from the template, enable these hooks in each clone:

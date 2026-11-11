@@ -3,5 +3,17 @@ set -euo pipefail
 
 git diff --cached --check
 
+while IFS= read -r -d '' path; do
+    object=":$path"
+    if [[ $(git cat-file -t "$object") != blob ]]; then
+        continue
+    fi
+    size=$(git cat-file -s "$object")
+    if (( size > 50000 )); then
+        printf 'Warning: staged file %q is %s bytes (over 50000 bytes).\n' "$path" "$size" >&2
+        printf 'Consider external hosting for media or Git LFS for large versioned files.\n' >&2
+    fi
+done < <(git diff --cached --name-only --diff-filter=ACMRT --no-renames -z)
+
 root=$(git rev-parse --show-toplevel)
 exec "$root/tools/check_staged_format.sh"

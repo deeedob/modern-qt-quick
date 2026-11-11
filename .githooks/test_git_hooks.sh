@@ -53,6 +53,27 @@ if git -C "$repository" log -1 --format=%B | grep -q '^#'; then
     exit 1
 fi
 git -C "$repository" commit --amend --allow-empty --no-edit --quiet
+dd if=/dev/zero of="$repository/large media.bin" bs=50001 count=1 2>/dev/null
+git -C "$repository" add 'large media.bin'
+printf 'small working copy\n' > "$repository/large media.bin"
+git -C "$repository" commit -m 'test: accept a large staged file' \
+    -m 'Warn about large files without blocking a commit.' --quiet 2> "$temporary_dir/large-warning"
+if ! grep -F 'large\ media.bin' "$temporary_dir/large-warning" >/dev/null ||
+   ! grep -F '50001' "$temporary_dir/large-warning" >/dev/null ||
+   ! grep -F 'Git LFS' "$temporary_dir/large-warning" >/dev/null; then
+    printf 'Expected warning for large staged file\n' >&2
+    exit 1
+fi
+printf 'small staged file\n' > "$repository/large media.bin"
+git -C "$repository" add 'large media.bin'
+dd if=/dev/zero of="$repository/large media.bin" bs=50001 count=1 2>/dev/null
+git -C "$repository" commit -m 'test: accept a small staged file' \
+    -m 'Use the staged file size instead of the working copy.' --quiet 2> "$temporary_dir/small-warning"
+if grep -F 'large\ media.bin' "$temporary_dir/small-warning" >/dev/null; then
+    printf 'Unexpected warning for small staged file\n' >&2
+    exit 1
+fi
+
 if git -C "$repository" log -1 --format=%B | grep -q '^#'; then
     printf 'Message template leaked into amended commit\n' >&2
     exit 1
