@@ -26,8 +26,8 @@ Report missing tools, skipped checks and warnings. Warnings are errors for proje
 
 ## Git
 
-- Follow `docs/17-git.qmd`: integrate small, reviewed changes into `main` frequently; use
-  short-lived branches and rebase before integration when a branch is needed.
+- Integrate small, reviewed changes into `main` frequently; use short-lived branches and rebase
+  before integration when a branch is needed.
 - Keep commits atomic and self-contained, with their tests; split unrelated changes so a fix
   can be reviewed, reverted or backported independently.
 - Use Conventional Commits: `type(scope): imperative summary`, at most 72 characters, with a
