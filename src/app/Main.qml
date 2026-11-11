@@ -24,6 +24,11 @@ ApplicationWindow {
         value: AppController.darkTheme
     }
 
+    LoggingCategory {
+        id: navigationLog
+        name: "app.navigation"
+    }
+
     header: ToolBar {
         RowLayout {
             anchors.fill: parent
@@ -34,7 +39,10 @@ ApplicationWindow {
                 icon.source: Theme.icon("arrow-left")
                 text: qsTr("Back")
                 visible: stack.depth > 1
-                onClicked: stack.pop()
+                onClicked: {
+                    console.info(navigationLog, "Returning to sketchbook");
+                    stack.pop();
+                }
             }
 
             Label {
@@ -59,14 +67,16 @@ ApplicationWindow {
             // demo:begin
             Label {
                 visible: stack.depth > 1
-                text: qsTr("%n stroke(s)", "", window.canvas.strokeCount) + " · " + qsTr("%n point(s)", "", window.canvas.pointCount)
+                text: qsTr("%n stroke(s)", "", window.canvas.strokeCount) + " · " + qsTr("%n point(s)",
+                                                                                         "", window.canvas.pointCount)
                 color: Theme.mutedText
             }
             // demo:end
 
             ToolButton {
                 icon.source: Theme.icon(AppController.darkTheme ? "sun" : "moon")
-                text: AppController.darkTheme ? qsTr("Switch to light theme") : qsTr("Switch to dark theme")
+                text: AppController.darkTheme ? qsTr("Switch to light theme") : qsTr(
+                                                    "Switch to dark theme")
                 onClicked: AppController.darkTheme = !AppController.darkTheme
             }
 
@@ -90,7 +100,10 @@ ApplicationWindow {
         // demo:begin
         initialItem: SketchbookPage {
             viewModel: window.sketchbook
-            onOpened: stack.push(canvasPage)
+            onOpened: {
+                console.info(navigationLog, "Opening canvas");
+                stack.push(canvasPage);
+            }
         }
         // demo:end
     }
