@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import App.Controls
 
 Dialog {
-    width: 360
+    width: 440
     padding: Theme.spacing * 2
     standardButtons: Dialog.Close
 
@@ -12,7 +12,6 @@ Dialog {
         font.pixelSize: 12
         color: Theme.mutedText
         wrapMode: Text.Wrap
-        horizontalAlignment: Text.AlignHCenter
     }
 
     contentItem: ColumnLayout {
@@ -38,26 +37,52 @@ Dialog {
             horizontalAlignment: Text.AlignHCenter
         }
 
-        ColumnLayout {
+        Rectangle {
             Layout.fillWidth: true
-            spacing: 0
+            implicitHeight: details.implicitHeight + Theme.spacing * 2
+            radius: Theme.radius
+            color: Theme.hover
+            border.color: Theme.border
 
-            DetailLabel {
-                text: "%1 · %2".arg(AppController.buildDetails.gitSha,
-                                    AppController.buildDetails.buildType)
-            }
+            GridLayout {
+                id: details
+                anchors.fill: parent
+                anchors.margins: Theme.spacing
+                columns: 2
+                columnSpacing: Theme.spacing
+                rowSpacing: Theme.spacing / 2
 
-            DetailLabel {
-                text: "%1 · Qt %2".arg(AppController.buildDetails.compiler,
-                                       AppController.buildDetails.qtVersion)
-            }
-
-            DetailLabel {
-                text: AppController.buildDetails.system
-            }
-
-            DetailLabel {
-                text: qsTr("Configured: %1").arg(AppController.buildDetails.timestamp)
+                DetailLabel {
+                    text: qsTr("Build")
+                }
+                DetailLabel {
+                    text: "%1 · %2".arg(AppController.buildDetails.buildType,
+                                        AppController.buildDetails.gitSha)
+                }
+                DetailLabel {
+                    text: qsTr("Compiler")
+                }
+                DetailLabel {
+                    text: AppController.buildDetails.compiler
+                }
+                DetailLabel {
+                    text: qsTr("System")
+                }
+                DetailLabel {
+                    text: AppController.buildDetails.system
+                }
+                DetailLabel {
+                    text: "Qt"
+                }
+                DetailLabel {
+                    text: AppController.buildDetails.qtVersion
+                }
+                DetailLabel {
+                    text: qsTr("Configured")
+                }
+                DetailLabel {
+                    text: AppController.buildDetails.timestamp
+                }
             }
         }
 
@@ -95,16 +120,16 @@ Dialog {
             horizontalAlignment: Text.AlignHCenter
         }
 
-        Button {
+        RowLayout {
             Layout.alignment: Qt.AlignHCenter
-            text: qsTr("Open licenses folder")
-            onClicked: AppController.openLicensesDirectory()
-        }
-
-        Button {
-            Layout.alignment: Qt.AlignHCenter
-            text: qsTr("Open log folder")
-            onClicked: AppController.openLogDirectory()
+            Button {
+                text: qsTr("Open licenses folder")
+                onClicked: AppController.openLicensesDirectory()
+            }
+            Button {
+                text: qsTr("Open log folder")
+                onClicked: AppController.openLogDirectory()
+            }
         }
     }
 }
