@@ -1,8 +1,9 @@
 #include "CanvasStore.hpp"
 
+#include <QtCore/QCoreApplication>
 #include <QtCore/QRegularExpression>
+#include <QtGui/QNativeGestureEvent>
 #include <QtGui/QPointingDevice>
-#include <QtGui/qpa/qwindowsysteminterface.h>
 #include <QtQuick/QQuickItem>
 #include <QtQuick/QQuickView>
 #include <QtTest/QTest>
@@ -67,13 +68,9 @@ private:
     {
         const auto inWindow = page.viewport->mapToScene(inViewport);
         const auto global = page.view.mapToGlobal(inWindow);
-        if (type == Qt::ZoomNativeGesture)
-            QWindowSystemInterface::handleGestureEventWithRealValue(&page.view, m_timestamp++,
-                m_touchpad.get(), type, value, inWindow, global, 2);
-        else
-            QWindowSystemInterface::handleGestureEvent(&page.view, m_timestamp++, m_touchpad.get(),
-                type, inWindow, global, 2);
-        QWindowSystemInterface::flushWindowSystemEvents();
+        QNativeGestureEvent event(type, m_touchpad.get(), 2, inWindow, inWindow, global, value, {});
+        event.setTimestamp(m_timestamp++);
+        QCoreApplication::sendEvent(&page.view, &event);
     }
 
     // Checks after every step that the view stays on the paper and, when anchored, that the
