@@ -91,10 +91,6 @@ Page {
                 }
 
                 Slider {
-                    palette.midlight: Theme.border
-                    palette.dark: Theme.accent
-                    palette.window: Theme.surface
-                    palette.light: Theme.pressed
                     Layout.leftMargin: Theme.spacing
                     Layout.fillWidth: true
                     Layout.minimumWidth: 48
@@ -113,10 +109,6 @@ Page {
                 }
 
                 Switch {
-                    palette.midlight: Theme.border
-                    palette.dark: Theme.accent
-                    palette.window: Theme.surface
-                    palette.light: Theme.pressed
                     Layout.leftMargin: Theme.spacing
                     text: root.width < 600 ? "" : qsTr("Snap shapes")
                     Accessible.name: qsTr("Snap shapes")

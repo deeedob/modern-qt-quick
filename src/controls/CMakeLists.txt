@@ -7,7 +7,9 @@ set_source_files_properties(style/ComboBox.qml PROPERTIES QT_RESOURCE_ALIAS Comb
 set_source_files_properties(style/Dialog.qml PROPERTIES QT_RESOURCE_ALIAS Dialog.qml)
 set_source_files_properties(style/DialogButtonBox.qml PROPERTIES QT_RESOURCE_ALIAS DialogButtonBox.qml)
 set_source_files_properties(style/ItemDelegate.qml PROPERTIES QT_RESOURCE_ALIAS ItemDelegate.qml)
+set_source_files_properties(style/Slider.qml PROPERTIES QT_RESOURCE_ALIAS Slider.qml)
 set_source_files_properties(style/SpinBox.qml PROPERTIES QT_RESOURCE_ALIAS SpinBox.qml)
+set_source_files_properties(style/Switch.qml PROPERTIES QT_RESOURCE_ALIAS Switch.qml)
 set_source_files_properties(style/TextField.qml PROPERTIES QT_RESOURCE_ALIAS TextField.qml)
 set_source_files_properties(style/ToolButton.qml PROPERTIES QT_RESOURCE_ALIAS ToolButton.qml)
 set_source_files_properties(style/ToolTip.qml PROPERTIES QT_RESOURCE_ALIAS ToolTip.qml)
@@ -25,7 +27,9 @@ qt_add_qml_module(app_controls
         style/Dialog.qml
         style/DialogButtonBox.qml
         style/ItemDelegate.qml
+        style/Slider.qml
         style/SpinBox.qml
+        style/Switch.qml
         style/TextField.qml
         Theme.qml
         LanguageSelector.qml

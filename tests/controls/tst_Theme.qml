@@ -3,7 +3,17 @@ import QtTest
 import App.Controls
 
 TestCase {
+    id: testCase
     name: "Theme"
+
+    Component {
+        id: sliderComponent
+        Slider {}
+    }
+    Component {
+        id: switchComponent
+        Switch {}
+    }
 
     function init(): void {
         failOnWarning(/.?/);
@@ -11,6 +21,20 @@ TestCase {
 
     function cleanup(): void {
         Theme.dark = false;
+    }
+
+    function test_sliderAndSwitchFollowTheme(): void {
+        const slider = createTemporaryObject(sliderComponent, testCase);
+        const toggle = createTemporaryObject(switchComponent, testCase);
+        for (const dark of [false, true]) {
+            Theme.dark = dark;
+            for (const control of [slider, toggle]) {
+                compare(control.palette.midlight, Theme.border);
+                compare(control.palette.dark, Theme.accent);
+                compare(control.palette.window, Theme.surface);
+                compare(control.palette.light, Theme.pressed);
+            }
+        }
     }
 
     function test_hardLightPalette(): void {
