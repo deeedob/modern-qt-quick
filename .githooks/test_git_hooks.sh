@@ -36,6 +36,7 @@ expect_failure "$root/tools/check_commit_message.sh" "$temporary_dir/message"
 write_message $'feat(canvas): add undo\n\nThis line is deliberately longer than seventy-two characters so that the policy rejects it. '
 expect_failure "$root/tools/check_commit_message.sh" "$temporary_dir/message"
 
+# Real commits exercise hook installation and message cleanup together.
 repository="$temporary_dir/repository"
 mkdir -p "$repository/.githooks" "$repository/tools"
 cp "$root/.githooks/commit-msg" "$root/.githooks/pre-commit" \
@@ -53,6 +54,7 @@ if git -C "$repository" log -1 --format=%B | grep -q '^#'; then
     exit 1
 fi
 git -C "$repository" commit --amend --allow-empty --no-edit --quiet
+# Staged and working-copy sizes must be evaluated independently.
 dd if=/dev/zero of="$repository/large media.bin" bs=50001 count=1 2>/dev/null
 git -C "$repository" add 'large media.bin'
 printf 'small working copy\n' > "$repository/large media.bin"
@@ -79,6 +81,7 @@ if git -C "$repository" log -1 --format=%B | grep -q '^#'; then
     exit 1
 fi
 
+# The formatting gate must inspect the index even when the working copy differs.
 printf 'int main(){return 0;}\n' > "$repository/example.cpp"
 git -C "$repository" add example.cpp
 expect_failure git -C "$repository" commit -m 'test: reject unformatted c++' -m 'Exercise the staged C++ formatting gate.'
@@ -98,6 +101,7 @@ expect_failure git -C "$repository" commit -m 'test: reject unformatted qml' -m 
 qmlformat --settings "$repository/.qmlformat.ini" -i "$repository/Example.qml"
 git -C "$repository" add Example.qml
 git -C "$repository" commit -m 'test: accept formatted qml' -m 'Exercise the staged QML formatting gate.' --quiet
+# Merge commits use Git-generated messages and need a separate history check.
 git -C "$repository" switch --create topic --quiet
 git -C "$repository" commit --allow-empty -m 'test: add topic commit' \
     -m 'Create a topic commit for merge-hook coverage.' --quiet
