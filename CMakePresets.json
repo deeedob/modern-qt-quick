@@ -30,16 +30,6 @@
         { "type": "test", "name": "release" },
         { "type": "package", "name": "release" }
       ]
-    },
-    {
-      "name": "qt-from-source",
-      "displayName": "Like release, with Qt built by vcpkg (hours on the first run)",
-      "steps": [
-        { "type": "configure", "name": "qt-from-source" },
-        { "type": "build", "name": "qt-from-source" },
-        { "type": "test", "name": "qt-from-source" },
-        { "type": "package", "name": "qt-from-source" }
-      ]
     }
   ],
 
@@ -53,6 +43,7 @@
       "environment": { "MACOSX_DEPLOYMENT_TARGET": "14.4" },
       "cacheVariables": {
         "CMAKE_PREFIX_PATH": "$env{QT_ROOT_DIR}",
+        "CMAKE_COLOR_DIAGNOSTICS": true,
         "CMAKE_EXPORT_COMPILE_COMMANDS": true,
         "CMAKE_COMPILE_WARNING_AS_ERROR": true,
         "VCPKG_INSTALL_OPTIONS": "--downloads-root=${sourceDir}/build/vcpkg-downloads;--x-buildtrees-root=${sourceDir}/build/vcpkg-buildtrees;--x-packages-root=${sourceDir}/build/vcpkg-packages;--clean-buildtrees-after-build;--clean-packages-after-build"
@@ -60,19 +51,13 @@
     },
     { "name": "dev", "inherits": "base", "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" } },
     { "name": "asan", "inherits": "dev", "cacheVariables": { "APP_SANITIZERS": "address;undefined" } },
-    { "name": "release", "inherits": "base", "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" } },
-    {
-      "name": "qt-from-source",
-      "inherits": "release",
-      "cacheVariables": { "CMAKE_PREFIX_PATH": "", "VCPKG_MANIFEST_FEATURES": "qt" }
-    }
+    { "name": "release", "inherits": "base", "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" } }
   ],
 
   "buildPresets": [
     { "name": "dev", "configurePreset": "dev" },
     { "name": "asan", "configurePreset": "asan" },
-    { "name": "release", "configurePreset": "release" },
-    { "name": "qt-from-source", "configurePreset": "qt-from-source" }
+    { "name": "release", "configurePreset": "release" }
   ],
 
   "testPresets": [
@@ -94,12 +79,10 @@
         "UBSAN_OPTIONS": "print_stacktrace=1"
       }
     },
-    { "name": "release", "inherits": "base", "configurePreset": "release" },
-    { "name": "qt-from-source", "inherits": "base", "configurePreset": "qt-from-source" }
+    { "name": "release", "inherits": "base", "configurePreset": "release" }
   ],
 
   "packagePresets": [
-    { "name": "release", "configurePreset": "release" },
-    { "name": "qt-from-source", "configurePreset": "qt-from-source" }
+    { "name": "release", "configurePreset": "release" }
   ]
 }

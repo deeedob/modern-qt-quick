@@ -1,35 +1,76 @@
-# Qt Kickstart
+<h1 align="center">Qt <s>Quick</s> Kickstart</h1>
 
-A guide to the concepts behind cross-platform Qt Quick applications, and a template that
-applies every one of them. Qt 6.12, C++23, CMake.
+![Kickstarting a pink moped](https://github.com/user-attachments/assets/73056a42-f4f9-4a60-84c0-b0e8e4305480)
 
-**Read the guide: [deeedob.github.io/qt-kickstart](https://deeedob.github.io/qt-kickstart/)**
+<p align="center">
+  <a href="https://deeedob.github.io/qt-kickstart/"><strong>Read the guide →</strong></a>
+</p>
 
-![Sketchbook's canvas](docs/images/canvas-light.png)
+So, you want to build a Qt Quick app. Where do you start, how do you structure it, and how do you get it onto someone else's machine?
 
-The demo app, *Sketchbook*, recognizes the shapes you draw. It is small, but built, tested
-and packaged the way a product would be.
+Qt Kickstart works through those questions with a hands-on guide and a template you can make your own. We cover the essentials of modern Qt Quick development: architecture and patterns, working with C++ and QML, and good development practices, from Git workflows to checking and testing your code. Then we take it through building, CI and packaging for different platforms.
 
-## Get started
+Along the way, we explain the choices made, share practical tricks, and link to further reading whenever you want to dig deeper.
 
-You need CMake 3.31, Ninja, a C++23 compiler (Xcode 16, Visual Studio 2022 or GCC 14) and
-Qt 6.12 from the [Qt Online Installer](https://www.qt.io/download-qt-installer-oss).
+Built with Qt 6.12, C++23 and CMake.
+
+Throughout the guide, we use *Sketchbook*, a small app that recognises the shapes you draw. It gives us something concrete to build, test and package, while keeping the code small enough to follow.
+
+## Prerequisites
+
+You'll need CMake 3.31, Ninja and a C++ compiler (Xcode 16, Visual Studio 2022 or GCC 14).
+The supplied project builds as C++23 to show modern C++ alongside Qt. When making the template
+your own, you can choose another standard and adapt the code to it.
+
+For Qt, choose either:
+
+- **Use an existing Qt 6.12 installation**, including a system package, or install it with the [Qt Online Installer](https://www.qt.io/download-qt-installer-oss).
+- **Build Qt as part of the project** with vcpkg. It builds the subset of Qt modules the app needs, so you don't need a separate Qt installation.
+
+On Windows, run the commands in a *Developer PowerShell for VS 2022*.
+
+## Build and run
+
+Clone the project:
 
 ```sh
 git clone --recurse-submodules https://github.com/deeedob/qt-kickstart.git
 cd qt-kickstart
-export QT_ROOT_DIR=~/Qt/6.12.0/macos        # Windows: $env:QT_ROOT_DIR="C:\Qt\6.12.0\msvc2022_64"
-
-cmake --workflow --preset dev               # configure, build and test
-cmake --build --preset dev --target run     # start the app
 ```
 
-On Windows, use a *Developer PowerShell for VS 2022*.
+### With an installed Qt
+
+Use a Qt installation in CMake's search path, or point `QT_ROOT_DIR` or `CMAKE_PREFIX_PATH`
+to your Qt kit. Then build, test and run:
+
+```sh
+cmake --workflow --preset dev
+cmake --build --preset dev --target run
+```
+
+### Building Qt with vcpkg
+
+If you do not already have a `CMakeUserPresets.json`, copy the example:
+
+```sh
+cmake -E copy CMakeUserPresets.example.json CMakeUserPresets.json
+```
+
+Then build, test and run:
+
+```sh
+cmake --workflow --preset dev-vcpkg
+cmake --build --preset dev-vcpkg --target run
+```
+
+The first Qt build can take hours; later builds can use vcpkg's cache. Outside Windows, install
+autotools first. The example also provides `asan-vcpkg` and `release-vcpkg` workflows.
+The user preset file is ignored by Git, so you can customize it for your machine.
 
 ## Git hooks
 
-After you have initialized a project from this template, enable its local Git policy before
-your first team commit:
+After initializing a project from this template, enable its local Git policy before your
+first team commit:
 
 ```sh
 git config core.hooksPath .githooks
@@ -47,23 +88,18 @@ Click *Use this template* on GitHub, clone your repository, then run:
 python3 tools/make_it_yours.py
 ```
 
-It asks for your app's name, bundle id and copyright holder, and can remove the demo, the
-guide, and rename the `App` prefix.
+The script walks you through naming your app and updating the project details. You can also remove the demo and guide.
 
-## What the template adds
+## What's included
 
-| | |
-|---|---|
-| **Workflow presets** | `dev`, `asan` (AddressSanitizer and UBSan), `release` (with a package), `qt-from-source` (Qt built by vcpkg; needs autotools outside Windows): `cmake --workflow --preset <name>` |
-| **`check` and `format`** | One target runs clang-format, clangd-tidy, qmllint and REUSE; `format` fixes the files. Tools that are not installed are skipped. |
-| **`app_target_defaults()`** | Warnings as errors, Qt's strict mode, hardening and sanitizers for your own targets, and registers their sources for `check` |
-| **`app_add_notice()`** | Ships a third-party license in the package; licenses of vcpkg dependencies are added automatically |
-| **`app_add_build_info()`** | Version, Git commit and build time, compiled into the app |
-| **`run`** | Builds and starts the app: `cmake --build --preset dev --target run` |
-| **Packaging** | The `release` workflow deploys Qt and writes a `.dmg`, `.zip` or `.tar.gz` |
-| **vcpkg triplets** | Dependencies built once, in release; LGPL libraries linked dynamically |
-| **CI** | GitHub Actions builds, tests and packages on Linux, macOS and Windows |
-| **`AGENTS.md`** | The project's rules and commands for AI coding agents, read by most of them automatically |
+- **Build presets** for development, sanitizers and release packages.
+- **Code checks and formatting** for C++, QML and licensing.
+- **Compiler settings** for warnings, Qt strict mode and hardening.
+- **Dependency management** through vcpkg.
+- **Packaging and CI** for Linux, macOS and Windows.
+- **Build information and third-party notices** included in your app.
+
+The guide explains how these fit together and how to adapt them.
 
 ## License
 

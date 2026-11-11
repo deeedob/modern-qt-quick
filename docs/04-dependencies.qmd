@@ -109,7 +109,8 @@ Qt is a dependency like any other, just a large one. You have two good options:
   is under your control, on every platform.
 
 ::: {.more}
-**Template:** the `dev` preset uses an installed Qt; the `qt-from-source` preset lets vcpkg build it
+**Template:** use `dev` for an installed Qt. To build Qt with vcpkg, copy
+`CMakeUserPresets.example.json` to `CMakeUserPresets.json` and use `dev-vcpkg`
 :::
 
 ## Reproducibility is control {#sec-reproducibility}

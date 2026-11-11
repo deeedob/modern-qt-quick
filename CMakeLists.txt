@@ -31,7 +31,8 @@ if(NOT Qt6_FOUND)
         "Qt 6.12 or newer was not found.\n"
         "Install it with the Qt Online Installer or aqtinstall, then point QT_ROOT_DIR at it:\n"
         "  export QT_ROOT_DIR=~/Qt/6.12.0/macos\n"
-        "Alternatively let vcpkg build Qt (takes hours): cmake --workflow --preset qt-from-source")
+        "Alternatively, copy CMakeUserPresets.example.json to CMakeUserPresets.json "
+        "and run: cmake --workflow --preset dev-vcpkg")
 endif()
 
 qt_standard_project_setup(REQUIRES 6.12

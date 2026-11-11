@@ -1,6 +1,6 @@
 name: Qt from source
 
-# Builds Qt itself with vcpkg (the qt-from-source preset). The first run takes hours, so it runs on
+# Builds Qt itself with vcpkg. The first run takes hours, so it runs on
 # demand only; later runs reuse the binary cache.
 on:
   workflow_dispatch:
@@ -53,7 +53,9 @@ jobs:
           restore-keys: qt-from-source-${{ matrix.os }}-
 
       - name: Configure, build, test and package
-        run: cmake --workflow --preset qt-from-source
+        run: |
+          cmake -E copy CMakeUserPresets.example.json CMakeUserPresets.json
+          cmake --workflow --preset release-vcpkg
 
       # Saved even when a step fails, so the hours spent building Qt are not lost.
       - uses: actions/cache/save@v6
