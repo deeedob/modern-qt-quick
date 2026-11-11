@@ -25,9 +25,9 @@ jobs:
           PUSH_SHA: ${{ github.sha }}
         run: |
           if [ "$EVENT_NAME" = pull_request ]; then
-            tools/check_git_history.sh "$BASE_SHA..$HEAD_SHA"
+            .githooks/check_git_history.sh "$BASE_SHA..$HEAD_SHA"
           elif [[ "$BEFORE_SHA" =~ ^0+$ ]]; then
-            tools/check_git_history.sh "$PUSH_SHA^!"
+            .githooks/check_git_history.sh "$PUSH_SHA^!"
           else
-            tools/check_git_history.sh "$BEFORE_SHA..$PUSH_SHA"
+            .githooks/check_git_history.sh "$BEFORE_SHA..$PUSH_SHA"
           fi

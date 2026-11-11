@@ -12,7 +12,7 @@ while IFS= read -r commit; do
     parent_count=$(git show -s --format=%P "$commit" | wc -w)
     (( parent_count > 1 )) && continue
     git show -s --format=%B "$commit" > "$message_file"
-    if ! "$root/tools/check_commit_message.sh" "$message_file"; then
+    if ! "$root/.githooks/check_commit_message.sh" "$message_file"; then
         printf 'Invalid commit: %s\n' "$commit" >&2
         exit 1
     fi

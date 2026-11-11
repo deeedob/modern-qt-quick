@@ -19,30 +19,34 @@ write_message()
 }
 
 write_message $'feat(canvas): add undo command\n\nRecord each stroke before drawing. Users can restore accidental edits.\n\nCloses: #123'
-"$root/tools/check_commit_message.sh" "$temporary_dir/message"
+"$root/.githooks/check_commit_message.sh" "$temporary_dir/message"
 
 write_message $'feat(api)!: remove v1 endpoint\n\nClients must migrate to the v2 endpoint before upgrading.\n\nBREAKING CHANGE: The v1 endpoint no longer accepts requests.'
-"$root/tools/check_commit_message.sh" "$temporary_dir/message"
+"$root/.githooks/check_commit_message.sh" "$temporary_dir/message"
 
 write_message $'fix(core): handle v1.2 files\n\nKeep existing files readable.'
-/bin/bash "$root/tools/check_commit_message.sh" "$temporary_dir/message"
+/bin/bash "$root/.githooks/check_commit_message.sh" "$temporary_dir/message"
+
+write_message $'fix(canvas): restore undo\n\nKeep the previous implementation available.\n\nAmends: 1a2b3c4'
+"$root/.githooks/check_commit_message.sh" "$temporary_dir/message"
 
 write_message $'feature: add undo\n\nRecord an undo action.'
-expect_failure "$root/tools/check_commit_message.sh" "$temporary_dir/message"
+expect_failure "$root/.githooks/check_commit_message.sh" "$temporary_dir/message"
 
 write_message $'feat(canvas): add undo'
-expect_failure "$root/tools/check_commit_message.sh" "$temporary_dir/message"
+expect_failure "$root/.githooks/check_commit_message.sh" "$temporary_dir/message"
 
 write_message $'feat(canvas): add undo\n\nThis line is deliberately longer than seventy-two characters so that the policy rejects it. '
-expect_failure "$root/tools/check_commit_message.sh" "$temporary_dir/message"
+expect_failure "$root/.githooks/check_commit_message.sh" "$temporary_dir/message"
 
 # Real commits exercise hook installation and message cleanup together.
 repository="$temporary_dir/repository"
 mkdir -p "$repository/.githooks" "$repository/tools"
 cp "$root/.githooks/commit-msg" "$root/.githooks/pre-commit" \
     "$root/.githooks/prepare-commit-msg" "$repository/.githooks/"
-cp "$root/tools/check_commit_message.sh" "$root/tools/check_git_history.sh" \
-    "$root/tools/check_staged_format.sh" "$repository/tools/"
+cp "$root/.githooks/check_commit_message.sh" "$root/.githooks/check_git_history.sh" \
+    "$repository/.githooks/"
+cp "$root/.githooks/check_staged_format.sh" "$repository/.githooks/"
 cp "$root/.clang-format" "$root/.qmlformat.ini" "$repository/"
 git -C "$repository" init --quiet
 git -C "$repository" config user.name Tester
@@ -89,7 +93,7 @@ clang-format -i --style="file:$repository/.clang-format" "$repository/example.cp
 git -C "$repository" add example.cpp
 (
     cd "$repository"
-    /bin/bash tools/check_staged_format.sh
+    /bin/bash .githooks/check_staged_format.sh
 )
 printf '\nint broken(  ) {}\n' >> "$repository/example.cpp"
 git -C "$repository" commit -m 'test: accept formatted c++' -m 'Exercise the staged C++ formatting gate.' --quiet
@@ -111,6 +115,6 @@ git -C "$repository" commit --allow-empty -m 'test: advance main branch' \
 git -C "$repository" merge --no-ff topic -m 'Merge topic branch' --quiet
 (
     cd "$repository"
-    tools/check_git_history.sh 'HEAD~4..HEAD'
-    expect_failure tools/check_git_history.sh 'missing-ref..HEAD'
+    .githooks/check_git_history.sh 'HEAD~4..HEAD'
+    expect_failure .githooks/check_git_history.sh 'missing-ref..HEAD'
 )

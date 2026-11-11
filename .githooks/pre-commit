@@ -16,4 +16,4 @@ while IFS= read -r -d '' path; do
 done < <(git diff --cached --name-only --diff-filter=ACMRT --no-renames -z)
 
 root=$(git rev-parse --show-toplevel)
-exec "$root/tools/check_staged_format.sh"
+exec "$root/.githooks/check_staged_format.sh"
