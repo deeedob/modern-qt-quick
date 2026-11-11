@@ -12,6 +12,8 @@
 #include <QtGui/QFontDatabase>
 #include <QtGui/QGuiApplication>
 #include <QtQml/QQmlApplicationEngine>
+#include <QtQml/qqmllist.h>
+#include <QtQuick/QQuickItem>
 #include <QtQuick/QQuickWindow>
 #include <QtTest/QTest>
 
@@ -40,6 +42,8 @@ struct MainFixture
     {
         controller.setLanguage("en"_L1);
         engine.setExternalSingletonInstance("App", "AppController", &controller);
+        QObject::connect(&controller, &app::AppController::languageChanged, &engine,
+            &QQmlEngine::retranslate);
         engine.setInitialProperties({
             { "sketchbook"_L1, QVariant::fromValue(&sketchbook) },
             { "canvas"_L1,     QVariant::fromValue(&canvas)     },
@@ -73,6 +77,62 @@ private Q_SLOTS:
     }
 
     void init() { QTest::failOnWarning(); }
+
+    void aboutDialogShowsBothInfoBoxesAndScrollsAtShortHeights()
+    {
+        MainFixture fixture;
+        QVERIFY(fixture.window);
+        fixture.window->hide();
+        fixture.window->setWidth(360);
+        fixture.window->setHeight(360);
+        fixture.window->show();
+        QTRY_VERIFY(fixture.window->isExposed());
+        fixture.controller.setLanguage("de"_L1);
+        auto *dialog = fixture.window->findChild<QObject *>("aboutDialog"_L1);
+        QVERIFY(dialog);
+        QVERIFY(QMetaObject::invokeMethod(dialog, "open"));
+        QTRY_VERIFY(dialog->property("height").toReal() <= fixture.window->height());
+        QTRY_VERIFY(dialog->property("width").toReal() <= fixture.window->width());
+
+        auto *scroll = fixture.window->findChild<QObject *>("aboutScroll"_L1);
+        QVERIFY(scroll);
+        const qreal dialogX = dialog->property("x").toReal();
+        const qreal dialogY = dialog->property("y").toReal();
+        const qreal dialogWidth = dialog->property("width").toReal();
+        const qreal dialogHeight = dialog->property("height").toReal();
+        QVERIFY(dialogX >= 0);
+        QVERIFY(dialogY >= 0);
+        QVERIFY(dialogX + dialogWidth <= fixture.window->width());
+        QVERIFY(dialogY + dialogHeight <= fixture.window->height());
+        QVERIFY(fixture.window->findChild<QObject *>("buildInfoBox"_L1));
+        auto *runtimeBox = fixture.window->findChild<QObject *>("runtimeInfoBox"_L1);
+        QVERIFY(runtimeBox);
+        QTRY_COMPARE(runtimeBox->property("title").toString(), "Laufzeit-Info"_L1);
+
+        auto *footer = dialog->property("footer").value<QObject *>();
+        QVERIFY(footer);
+        const QQmlListReference buttons(footer, "contentChildren");
+        QVERIFY(buttons.isValid());
+        QCOMPARE(buttons.count(), 1);
+        auto *closeItem = qobject_cast<QQuickItem *>(buttons.at(0));
+        QVERIFY(closeItem);
+
+        QTRY_VERIFY(scroll->property("contentHeight").toReal()
+            > scroll->property("height").toReal());
+        const qreal narrowX = dialog->property("x").toReal();
+        const qreal narrowY = dialog->property("y").toReal();
+        const qreal narrowWidth = dialog->property("width").toReal();
+        const qreal narrowHeight = dialog->property("height").toReal();
+        QVERIFY(narrowX >= 0);
+        QVERIFY(narrowY >= 0);
+        QVERIFY(narrowX + narrowWidth <= fixture.window->width());
+        QVERIFY(narrowY + narrowHeight <= fixture.window->height());
+        const QPointF closeTopLeft = closeItem->mapToItem(fixture.window->contentItem(), QPointF{});
+        QVERIFY(closeTopLeft.x() >= 0);
+        QVERIFY(closeTopLeft.y() >= 0);
+        QVERIFY(closeTopLeft.x() + closeItem->width() <= fixture.window->width());
+        QVERIFY(closeTopLeft.y() + closeItem->height() <= fixture.window->height());
+    }
 
     void healthyPendingSaveWaitsBeforeClosing()
     {

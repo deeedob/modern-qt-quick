@@ -6,6 +6,7 @@
 #include <QtCore/QLocale>
 #include <QtCore/QLoggingCategory>
 #include <QtCore/QSettings>
+#include <QtCore/QSysInfo>
 #include <QtCore/QTranslator>
 #include <QtCore/QUrl>
 #include <QtGui/QDesktopServices>
@@ -19,6 +20,14 @@ using namespace Qt::StringLiterals;
 Q_STATIC_LOGGING_CATEGORY(lcApp, "app.controller")
 
 namespace app {
+
+RuntimeInfo::RuntimeInfo()
+    : m_operatingSystem(QSysInfo::prettyProductName())
+    , m_kernelVersion(QSysInfo::kernelType() + " "_L1 + QSysInfo::kernelVersion())
+    , m_processArchitecture(QSysInfo::buildCpuArchitecture())
+    , m_windowSystem(QGuiApplication::platformName())
+{
+}
 
 namespace {
 
@@ -51,6 +60,11 @@ AppController::~AppController() = default;
 BuildInfo AppController::buildDetails() const
 {
     return buildInfo;
+}
+
+RuntimeInfo AppController::runtimeInfo() const
+{
+    return m_runtimeInfo;
 }
 
 QString AppController::language() const

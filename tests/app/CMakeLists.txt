@@ -11,6 +11,7 @@ app_add_qt_test(tst_AppController
         tst_AppController.cpp
     LIBRARIES
         app_ui
+        app_uiplugin
         Qt::Gui
 )
 

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QtCore/QDebug>
+#include <QtCore/QLibraryInfo>
+#include <QtCore/qglobal.h>
 #include <QtCore/QString>
 #include <QtQmlIntegration/qqmlintegration.h>
 
@@ -18,6 +20,7 @@ struct BuildInfo
     Q_PROPERTY(QString compiler READ compiler CONSTANT FINAL)
     Q_PROPERTY(QString system READ system CONSTANT FINAL)
     Q_PROPERTY(QString qtVersion READ qtVersion CONSTANT FINAL)
+    Q_PROPERTY(bool sharedQt READ sharedQt CONSTANT FINAL)
 
 public:
     BuildInfo() = default;
@@ -42,7 +45,8 @@ public:
     [[nodiscard]] const QString &buildTimestamp() const { return m_buildTimestamp; }
     [[nodiscard]] const QString &compiler() const { return m_compiler; }
     [[nodiscard]] const QString &system() const { return m_system; }
-    [[nodiscard]] QString qtVersion() const { return QString::fromLatin1(qVersion()); }
+    [[nodiscard]] QString qtVersion() const { return QString::fromLatin1(QT_VERSION_STR); }
+    [[nodiscard]] bool sharedQt() const { return QLibraryInfo::isSharedBuild(); }
 
 private:
     friend QDebug operator<<(QDebug debug, const BuildInfo &info)

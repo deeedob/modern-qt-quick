@@ -4,52 +4,97 @@
 <context>
     <name>AboutDialog</name>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="36"/>
+        <location filename="../src/app/AboutDialog.qml" line="85"/>
         <source>Version %1</source>
         <translation>Version %1</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="56"/>
+        <location filename="../src/app/AboutDialog.qml" line="91"/>
+        <source>Build info</source>
+        <translation>Build-Info</translation>
+    </message>
+    <message>
+        <location filename="../src/app/AboutDialog.qml" line="95"/>
         <source>Build</source>
         <translation>Build</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="63"/>
+        <location filename="../src/app/AboutDialog.qml" line="102"/>
+        <source>Configured (UTC)</source>
+        <translation>Konfiguriert (UTC)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/AboutDialog.qml" line="108"/>
         <source>Compiler</source>
         <translation>Compiler</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="69"/>
-        <source>System</source>
-        <translation>System</translation>
+        <location filename="../src/app/AboutDialog.qml" line="114"/>
+        <source>Target platform</source>
+        <translation>Zielplattform</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="81"/>
-        <source>Configured</source>
-        <translation>Konfiguriert</translation>
+        <location filename="../src/app/AboutDialog.qml" line="120"/>
+        <source>Build Qt</source>
+        <translation>Qt beim Build</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="97"/>
+        <location filename="../src/app/AboutDialog.qml" line="135"/>
+        <source>Runtime info</source>
+        <translation>Laufzeit-Info</translation>
+    </message>
+    <message>
+        <location filename="../src/app/AboutDialog.qml" line="139"/>
+        <source>Operating system</source>
+        <translation>Betriebssystem</translation>
+    </message>
+    <message>
+        <location filename="../src/app/AboutDialog.qml" line="126"/>
+        <source>Qt linkage</source>
+        <translation>Qt-Verknüpfung</translation>
+    </message>
+    <message>
+        <location filename="../src/app/AboutDialog.qml" line="129"/>
+        <source>Shared</source>
+        <translation>Dynamisch</translation>
+    </message>
+    <message>
+        <location filename="../src/app/AboutDialog.qml" line="129"/>
+        <source>Static</source>
+        <translation>Statisch</translation>
+    </message>
+    <message>
+        <location filename="../src/app/AboutDialog.qml" line="145"/>
+        <source>Kernel version</source>
+        <translation>Kernelversion</translation>
+    </message>
+    <message>
+        <location filename="../src/app/AboutDialog.qml" line="151"/>
+        <source>Window system</source>
+        <translation>Fenstersystem</translation>
+    </message>
+    <message>
+        <location filename="../src/app/AboutDialog.qml" line="190"/>
         <source>Source code</source>
         <translation>Quellcode</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="105"/>
+        <location filename="../src/app/AboutDialog.qml" line="198"/>
         <source>Guide</source>
         <translation>Leitfaden</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="117"/>
+        <location filename="../src/app/AboutDialog.qml" line="177"/>
         <source>Built with Qt, used under the LGPL version 3. The licenses of all third-party components ship with the application, in its licenses folder.</source>
         <translation>Erstellt mit Qt, verwendet unter der LGPL Version 3. Die Lizenzen aller Komponenten von Drittanbietern liegen der Anwendung im Ordner „licenses“ bei.</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="128"/>
+        <location filename="../src/app/AboutDialog.qml" line="170"/>
         <source>Open licenses folder</source>
         <translation>Lizenzordner öffnen</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="132"/>
+        <location filename="../src/app/AboutDialog.qml" line="166"/>
         <source>Open log folder</source>
         <translation>Log-Ordner öffnen</translation>
     </message>
