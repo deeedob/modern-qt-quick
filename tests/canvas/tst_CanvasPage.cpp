@@ -115,8 +115,10 @@ private Q_SLOTS:
         const QPoint settingsPoint = settings->mapToScene(settingsCenter).toPoint();
         QTest::mouseClick(&page.view, Qt::LeftButton, Qt::NoModifier, settingsPoint);
         auto *width = page.root->findChild<QObject *>(u"pageWidth"_s);
+        auto *height = page.root->findChild<QObject *>(u"pageHeight"_s);
         auto *link = page.root->findChild<QQuickItem *>(u"aspectLink"_s);
         QVERIFY(width);
+        QVERIFY(height);
         QVERIFY(link);
         const QPointF linkCenter(link->width() / 2, link->height() / 2);
         const QPoint linkPoint = link->mapToScene(linkCenter).toPoint();
@@ -125,6 +127,9 @@ private Q_SLOTS:
         auto *input = width->property("contentItem").value<QQuickItem *>();
         QVERIFY(input);
         input->forceActiveFocus();
+        QTRY_VERIFY(height->property("linkedFocus").toBool());
+        QCOMPARE(width->property("displayText").toString(), u"1600"_s);
+        QCOMPARE(width->property("suffix").toString(), u"px"_s);
         QVERIFY(QMetaObject::invokeMethod(input, "selectAll"));
         QTest::keyClick(&page.view, Qt::Key_1);
         QTest::keyClick(&page.view, Qt::Key_2);

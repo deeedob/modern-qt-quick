@@ -9,6 +9,17 @@ Basic.ComboBox {
     implicitHeight: Theme.controlHeight
     font.family: Theme.fontFamily
 
+    delegate: ItemDelegate {
+        required property var model
+        required property int index
+
+        width: ListView.view.width
+        text: model[control.textRole]
+        highlighted: control.highlightedIndex === index
+        font.weight: control.currentIndex === index ? Font.DemiBold : Font.Normal
+        hoverEnabled: control.hoverEnabled
+    }
+
     indicator: Text {
         x: control.mirrored ? control.leftPadding : control.width - width - control.rightPadding
         y: (control.height - height) / 2

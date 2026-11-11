@@ -60,12 +60,11 @@ ToolButton {
                 Label {
                     text: qsTr("Width")
                 }
-                SpinBox {
+                Dimension {
+                    id: pageWidth
                     objectName: "pageWidth"
                     Layout.fillWidth: true
-                    from: 100
-                    to: 4096
-                    editable: true
+                    linkedFocus: root.aspectLinked && pageHeight.activeFocus
                     value: root.store.pageWidth
                     onValueModified: root.store.setPageSize(value, pageProperties.constrainedHeight(
                                                                 value))
@@ -85,12 +84,11 @@ ToolButton {
                 Label {
                     text: qsTr("Height")
                 }
-                SpinBox {
+                Dimension {
+                    id: pageHeight
                     objectName: "pageHeight"
                     Layout.fillWidth: true
-                    from: 100
-                    to: 4096
-                    editable: true
+                    linkedFocus: root.aspectLinked && pageWidth.activeFocus
                     value: root.store.pageHeight
                     onValueModified: root.store.setPageSize(pageProperties.constrainedWidth(value),
                                                             value)
@@ -146,5 +144,13 @@ ToolButton {
                 }
             }
         }
+    }
+
+    component Dimension: SpinBox {
+        from: 100
+        to: 4096
+        editable: true
+        suffix: "px"
+        textFromValue: value => value.toString()
     }
 }
