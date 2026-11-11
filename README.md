@@ -1,6 +1,6 @@
 <h1 align="center">Qt <s>Quick</s> Kickstart</h1>
 
-![Kickstarting a pink moped](https://github.com/user-attachments/assets/73056a42-f4f9-4a60-84c0-b0e8e4305480)
+<img width="2172" height="724" alt="Unbenannt" src="https://github.com/user-attachments/assets/317e53ad-baaa-48ea-90f7-dcb4f6be9521" />
 
 <p align="center">
   <a href="https://deeedob.github.io/qt-kickstart/"><strong>Read the guide →</strong></a>
