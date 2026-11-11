@@ -1,41 +1,18 @@
-# Welcome {.unnumbered}
+# Start with the idea {.unnumbered}
 
-This guide teaches the concepts behind a cross-platform application built with Qt Quick:
-how to structure it, build it, connect C++ to QML, test it, and ship it to Windows, macOS
-and Linux, with a look at mobile. It explains ideas, not APIs. Each section covers one idea
-in a few sentences and a short snippet, then links to the documentation that holds the
-details.
+Qt Kickstart is a small Qt Quick application and a guide to the choices that keep it easy to
+change. The example app, Sketchbook, stores drawings and recognizes shapes. It is small enough
+to read, but real enough to test and package.
 
-## The example app
+![Sketchbook's canvas with a triangle and a rectangle.](images/canvas-light.png){width=85%}
 
-Every concept in the guide is applied in one complete application, *Sketchbook*. You draw
-on a canvas, and circles, rectangles and triangles snap into clean shapes. The app is small,
-but it is built, tested and packaged the way a product would be, so each section can point
-to working code.
+## Read for the boundary you need
 
-![](images/canvas-light.png){fig-alt="Sketchbook's canvas with a triangle and a rectangle." width=85%}
+Start with the application shape and layout. Then follow the path that matters: build and
+dependencies, QML and C++, tests and checks, or release work. Each chapter leads with one idea,
+shows where Sketchbook uses it, and keeps edge cases in expandable details.
 
-The app and this guide share one repository,
-[deeedob/qt-kickstart](https://github.com/deeedob/qt-kickstart). Its README explains
-how to build and run the app and how to start your own project from it.
+## Bring basic QML knowledge
 
-## How to read this guide
-
-Read it front to back once. The chapters build on each other: first the shape of an
-application and its build, then Qt and QML, testing and maintenance, and releasing the app.
-Afterwards, come back to single sections when you need them.
-
-Most sections end with a box like this one:
-
-::: {.more}
-**Template:** the file in the repository that shows the idea
-
-**Read more:** one link that goes deeper
-:::
-
-The file names in the box link to the file on GitHub.
-
-## What you should know already
-
-You can write C++ and have seen a little QML. You do not need to know CMake or how Qt works
-inside; that is what this guide is for.
+This guide assumes you can read C++ and basic QML. It explains why the template has its
+boundaries. Use the linked Qt documentation when you need an API reference.

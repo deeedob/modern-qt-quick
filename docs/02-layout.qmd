@@ -1,244 +1,108 @@
-# Project layout {#sec-layout}
+# A layout that tells the truth {#sec-layout}
 
-A good layout shows where things are before anyone reads a line of code. C++ has no
-official standard for it, but it has a widely used convention, and Qt Quick adds a few rules
-of its own.
+A repository should show its boundaries before a reader opens a file. Keep application code,
+reusable code, tests, and build helpers in predictable places.
 
 ## A conventional top level {#sec-pitchfork}
 
-Base your layout on **Pitchfork**, the most widely used convention for C++ project layouts.
-It is a guideline, not a standard: no tool enforces it, and projects adapt it to their needs.
-An application could look like this:
+The [Pitchfork layout](https://joholl.github.io/pitchfork-website/) is a useful C++ reference,
+not a standard. Sketchbook adapts the idea to keep the application and its separable library
+side by side:
 
-```{.default filename="my-app/"}
-my-app/
-├── CMakeLists.txt
-├── CMakePresets.json
-├── cmake/        build helpers
-├── docs/         documentation
-├── external/     third-party code kept in the repository
-├── libs/         libraries that could live without the app
-├── src/          the application
-└── tests/        tests for src/
+```text
+qt-kickstart/
+├── CMakeLists.txt       project and dependencies
+├── CMakePresets.json    shared build configurations
+├── cmake/               build helpers
+├── docs/                this guide
+├── external/            third-party sources
+├── libs/                separable libraries
+├── src/                 application features
+└── tests/               application tests
 ```
 
-Pitchfork itself allows either a single `src/` or a split into `libs/`, but never both. An
-application with separable libraries often uses both anyway, as above: the app goes in
-`src/`, and anything that could live without it goes in `libs/`. Other names are common too:
-Qt and many older projects name this folder `3rdparty/` instead of `external/`, and Google's
-projects use `third_party/`. Which names you pick
-matters less than using them consistently, so that code is where a reader expects it.
+Pitchfork distinguishes a single `src/` layout from a `libs/` layout. This project combines
+them: `src/` holds the app, while `libs/shapes/` can stand alone with its own tests.
 
-::: {.more}
-**Template:** the repository root
+## Public API is a promise {#sec-include-dirs}
 
-**Read more:** [Pitchfork](https://joholl.github.io/pitchfork-website/)
+A library's public headers are the contract other code may include. Keep them under
+`include/<name>/`; keep implementation headers beside the source. Consumers normally do not
+need to depend on a private detail.
+
+A small public API gives a library room to change. Once consumers rely on a declaration,
+changing it can require them to update or rebuild their code. A distributed binary library
+may also promise that existing compiled consumers continue to work. Keep implementation
+details private so that promise covers only what consumers actually need.
+
+::: {.snippet source="libs/shapes/CMakeLists.txt"}
+
+```cmake
+add_library(shapes STATIC)
+        FILES include/shapes/Recognizer.h\n)
+```
+
 :::
 
-## Public and private headers {#sec-include-dirs}
+A feature inside one application does not need to pretend it is a library. Keep its QML and
+C++ together until another application needs the code.
 
-A library's headers fall into two groups. **Public headers** are its API: other code includes
-them, and they ship when you install the library. **Private headers** hold implementation
-details that only the library's own sources include. Keep the two apart, so that nobody can
-depend on a detail by accident.
+The extra `shapes/` directory in the public include path makes `#include <shapes/Recognizer.h>`
+identify its library and avoids collisions with another library's `Recognizer.h`. Private
+headers remain implementation details, but a directory layout alone cannot prevent someone
+from reaching into them. The build's target dependencies support the boundary.
 
-The most common way is to give the public headers a folder of their own, `include/<name>/`:
+## Names make ownership clear {#sec-namespaces}
 
-```{.default filename="libs/core/"}
-core/
-├── CMakeLists.txt
-├── include/
-│   └── core/
-│       └── message.h        public: consumers include it
-└── src/
-    ├── message.cpp
-    ├── peerregistry.hpp     private: invisible to consumers
-    └── peerregistry.cpp
-```
+Put library code in the library namespace and application code in `app::<feature>`. Namespaces
+stop collisions and make an unfamiliar type easier to place. Keep helpers in an unnamed
+namespace in a `.cpp` file. Never put `using namespace` in a header.
 
-```{.cmake filename="libs/core/CMakeLists.txt"}
-add_library(core STATIC src/message.cpp src/peerregistry.cpp)
-target_include_directories(core
-    PUBLIC include   # <1>
-    PRIVATE src      # <2>
-)
-```
-1. Consumers get `include/` on their include path and write `#include <core/message.h>`.
-2. Only the library itself can include `peerregistry.hpp`.
+Macros do not follow C++ namespaces. Prefer a constant or function where possible, or give a
+macro a project-specific prefix. For types exposed through Qt's meta-object system, spelling
+names fully qualified in properties, signals, and invokable signatures also helps the QML tools
+identify them correctly.
 
-The extra `core/` folder pays off at every include. `#include <core/message.h>` says where
-the header comes from and cannot collide with another library's `message.h`. The suffix can
-mark the split as well: this guide uses `.h` for public headers, which ship, and `.hpp` for
-everything else. Many projects use one suffix for both, which works just as well.
+## Feature folders keep change local {#sec-features}
 
-It is not the only way. Qt keeps all of its headers next to the sources, and its build
-generates the public include folder (`include/QtCore/`) from them. Private headers end in
-`_p.h`, install into a separate folder, and carry no compatibility promise. The mechanism
-differs; the separation is the same.
+Put the parts that change together in one feature folder: QML, C++ state, and the feature's
+CMake target. Sketchbook puts its canvas, notebook, and controls in separate folders. Its
+tests mirror that shape, so a test is easy to find.
 
-Code that never leaves the application can keep things simpler. The feature folders under `src/`
-(@sec-features) keep all their headers next to the sources and put that folder on their
-include path. Whatever links `app_canvas` can write `#include "CanvasStore.hpp"`; whatever
-does not, cannot. The build still enforces the boundary (@sec-direction); there is no
-separate public API.
+## Small libraries earn their boundary {#sec-separable}
 
-::: {.more}
-**Template:** `libs/shapes/`, which declares its public headers as a `FILE_SET HEADERS`, the
-modern spelling of `PUBLIC include`; `src/canvas/` for a feature folder
-:::
+Move code to `libs/` when it can live without the application. Sketchbook's recognizer is
+plain C++, has its own public header and tests, and has no QML dependency. A library may use
+Qt when Qt belongs in its public design.
 
-## Namespaces keep the global scope empty {#sec-namespaces}
+## Include hygiene {#sec-include-style}
 
-A name declared outside any namespace can collide with the same name in every other library
-of the program: two `Point` types, two `distance()` functions. At best the compiler stops
-with an error. At worst the linker quietly keeps one of two different definitions, and the
-program misbehaves at run time. Put all of your code into a namespace, named like the
-library and its include folder:
+Each source file should include the declarations it uses instead of depending on another
+header to include them by accident. Group the file's own header first, then project headers,
+third-party headers, and standard library headers. For Qt headers, including by module, such
+as `<QtCore/QObject>`, makes the dependency visible to a reader.
 
-```{.cpp filename="include/shapes/Recognizer.h"}
-namespace shapes {
+## Include only what a declaration needs {#sec-forward-declarations}
 
-struct Point { double x = 0.0; double y = 0.0; };
+Include a base class, a value member, and types used by inline code. Forward-declare a type
+that appears only as a pointer or reference. This keeps a public header smaller and avoids
+pulling an implementation dependency into every consumer.
 
-class Recognizer { /* ... */ };
+An owning pointer such as `std::unique_ptr<SomeType>` can use a forward declaration too. Its
+owning class must define the destructor where `SomeType` is complete, typically in the source
+file. That is where the pointer actually deletes its object.
 
-} // namespace shapes
-```
+::: {.callout-note collapse="true"}
+## Detail: private implementation and binary compatibility
 
-```{.cpp filename="src/Recognizer.cpp"}
-namespace shapes {
-namespace {
+Qt's private headers use a separate private API convention. For a library you publish, a
+D-pointer can preserve binary layout while the implementation evolves. It is useful only when
+you make a real binary-compatibility promise.
 
-double distance(Point a, Point b);   // only this file sees it
-
-} // namespace
-} // namespace shapes
-```
-
-Three more rules keep names from leaking:
-
-- **File-local helpers go into an unnamed namespace.** Other files cannot see them, and two
-  files can each have their own `distance()`.
-- **No `using namespace` at file scope in a header.** It would apply to every file that
-  includes the header, now and later. Inside a `.cpp` file or a function it is fine.
-- **Macros ignore namespaces.** Give each one a prefix unique to your project, such as
-  `SHAPES_`, or use a `constexpr` variable or an inline function instead.
-
-For a library this is part of its API: a consumer cannot rename what your headers leak. An
-application shares its process with Qt and every other dependency, so the same rules apply
-to it, nested by feature: `app::canvas`, `app::sketchbook`.
-
-You can see two eras in Qt itself. Its classes start with `Q` because Qt is older than reliable
-namespace support in compilers; its newer APIs live in namespaces such as `Qt::` and
-`QtConcurrent::`. Classes with `Q_OBJECT` or `QML_ELEMENT` work inside namespaces, and QML
-sees the class name without the namespace. One catch: in `Q_PROPERTY`, signals and
-`Q_INVOKABLE` methods, write other types fully qualified (`app::canvas::CanvasStore *`).
-moc and the QML tools read those as text and do not resolve names from the enclosing
-namespace.
-
-::: {.callout-important}
-## A public header is a promise
-Everything in a public header becomes API: consumers include it, build against it, and break
-when it changes. Keep it to what they need, inside your namespace, with no `using namespace`
-and no unprefixed macros. Code that only your own sources share belongs in a private
-header, where you can change it freely. Before a header moves into `include/`, ask whether a
-consumer really has to see it.
+**Read more:** [Qt object model](https://doc.qt.io/qt-6/object.html) and
+[KDE binary compatibility](https://community.kde.org/Policies/Binary_Compatibility_Issues_With_C%2B%2B).
 :::
 
 ::: {.more}
-**Template:** `libs/shapes/include/shapes/Recognizer.h`, `src/canvas/Sketch.hpp`
-
-**Read more:** [C++ Core Guidelines, SF.20 to SF.22](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rs-namespace)
+**Template:** `libs/shapes/`, `src/canvas/`, and `tests/canvas/`
 :::
-
-## Separable code becomes its own library {#sec-separable}
-
-Ask of every piece of code: *would someone use this without our app?* An algorithm, a file
-parser or a protocol passes that test. It then becomes a library under `libs/`, with its own
-tests and a public design that does not depend on the application. A library can use Qt when Qt
-serves that design. Separability matters more than avoiding a dependency.
-
-Such a library is the easiest code in the project to test, to reason about, and to reuse.
-Code that only serves one feature fails the test and stays inside that feature.
-
-::: {.more}
-**Template:** `libs/shapes/`, a shape recognizer in plain C++. It demonstrates a library that
-does not need Qt.
-:::
-
-## Group by feature, then by role {#sec-features}
-
-Organize the application by feature, not by file type. A feature folder holds everything
-the feature needs: its C++ types and its QML files, side by side, built as one QML module.
-
-```{.default filename="src/"}
-src/
-├── app/            main.cpp, the main window
-├── controls/       the look: controls, colors, icons
-├── canvas/         a small feature: a few files
-└── contacts/       a grown feature, split by role
-    ├── components/    reusable QML pieces: a search field, a delegate
-    ├── pages/         screens that combine components
-    ├── models/        item models
-    └── controllers/   view models and controllers
-```
-
-Adding a feature adds a folder; removing it deletes one. Split by role only once a feature
-outgrows a single folder.
-
-::: {.more}
-**Template:** `src/`
-
-**Read more:** [Qt 6 QML project architecture](https://www.learnqt.guide/qt6-qml-project-architecture)
-:::
-
-## Tests mirror the sources {#sec-tests-mirror}
-
-`tests/canvas/` tests `src/canvas/`. When you look for a class's tests, you know where they
-are. A library under `libs/` keeps its tests in its own `tests/` folder, so it can move to
-another repository in one piece.
-
-::: {.more}
-**Template:** `tests/` and `libs/shapes/tests/`
-:::
-
-## Include by module {#sec-include-style}
-
-Write Qt includes with their module, and your own libraries' includes with their folder:
-
-```cpp
-#include <QtCore/QObject>
-#include <QtQuick/QQuickItem>
-#include <core/message.h>
-```
-
-Every include then tells the reader which module or library a type comes from, in the same
-form for Qt and for your own code.
-
-## Forward declare incomplete types {#sec-forward-declarations}
-
-Include the header for a base class, a value member, or an inline function that calls the type.
-For a pointer or reference that only appears in a declaration, forward-declare the type instead.
-For Qt types, use `QT_FORWARD_DECLARE_CLASS` so the declaration follows a Qt build configured
-with a namespace:
-
-```cpp
-#include <QtCore/QObject>
-
-QT_FORWARD_DECLARE_CLASS(QSettings)
-
-class Preferences : public QObject
-{
-    Q_OBJECT
-
-public:
-    explicit Preferences(QSettings &settings);
-
-private:
-    QSettings &m_settings;
-};
-```
-
-An owning pointer such as `std::unique_ptr<QTranslator>` also permits a forward declaration,
-but its destructor must be declared in the header and defined in the `.cpp` after including the
-complete type.

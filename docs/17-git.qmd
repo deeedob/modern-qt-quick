@@ -5,10 +5,10 @@ its author and a message. A useful history lets a teammate understand a change, 
 regression, undo a mistake or bring a fix to an older release.
 
 This chapter is not a Git course. It explains the decisions a team makes around that
-history: what belongs in a commit, how changes reach the shared branch and how a fix reaches
-users of an older version.
+history: what belongs in a commit and how changes reach the shared branch. For release tags,
+maintenance branches and backports, see @sec-versions-and-backports.
 
-## One change per commit {#sec-atomic-commits}
+## Atomic commits {#sec-atomic-commits}
 
 Suppose you fix a crash when opening an empty sketch and also change the canvas colors. Both
 changes work, but they solve different problems. Put them in separate commits: the crash fix
@@ -45,7 +45,7 @@ request comment and use the resulting attachment URL. Keep a copy under your con
 check that the link remains accessible to your readers. For large files the project must
 version, consider [Git LFS](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage).
 
-## A message for the next reader {#sec-commit-messages}
+## Useful commit messages {#sec-commit-messages}
 
 The diff shows *what* changed. The commit message gives a future reader the reason and the
 context that the code cannot show. Start with a short summary, leave a blank line, then explain
@@ -67,6 +67,11 @@ Closes: #42
 Here `fix` says this is a bug fix and `sketchbook` names the area. `Closes: #42` is a
 **trailer**, a labelled piece of metadata at the end of the message. Other examples include
 `Co-authored-by:` and links to a review.
+
+A trailer can also point to related work, but names such as `Amends:` have no universal Git
+meaning. Follow the convention your team or tools understand. For backports,
+`git cherry-pick -x` records the original commit automatically when the pick applies cleanly
+(@sec-backports).
 
 | Type | A change that ... |
 |---|---|
@@ -92,7 +97,7 @@ changelog or suggesting a version. The team still reviews the result.
 [Git trailers](https://git-scm.com/docs/git-interpret-trailers)
 :::
 
-## Tell users when a change breaks compatibility {#sec-breaking-changes}
+## Breaking changes {#sec-breaking-changes}
 
 Imagine an app exposes a REST endpoint used by another program. Removing that endpoint may
 leave the app itself working, but the other program breaks when it upgrades. That is a
@@ -137,12 +142,19 @@ Git does not enable hooks from a cloned repository automatically. Once you have 
 your project from the template, enable these hooks in each clone:
 
 ```sh
+git config --get core.hooksPath
 git config core.hooksPath .githooks
 ```
 
-This replaces any existing hook path for that clone. The checks need `clang-format` for C++
+Check the first command's output before setting the path: the second command replaces any
+existing hook path for that clone. The checks need `clang-format` for C++
 and Qt's `qmlformat` for QML. If a check fails, fix the file or message and try again. The
 `format` target formats the working files; stage the intended result afterwards.
+
+When Git opens an editor for a new commit message, the `prepare-commit-msg` hook adds a
+commented guide to the expected format. Git removes those comments from the finished message.
+The hook does not add the guide to messages supplied with `-m`, or to merge, squash, and
+reused commit messages.
 
 Local hooks can be bypassed, so the template also checks commit messages in GitHub Actions.
 For a shared repository, require the `commits` status check and pull requests for `main` in
@@ -150,7 +162,8 @@ For a shared repository, require the `commits` status check and pull requests fo
 Keep build and test checks there too.
 
 ::: {.more}
-**Template:** `.githooks/`, `tools/check_commit_message.sh`, `.github/workflows/git-policy.yml`
+**Template:** `.githooks/pre-commit`, `.githooks/prepare-commit-msg`,
+`.githooks/commit-msg`, `tools/check_commit_message.sh`, `.github/workflows/git-policy.yml`
 
 **Read more:** [Git hooks](https://git-scm.com/docs/githooks)
 :::

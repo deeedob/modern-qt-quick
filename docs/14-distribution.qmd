@@ -1,102 +1,41 @@
-# Signing and distribution {#sec-distribution}
+# Trust is part of distribution {#sec-distribution}
 
-A package is ready to ship when the user's operating system trusts it. On macOS and Windows,
-that trust comes from a signature.
+A package needs to look trustworthy to the operating system before it can look trustworthy to
+a user. Signing connects the package to its publisher and detects later changes.
 
-## Why sign {#sec-why-sign}
+## Sign the final artifact {#sec-signing}
 
-macOS and Windows check where downloaded software comes from. An unsigned app gets a stern
-warning on Windows (SmartScreen) and is blocked outright on macOS (Gatekeeper) until the
-user overrides it.
-
-A signature proves two things: **who** published the app, and that **nobody changed it**
-since. Unsigned builds are fine for development and a course project. Anything you hand to
-users should be signed.
-
-## macOS: Developer ID and notarization {#sec-sign-macos}
-
-Apps distributed outside the Mac App Store need three things:
-
-1. **A Developer ID certificate**, from the Apple Developer Program.
-2. **A signature on every binary**, made with the *hardened runtime* and a secure timestamp.
-3. **Notarization**: you upload the app to Apple, Apple scans it and issues a ticket, and you
-   *staple* the ticket to the app so Gatekeeper accepts it even offline.
-
-Qt's deploy tool signs the bundle for you when you pass it an identity. Pass the
-certificate's SHA-1 hash (listed by `security find-identity -v -p codesigning`) instead of
-its name, because the deploy script would split a name with spaces into several arguments.
-
-```{.cmake filename="src/app/CMakeLists.txt"}
-qt_generate_deploy_qml_app_script(TARGET app OUTPUT_SCRIPT deploy_script
-    DEPLOY_TOOL_OPTIONS "-sign-for-notarization=${APP_SIGNING_IDENTITY}"
-)
-```
-
-Then sign the disk image, notarize it and staple the ticket:
-
-```sh
-codesign --sign "Developer ID Application: Your Name (TEAMID)" \
-    --timestamp Sketchbook.dmg
-xcrun notarytool submit Sketchbook.dmg --keychain-profile notary --wait
-xcrun stapler staple Sketchbook.dmg
-```
-
-::: {.more}
-**Read more:** [Qt for macOS: deployment](https://doc.qt.io/qt-6/macos-deployment.html),
-[Apple: notarizing macOS software](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
-:::
-
-## Windows: Authenticode {#sec-sign-windows}
-
-Windows signatures are called Authenticode. You sign the executable and the installer with
-`signtool` from the Windows SDK:
-
-```powershell
-signtool sign /fd SHA256 /td SHA256 /a `
-    /tr http://timestamp.digicert.com Sketchbook.exe
-signtool verify /pa Sketchbook.exe
-```
-
-The certificate comes from a certificate authority or from a cloud signing service, such as
-Microsoft's. Always add a timestamp (`/tr`): it keeps the signature valid after the
-certificate expires. SmartScreen builds trust in a publisher over time, as more users install
-its signed releases.
-
-::: {.more}
-**Read more:** [Microsoft: code signing options](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options),
-[SignTool](https://learn.microsoft.com/en-us/windows/win32/seccrypto/signtool)
-:::
-
-## Signing in the pipeline {#sec-sign-pipeline}
-
-The order matters:
+Deploy first, then sign every contained binary, then sign the installer or disk image. A file
+changed after signing loses its signature.
 
 ```{mermaid}
-%%| fig-width: 6.5
 flowchart LR
-    B[Build] --> T[Test] --> D[Deploy] --> S1[Sign app]
-    S1 --> P[Package] --> S2[Sign package] --> N["Notarize<br/>(macOS)"]
+    B[Build] --> T[Test] --> D[Deploy] --> S[Sign application]
+    S --> P[Package] --> SP[Sign package] --> N[Notarize on macOS]
 ```
 
-- **Sign after deploying.** The deploy tool still changes binaries, and any change breaks a
-  signature.
-- **Sign inside out.** Libraries and plugins first, then the app, then the disk image or
-  installer that contains it.
-- **Keep signing keys out of the repository.** Apple certificates go into your CI's secret
-  store. Windows code-signing keys must live in hardware since 2023, so CI signs through a
-  cloud signing service and stores only its credentials. Only release builds get signed.
+## macOS needs notarization {#sec-sign-macos}
 
-## App stores {#sec-stores}
+Outside the App Store, use a Developer ID certificate, the hardened runtime, notarization, and
+stapling. Keep the certificate and notarization credentials in the CI secret store, never in
+the repository.
 
-App stores handle trust and updates for you, in exchange for following their rules: a
-sandbox, a review, a store package format.
+Notarization submits the signed app or package to Apple for automated checks. Stapling attaches
+the resulting ticket, so Gatekeeper can check it when the user is offline. The template's
+release workflow builds packages; it does not configure signing or notarization for you.
 
-| Store | Platform | Notes |
-|---|---|---|
-| Mac App Store | macOS | App Sandbox required |
-| Microsoft Store | Windows | MSI or EXE installers, or MSIX packages; `windeployqt --appx` prepares one (Qt 6.11+) |
-| Google Play, App Store | Android, iOS | the normal way to ship mobile apps (@sec-mobile) |
+## Windows uses Authenticode {#sec-sign-windows}
+
+Sign executables and installers with an Authenticode certificate and a timestamp. The timestamp
+keeps a signature valid after the certificate expires. Use a hardware-backed or cloud signing
+service for CI keys.
+
+## Stores trade control for services {#sec-stores}
+
+A store handles discovery, trust, and updates, but adds its own sandbox, review process, and
+package rules. Choose it when those services are worth the platform constraints.
 
 ::: {.more}
-**Read more:** [Microsoft Store deployment with windeployqt](https://www.qt.io/blog/windows-store-deployment-with-windeployqt)
+**Read more:** [Qt macOS deployment](https://doc.qt.io/qt-6/macos-deployment.html) and
+[Microsoft code signing](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options).
 :::

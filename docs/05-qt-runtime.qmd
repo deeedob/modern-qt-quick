@@ -1,171 +1,152 @@
-# How Qt runs your code {#sec-runtime}
+# The event loop stays free {#sec-runtime}
 
-QML bindings, signals and threads all rest on a few mechanisms in Qt's core. Understand
-these five and most of Qt's behavior stops being surprising.
+Qt delivers input, timers, and queued work through an event loop. If the main thread waits,
+the app stops reacting. This one idea explains most Qt rules.
 
 ## The event loop {#sec-event-loop}
 
-A Qt application is one loop. `QGuiApplication::exec()` starts it, and it runs until the
-app quits:
+`QGuiApplication::exec()` starts the main event loop. It waits for input, timer, and other
+events, delivers them to their objects, and gives the application a chance to update the next
+frame. Each handler must return before the loop can deliver the next event on that thread.
 
 ```{mermaid}
-%%| fig-width: 6.5
 flowchart LR
-    W(["Wait"]) --> E["Events arrive<br/>input, timers, network"]
-    E --> D["Deliver each<br/>to its object"]
-    D --> H["Handlers emit signals,<br/>bindings update"]
-    H --> R["Render the<br/>next frame"]
-    R --> W
+    W[Wait] --> E[Receive event] --> H[Run handler]
+    H --> U[Update state and bindings] --> R[Prepare next frame] --> W
 ```
 
-Every click, timer and update passes through this cycle, on the main thread, one at a
-time. That has one big consequence: **code that blocks the loop freezes the whole app.** No
-input, no animation, no repaint until your function returns. Qt Quick draws on a render
-thread of its own (@sec-custom-items), but the content of each frame comes from the main
-thread, so a blocked loop freezes the picture as well.
+A long computation in a handler blocks input and prevents the interface from responding. A
+timer or asynchronous result lets the handler return; CPU-heavy or blocking work belongs on
+another thread. Even repeated short updates can cause a stall if each one starts expensive work.
+
+## Properties drive the view {#sec-properties}
+
+A `Q_PROPERTY` plus a notify signal is observable state. QML binds to it and updates after
+the signal. Sketchbook exposes canvas state this way, which leaves QML declarative.
+
+For example, `CanvasStore` declares `snapShapes` with `READ snapShapes`, `WRITE setSnapShapes`,
+and `NOTIFY snapShapesChanged`. QML can read or change the property and observe changes. The
+setter shows how the contract works:
+
+::: {.snippet source="src/canvas/CanvasStore.cpp"}
 
 ```cpp
-QThread::sleep(2);                                 // frozen for 2 s
-QTimer::singleShot(2000, this, &Uploader::retry);  // keeps running
+void CanvasStore::setSnapShapes(bool snap)
+    Q_EMIT snapShapesChanged();\n}
 ```
 
-Never wait inside the loop. Let a timer or a signal call you back, and move slow work to
-another thread (@sec-threads).
-
-::: {.more}
-**Read more:** [The event system](https://doc.qt.io/qt-6/eventsandfilters.html)
 :::
 
-## Properties and signals: the reactive contract {#sec-properties}
+- The equality check returns when the value has not changed, avoiding unnecessary updates.
+- `m_snapShapes = snap` updates the state the getter returns.
+- `Q_EMIT snapShapesChanged()` tells Qt to re-evaluate bindings that read the property.
 
-A `Q_PROPERTY` with a `NOTIFY` signal is state that others can observe. Change the value,
-emit the signal, and every QML binding that reads the property updates itself.
+The canvas switch binds its checked state to `root.store.snapShapes` and writes back through
+the property when toggled. The declaration in `CanvasStore.hpp` connects that QML property to
+this getter, setter, and signal. `CONSTANT` describes a property that never changes; `FINAL`
+tells the type system a subclass will not override it.
 
-```{.cpp filename="CanvasStore.hpp"}
-class CanvasStore : public QObject
-{
-    Q_OBJECT
-    Q_PROPERTY(bool snapShapes READ snapShapes WRITE setSnapShapes
-               NOTIFY snapShapesChanged FINAL)
+## Signals cross boundaries {#sec-signals}
 
-public:
-    bool snapShapes() const { return m_snapShapes; }
-    void setSnapShapes(bool snap)
-    {
-        if (snap == m_snapShapes)  // <1>
-            return;
-        m_snapShapes = snap;
-        Q_EMIT snapShapesChanged();  // <2>
-    }
+A signal announces a change without knowing its listeners. Use typed connections. Give lambdas
+a context object so Qt disconnects them when that object dies.
 
-Q_SIGNALS:
-    void snapShapesChanged();
+With the default connection, a receiver in the emitting thread runs immediately. A receiver
+in another thread receives a queued event, which its event loop handles later. A queued
+connection needs a running event loop in the receiver's thread.
 
-private:
-    bool m_snapShapes = true;
-};
-```
-1. No change, no signal. This avoids needless updates and binding loops.
-2. Every binding on `snapShapes` re-evaluates.
+Qt's meta-object compiler, `moc`, generates the machinery for classes marked `Q_OBJECT`.
+It gives signals, properties, and invokable methods the metadata Qt and QML use. The template
+spells the keywords `Q_SIGNALS`, `Q_SLOTS`, and `Q_EMIT` because it disables Qt's short keyword
+macros to avoid clashes with other libraries.
 
-Mark a property `CONSTANT` when it never changes, and `FINAL` so that no subclass can
-override it; the QML tools can then rely on its type.
+## Ownership has one answer {#sec-ownership}
 
-::: {.more}
-**Template:** `src/canvas/CanvasStore.hpp`
+A parent owns its child. A value owns itself. A `std::unique_ptr` owns its pointee. Pick one.
+A parented QObject in a `unique_ptr` has two owners and can be deleted twice.
 
-**Read more:** [The property system](https://doc.qt.io/qt-6/properties.html)
-:::
+For a QObject with a parent, destroying the parent destroys its children. An unparented object
+can instead live on the stack, as a member, or under an owning pointer. The important question
+is who destroys it and whether any view or connection can outlive that owner.
 
-## Signals and slots {#sec-signals}
+## Work leaves the UI thread {#sec-threads}
 
-A signal announces that something happened, without knowing who listens. `connect()` wires
-it to a receiver:
+File operations can be slow enough to block the event loop. Sketchbook queues them on a
+one-thread pool, passes the file path by value, and handles the result through a context-bound
+continuation. Keeping one writer also preserves the order of operations.
+
+::: {.content-visible when-format="html"}
+
+::: {.panel-tabset}
+
+### Short task: QtConcurrent
+
+Use `QtConcurrent` for a finite task with a clear input and result. Here the removal runs on
+the writer pool and returns either an empty string or an error message:
+
+::: {.snippet source="src/sketchbook/SketchStorage.cpp"}
 
 ```cpp
-connect(&m_canvas, &CanvasStore::edited,
-        this, &SketchbookViewModel::saveOpenSketch);
-connect(&m_canvas, &CanvasStore::edited,
-        this, [this] { scheduleBackup(); });
+QFuture<QString> SketchStorage::remove(const QString &id)
+    });\n}
 ```
 
-Use member-function pointers, as above: the compiler checks that signal and slot fit. The
-third argument of the lambda version, the **context object**, matters: when it is
-destroyed, the connection ends, and the lambda runs in that object's thread.
-
-Signals are not a language feature. **moc**, Qt's meta-object compiler, reads every class
-marked `Q_OBJECT` and generates the code behind them: a signal is a member function whose
-body moc writes, and that body calls every connected slot. How it calls them depends on which thread the receiver lives in:
-
-- **Receiver in the emitting thread:** the slot runs immediately, inside the emit, like a normal
-  function call.
-- **Receiver in another thread:** Qt packs the call and its arguments into an event and
-  posts it to the receiver thread's event loop, which runs the slot later. This is a
-  *queued connection*, and it is how a worker thread reports to the GUI safely
-  (@sec-threads).
-
-This guide writes `Q_SIGNALS`, `Q_SLOTS` and `Q_EMIT`. They mean the same as `signals`,
-`slots` and `emit`, but keep working in projects that define `QT_NO_KEYWORDS` because some
-library uses those words as names.
-
-::: {.more}
-**Read more:** [Signals and slots](https://doc.qt.io/qt-6/signalsandslots.html)
 :::
 
-## Who owns an object {#sec-ownership}
+### Long-lived worker: QThread
 
-A QObject can have a **parent**. When the parent is destroyed, it destroys its children.
-Objects without a parent belong to whoever created them: a stack variable, a member, or a
-`std::unique_ptr`.
+Use a QObject moved to a `QThread` when a worker owns a long-lived event loop, such as a
+protocol connection. Send it queued signals. The GUI never calls it directly.
+
+:::
+:::
+
+::: {.content-visible unless-format="html"}
+
+### Short task: QtConcurrent
+
+Use `QtConcurrent` for a finite task with a clear input and result. Here the removal runs on
+the writer pool and returns either an empty string or an error message:
+
+::: {.snippet source="src/sketchbook/SketchStorage.cpp"}
 
 ```cpp
-auto *timer = new QTimer(this);                       // the parent deletes it
-auto translator = std::make_unique<QTranslator>();    // the unique_ptr deletes it
-SketchStorage storage(dataDir);                       // the scope deletes it
+QFuture<QString> SketchStorage::remove(const QString &id)
+    });\n}
 ```
 
-Give every object exactly one owner. With two owners, such as a parent *and* a
-`unique_ptr`, the parent may delete the object first, and the `unique_ptr` later deletes it
-a second time and crashes.
-
-::: {.more}
-**Read more:** [Object trees and ownership](https://doc.qt.io/qt-6/objecttrees.html)
 :::
 
-## Threads: hand work off, send results back {#sec-threads}
+### Long-lived worker: QThread
 
-Each QObject belongs to the thread that created it. The GUI belongs to the main thread and
-must only be touched there. Slow work, such as writing a file or parsing a large document,
-runs on another thread and reports back with a signal.
+Use a QObject moved to a `QThread` when it owns a long-lived event loop. Send it queued
+signals and never call GUI objects from the worker.
 
-```{.cpp filename="Storage.cpp"}
-void Storage::save(QString path, Document document)
-{
-    QtConcurrent::run(&m_writer,                                  // <1>
-        [path, document = std::move(document)] { writeJson(path, document); })
-        .then(this, [this] { Q_EMIT saved(); });                  // <2>
-}
+:::
+
+The storage operation returns a future. The view model attaches a continuation with `this` as
+its context, so the result handling runs in the view model's thread and does not run after that
+context is destroyed:
+
+::: {.snippet source="src/sketchbook/SketchbookViewModel.cpp"}
+
+```cpp
+void SketchbookViewModel::save(const QString &id, SketchDocument document,
+    });\n}
 ```
-1. The worker gets its own copy of the data, or data that nobody changes. Then it needs no
-   locks.
-2. With a context object, the continuation runs in that object's thread: back on the GUI
-   thread.
 
-For long-lived background work, such as a network connection, move a worker object to a
-`QThread` and talk to it through signals. Qt Quick itself renders on a separate thread, too
-(@sec-custom-items).
+:::
 
 ::: {.callout-important}
-## Touch a QObject only from its own thread
-Calling a QObject, or anything in the UI, from another thread is a data race, even when it
-seems to work. Cross threads only through signals, queued connections or a continuation with
-a context object, and hand over copies of the data.
+## QObject affinity is real
+
+Only touch a QObject from its owning thread. Move expensive work away from the UI before it
+can block input or trigger repeated expensive updates. Return plain values through a queued
+signal or a continuation with a GUI-thread context.
 :::
 
 ::: {.more}
-**Template:** `src/sketchbook/SketchStorage.cpp` saves on a one-thread pool, so writes keep
-their order
+**Template:** `src/sketchbook/SketchStorage.cpp`
 
-**Read more:** [Threads and QObjects](https://doc.qt.io/qt-6/threads-qobject.html),
-[The eight rules of multithreaded Qt](https://www.kdab.com/the-eight-rules-of-multithreaded-qt/)
+**Read more:** [Threads and QObjects](https://doc.qt.io/qt-6/threads-qobject.html).
 :::

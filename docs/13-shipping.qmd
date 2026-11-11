@@ -1,207 +1,111 @@
-# Packaging and deployment {#sec-shipping}
+# A release is a promise {#sec-shipping}
 
-An app that only runs on your machine is not done. This chapter turns a build into something
-a user can download, with everything it needs to run and every license it has to include.
+A release is more than a built executable. It is an identified package that runs on a user's
+machine, includes its notices, and can be supported after it ships.
 
-## Install, then deploy {#sec-deploy}
+## Install before you package {#sec-deploy}
 
-Shipping starts with two steps. `install()` copies your app into a clean folder. Qt's deploy
-script then copies everything your app needs from Qt next to it: libraries, plugins and QML
-modules.
+Install into a clean prefix, then let Qt's deployment script collect the QML modules, plugins,
+and libraries it needs. Test that result away from the development machine.
 
-```{.cmake filename="src/app/CMakeLists.txt"}
+Deployment is platform-specific. A macOS application uses a bundle, Windows needs DLLs beside
+the executable, and Linux packages need their runtime dependencies arranged for the target
+system. CPack wraps the installed files in a platform-specific package. Test the package on a
+clean machine: a development machine may hide missing plugins or libraries.
+
+The template currently packages a disk image on macOS, a ZIP archive on Windows, and a TGZ
+archive on Linux. Other package formats may suit your audience better. On Windows, Qt's deploy
+step knows its own DLLs; the install rules also copy other runtime DLLs required by the app.
+Qt plugins load at runtime, so a missing platform plugin may only become visible on a clean
+machine.
+
+::: {.snippet source="src/app/CMakeLists.txt"}
+
+```cmake
 install(TARGETS app
-    BUNDLE DESTINATION .
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-qt_generate_deploy_qml_app_script(TARGET app OUTPUT_SCRIPT deploy_script)
-install(SCRIPT ${deploy_script})
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"\n)
 ```
 
-```sh
-cmake --install build/release --prefix dist
+:::
+
+After installing the executable, the template generates and installs Qt's deployment script:
+
+::: {.snippet source="src/app/CMakeLists.txt"}
+
+```cmake
+qt_generate_deploy_qml_app_script(
+install(SCRIPT "${_deploy_script}")
 ```
 
-`dist/` now runs on a machine without Qt: a self-contained `.app` bundle on macOS, a folder
-with the executable and its DLLs on Windows, a `bin/` and `lib/` tree on Linux.
-
-::: {.callout-warning}
-## "Could not find or load the Qt platform plugin"
-The most famous Qt error means the deploy step did not run, or ran without the plugins.
-Qt loads plugins at run time, so a build that starts on your machine can still fail on
-another one.
 :::
 
-On Windows, the deploy script knows Qt's DLLs but not those of your other dependencies.
-Install them too, with `install(FILES $<TARGET_RUNTIME_DLLS:app> ...)`.
+The script runs during installation, after the app is in place. It collects Qt's required
+libraries, plugins, and QML imports for the supported deployment platform.
 
-::: {.more}
-**Template:** `src/app/CMakeLists.txt`
+## Versions describe user impact {#sec-versions-and-backports}
 
-**Read more:** [Deploying Qt applications with CMake](https://doc.qt.io/qt-6/cmake-deployment.html)
-:::
+For an application, a version tells users what upgrade they are taking. Use the three SemVer
+numbers as a clear expectation:
 
-## One package per platform {#sec-packages}
+| Release | User expectation |
+|---|---|
+| Patch, `1.2.1` | fixes a problem without changing normal use |
+| Minor, `1.3.0` | adds compatible capability |
+| Major, `2.0.0` | makes an incompatible change to a supported contract |
 
-CPack, part of CMake, turns the installed app into the format each platform expects:
+A tag such as `v1.2.1` identifies the exact source of a release. Define what users may rely
+on, for example a document format or CLI command. Internal refactoring is not a major release.
+Before `1.0.0`, SemVer treats the public API as unstable, so communicate compatibility
+expectations directly to users.
 
-| Platform | Format | CPack generator |
-|---|---|---|
-| macOS | disk image (`.dmg`) | `DragNDrop` |
-| Windows | archive or installer | `ZIP`, `NSIS`, `WIX` |
-| Linux | archive or package | `TGZ`, `DEB`, `RPM` |
+## Maintenance branches keep fixes traceable {#sec-backports}
 
-```{.cmake filename="cmake/Packaging.cmake"}
-set(CPACK_PACKAGE_FILE_NAME
-    "${PROJECT_NAME}-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}")
-if(APPLE)
-    set(CPACK_GENERATOR DragNDrop)
-elseif(WIN32)
-    set(CPACK_GENERATOR ZIP)
-else()
-    set(CPACK_GENERATOR TGZ)
-endif()
-include(CPack)
-```
-
-With a package preset, `cmake --workflow --preset release` configures, builds, tests and
-packages in one go. Before you hand the package to users, sign it (@sec-distribution).
-
-::: {.more}
-**Template:** `cmake/Packaging.cmake`
-
-**Read more:** [CPack](https://cmake.org/cmake/help/latest/module/CPack.html)
-:::
-
-## Licenses are part of the product {#sec-licenses}
-
-Every library and asset you ship comes with a license, and most licenses ask for something
-in return.
-
-**Qt** is available under the LGPLv3 (and a commercial license). For an app you distribute,
-the LGPL asks you to:
-
-- let users replace Qt with their own build; linking Qt dynamically is the simple way;
-- ship Qt's license texts and say that your app uses Qt;
-- provide Qt's source code, or a written offer for it;
-- avoid the Qt modules that are available only under the GPL.
-
-**Every other dependency and asset** needs its license shipped as well: libraries, but also
-fonts and icons. Put one text file per component into a `licenses/` folder of the package.
-Install that folder in the platform's package-data location, then let people open it from the
-About dialog.
-
-**Your own repository** should say clearly what is yours and under which terms. The
-[REUSE](https://reuse.software/) convention does that in one file:
-
-```{.toml filename="REUSE.toml"}
-version = 1
-
-[[annotations]]
-path = "**"
-SPDX-FileCopyrightText = "2026 Your Name"
-SPDX-License-Identifier = "MIT-0"
-
-[[annotations]]
-path = "src/controls/fonts/**"
-SPDX-FileCopyrightText = "2016 The Inter Project Authors"
-SPDX-License-Identifier = "OFL-1.1"
-```
-
-`reuse lint` then checks that every file in the repository is covered.
-
-This is a summary of obligations, not legal advice.
-
-::: {.more}
-**Template:** `REUSE.toml`, `app_add_notice()` in `cmake/Packaging.cmake`, and the About dialog
-
-**Read more:** [Qt licensing](https://doc.qt.io/qt-6/licensing.html)
-:::
-
-## CI and release builds {#sec-ci}
-
-Build and test every change on each supported platform using an installed Qt. The manual
-release workflow builds Qt with vcpkg, tests the application, and uploads the packages as
-workflow artifacts:
-
-```{.yaml filename=".github/workflows/release.yml (excerpt)"}
-jobs:
-  build:
-    strategy:
-      matrix:
-        os: [ubuntu-24.04, macos-15, windows-2022]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          submodules: true
-      - run: cmake --preset release -DAPP_USE_VCPKG_QT=ON
-      - run: cmake --workflow --preset release
-```
-
-A complete workflow also sets up the compiler environment on Windows. Cache the dependency
-builds between runs (vcpkg's binary cache does this), or every run rebuilds them from
-scratch. Download the release workflow artifacts to test the packages before shipping.
-
-::: {.callout-tip}
-## Package for an empty machine
-
-Before shipping, picture a machine with none of your development environment: no installed
-fonts, libraries, tools, or configuration. Package every required runtime component, then test
-the result on such a machine.
-:::
-
-::: {.more}
-**Template:** `.github/workflows/ci.yml`, `.github/workflows/release.yml`
-:::
-
-## Versions, releases and backports {#sec-versions-and-backports}
-
-A **version** tells a user which release they have. With
-[Semantic Versioning](https://semver.org/spec/v2.0.0.html), a version has three numbers:
-
-| Change | Example | Meaning |
-|---|---|---|
-| Patch | `1.2.0` → `1.2.1` | a backward-compatible bug fix |
-| Minor | `1.2.1` → `1.3.0` | backward-compatible functionality |
-| Major | `1.3.0` → `2.0.0` | an incompatible public change |
-
-These promises need a defined public contract: for an app that might include a file format,
-an API or commands used by scripts. Before `1.0.0`, SemVer treats the public API as unstable.
-A **tag** such as `v1.2.0` names the exact commit used for a release; a branch can continue
-moving as more fixes are added.
-
-Now imagine users run both version `1.2` and the newer `2.2`. You discover a serious bug in
-both. Fix and test it on `main` for the next release, then bring the same fix to the
-`release/1.2` maintenance branch. That branch starts at the old release and contains only
-the fixes the team chooses to support there. Test the backport and release `1.2.1`, tagged
-at its own commit. Users can receive the fix without upgrading to version 2.
-
-```{mermaid}
-%%| fig-width: 6.5
-flowchart LR
-    A["v1.2.0<br/>released"] --> B["v2.2.0<br/>released"] --> C["Fix on main"]
-    A --> D["release/1.2<br/>maintenance"] --> E["Backport fix<br/>tag v1.2.1"]
-    C -. "copy the fix" .-> E
-```
-
-Copying a commit to another branch is called **cherry-picking** or **backporting**. An atomic
-fix is easier to pick because it brings the fix and its test without unrelated features:
+Support an older release only when users need it. Fix and test the issue on the main line,
+then copy the small, tested fix to the maintenance branch.
 
 ```sh
 git switch release/1.2
 git cherry-pick -x <fix-commit>
 ```
 
-The result is a new commit on the maintenance branch. The `-x` option records the original
-commit when the pick applies without conflicts; after resolving a conflict, check the message
-and add that reference if needed. A fix may need adaptation if version 1 has different code.
-Maintain older branches only for releases you have chosen to support.
+The `-x` trailer records the source commit when the pick applies without conflicts. After
+resolving a conflict, check the message and add the reference if needed. That trace matters
+when a future fix needs the same branch. Release the backport with its own patch tag.
+
+```{mermaid}
+flowchart LR
+    A[Release 1.2.0] --> B[Later work on main] --> C[Fix on main]
+    A --> D[Maintenance branch 1.2] --> E[Backport and release 1.2.1]
+    C -. cherry-pick .-> E
+```
+
+## CI makes the package repeatable {#sec-ci}
+
+A release workflow should build, test, deploy, package, and archive the result on every
+supported platform. Symbol files make crash reports useful, so a production release process
+should preserve matching debug symbols when it strips distributed binaries. The template does
+not yet implement a complete cross-platform symbol archival process.
+
+The template's release workflow is started manually. It builds and tests on the configured
+platforms, packages the app, and uploads workflow artifacts for inspection. Download and test
+those artifacts before you publish a release; creating a workflow artifact does not itself
+publish a GitHub release.
+
+## Licenses travel with the product {#sec-licenses}
+
+Ship notices and required license texts for Qt, libraries, fonts, and other assets. REUSE
+keeps the source inventory checkable. Licensing needs project-specific review before release.
+
+Qt and each third-party library, font, and icon may carry different terms. Keep the applicable
+notices and license texts with the distributed app, not only in the source repository. The
+About dialog provides a way to find the installed notices. `REUSE.toml` records license
+information for repository files, and the REUSE check helps find files without coverage.
 
 ::: {.more}
-**Template:** `CMakeLists.txt` sets the app version; the release build puts it in the package
+**Template:** `src/app/CMakeLists.txt`, `cmake/Packaging.cmake`, and
+`.github/workflows/release.yml`
 
-**Read more:** [Semantic Versioning](https://semver.org/spec/v2.0.0.html),
-[Git tags](https://git-scm.com/book/en/v2/Git-Basics-Tagging),
-[Git cherry-pick](https://git-scm.com/docs/git-cherry-pick)
+**Read more:** [Qt deployment with CMake](https://doc.qt.io/qt-6/cmake-deployment.html),
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html), and
+[Git cherry-pick](https://git-scm.com/docs/git-cherry-pick).
 :::

@@ -1,62 +1,37 @@
-# Mobile, briefly {#sec-mobile}
+# Mobile changes the edges {#sec-mobile}
 
-The same Qt Quick application can run on Android and iOS. This chapter does not teach mobile
-development; it shows what changes, so you can plan for it.
+Qt Quick lets a shared application core reach Android and iOS. The device changes the view,
+lifecycle, and permissions, not the reason to keep state separate.
 
-## Same code, different device {#sec-mobile-device}
+## Touch and lifecycle shape the view {#sec-mobile-device}
 
-What stays: your C++ layers, your QML, your build. What changes is the device around them:
+Design for fingers, smaller rotating screens, and suspension at any time. Save after meaningful
+edits, not only when the app quits. Use `QStandardPaths` because each app has its own
+sandbox.
 
-- **Input.** Fingers instead of a mouse: no hover, larger touch targets, gestures.
-- **Screens.** Small, dense, and rotating between portrait and landscape.
-- **Lifecycle.** The system suspends your app when the user switches away, and may end it
-  without warning. Save early, not on quit.
-- **Files.** Each app lives in a sandbox; use `QStandardPaths` (@sec-paths), never fixed
-  paths.
+Touch targets need enough room for a finger, and hover cannot be the only way to discover an
+action. Orientation and screen density can change the space available to a view. The operating
+system can suspend or terminate an app while it is in the background, so do not rely on a
+normal quit to save work. Keeping these concerns in the view and platform boundary helps the
+core remain shared with the desktop app.
 
-This is where the split from @sec-split pays off once more: logic stays in C++, and mostly
-the views adapt.
+## Native toolchains build the package {#sec-mobile-build}
 
-::: {.more}
-**Read more:** [Mobile development with Qt](https://doc.qt.io/qt-6/mobiledevelopment.html)
-:::
+Android needs its SDK and NDK; iOS needs Xcode and an Apple toolchain. Install the matching Qt
+kits, then let CMake configure against the target platform.
 
-## Building for a device {#sec-mobile-build}
+Qt provides separate kits for Android and iOS. A mobile build is cross-compiled with the
+platform toolchain; test on the target device as well as an emulator or simulator, because
+input, graphics, and lifecycle behaviour can differ.
 
-Mobile builds are cross-compiled with the platform's own tools: the Android SDK and NDK, or
-Xcode for iOS. Qt provides a build for each platform, and the Qt Online Installer installs
-them next to your desktop Qt. vcpkg builds your other dependencies for mobile triplets from
-the same `vcpkg.json` (@sec-vcpkg).
+## Permissions ask at the moment of need {#sec-permissions}
 
-::: {.more}
-**Read more:** [Getting started with Qt for Android](https://doc.qt.io/qt-6/android-getting-started.html),
-[Qt for iOS](https://doc.qt.io/qt-6/ios.html)
-:::
-
-## Permissions {#sec-permissions}
-
-Using the camera, location, microphone or Bluetooth needs the user's consent, which the app asks for at run time.
-Qt offers one permission API for all platforms:
-
-```qml
-import QtCore
-
-CameraPermission {
-    id: camera
-}
-
-Button {
-    text: qsTr("Scan a sketch")
-    visible: camera.status !== Qt.PermissionStatus.Denied
-    onClicked: camera.status === Qt.PermissionStatus.Granted
-               ? scanner.start() : camera.request()
-}
-```
-
-Each permission must also be declared: in the app's `AndroidManifest.xml` on Android, and in
-`Info.plist` on iOS, with a usage description that tells the user why. Ask for as little as
-you need, at the moment you need it, so the user understands why.
+Declare a permission in platform metadata and request it when a feature needs it. Explain the
+benefit in the UI. A request for camera access makes sense beside scanning, not at first launch.
+Android uses its manifest; iOS uses `Info.plist` with a usage description. Qt provides a
+common API for requesting supported permissions at runtime.
 
 ::: {.more}
-**Read more:** [Application permissions](https://doc.qt.io/qt-6/permissions.html)
+**Read more:** [Qt mobile development](https://doc.qt.io/qt-6/mobiledevelopment.html) and
+[Qt permissions](https://doc.qt.io/qt-6/permissions.html).
 :::

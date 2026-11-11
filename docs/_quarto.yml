@@ -30,6 +30,7 @@ book:
       chapters:
         - 03-build.qmd
         - 04-dependencies.qmd
+        - 17-git.qmd
     - part: "Develop the application"
       chapters:
         - 05-qt-runtime.qmd
@@ -42,7 +43,6 @@ book:
       chapters:
         - 12-testing.qmd
         - 11-quality.qmd
-        - 17-git.qmd
     - part: "Release the application"
       chapters:
         - 13-shipping.qmd
@@ -53,6 +53,7 @@ book:
         - 16-learning.qmd
 
 filters:
+  - source-snippets.lua
   - repo-links.lua
   - typst.lua
 

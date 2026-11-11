@@ -6,6 +6,7 @@ $code-block-font-size: 0.86em;
 /*-- scss:rules --*/
 h2 {
   margin-top: 2.4rem;
+  letter-spacing: -0.02em;
 }
 
 pre code {
@@ -14,6 +15,74 @@ pre code {
 
 .callout {
   margin-block: 1.4rem;
+  border-radius: 0.6rem;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid rgba($primary, 0.2);
+  border-radius: 0.6rem;
+  overflow: hidden;
+}
+
+table thead,
+table tr:first-child {
+  background: rgba($primary, 0.12);
+}
+
+table th {
+  color: $primary;
+  font-weight: 700;
+}
+
+table th, table td {
+  padding: 0.7rem 0.8rem;
+  border-color: rgba($primary, 0.15);
+}
+
+.source-snippet {
+  margin: 1.25rem 0;
+  border: 1px solid rgba($primary, 0.2);
+  border-radius: 0.6rem;
+  overflow: hidden;
+}
+
+.source-snippet > p:first-child {
+  margin: 0;
+  padding: 0.45rem 0.8rem;
+  background: rgba($primary, 0.1);
+  font-size: 0.82rem;
+}
+
+.source-snippet > .code-copy-outer-scaffold,
+.source-snippet > .code-copy-outer-scaffold > div.sourceCode,
+.source-snippet > div.sourceCode {
+  margin: 0;
+}
+
+.source-snippet pre {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.panel-tabset .nav-tabs {
+  border-bottom-color: rgba($primary, 0.25);
+}
+
+.panel-tabset .nav-link.active {
+  border-color: rgba($primary, 0.25) rgba($primary, 0.25) transparent;
+  color: $primary;
+  font-weight: 700;
+}
+
+.mermaid {
+  margin-block: 1.4rem;
+  padding: 1.2rem;
+  border: 1px solid rgba($primary, 0.2);
+  border-radius: 0.6rem;
+  background: rgba($primary, 0.04);
 }
 
 // The closing line of a section: where the template shows it, and where to read more.

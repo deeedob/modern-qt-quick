@@ -1,191 +1,96 @@
-# QML done right {#sec-qml}
+# QML describes the view {#sec-qml}
 
-QML looks like a layout language, but it is a language for relationships: this item is half
-as wide as that one, this button is enabled while that list is not empty. Writing good QML
-means stating relationships and keeping everything else in C++.
+QML works best when it describes what the view should show. Bind a property to state, send a
+user action to C++, and let the binding update the view later.
 
-## Bindings, not assignments {#sec-bindings}
+## Bindings keep state connected {#sec-bindings}
 
-A property written with a colon is a **binding**. It stays true: whenever the right side
-changes, QML re-evaluates it.
+A binding is a live relationship, not an assignment. Sketchbook disables Undo from C++ state
+and sends the action back to the store.
 
-```qml
-Rectangle {
-    id: panel
-    width: parent.width / 2          // a binding: follows the parent, forever
-
-    MouseArea {
-        anchors.fill: parent
-        onClicked: panel.width = 300   // an assignment: replaces the binding
-    }
-}
-```
-
-After the click, `panel` has a fixed width of 300, and resizing the window no longer resizes
-it. Most layout bugs in QML come from an assignment where a binding was meant. If a value
-should follow something, bind it. If the user changes it, change the *source* of the
-binding, usually a property in C++, instead of overwriting the binding.
-
-::: {.callout-important}
-## Never assign to a bound property
-An assignment from JavaScript removes the binding without any warning. To change a bound
-value, change its source. If a property really needs both, restore the binding with
-`Qt.binding()`, or better, move that state into C++.
-:::
-
-::: {.more}
-**Read more:** [Property binding](https://doc.qt.io/qt-6/qtqml-syntax-propertybinding.html)
-:::
-
-## Components with a clear interface {#sec-components}
-
-A reusable component works like a function: data goes in through properties, intent comes
-out through signals. It never reaches into its parent or into ids defined elsewhere.
-
-```{.qml filename="Swatch.qml"}
-AbstractButton {
-    id: swatch
-
-    required property color ink   // input: whoever uses Swatch must set it
-    signal picked(color ink)       // output: reports what happened
-
-    implicitWidth: 28
-    implicitHeight: 28
-    onClicked: swatch.picked(swatch.ink)
-
-    background: Rectangle {
-        radius: width / 2
-        color: swatch.ink
-    }
-}
-```
-
-The component only reports that it was picked; its user decides what that means:
+::: {.snippet source="src/canvas/CanvasPage.qml"}
 
 ```qml
-Swatch {
-    ink: "#e5484d"
-    onPicked: ink => page.penColor = ink
-}
+                ToolButton {\n                    icon.source: Theme.icon("undo-2")
+                    onClicked: root.store.undo()\n                }
 ```
 
-A component written this way works anywhere, and a test can create it on its own.
-
-::: {.more}
-**Template:** the `Swatch` inline component in `src/canvas/CanvasPage.qml`
-
-**Read more:** [QML component design](https://www.kdab.com/qml-component-design/)
 :::
 
-## Typed QML that tools can check {#sec-typed-qml}
+Do not overwrite a bound property in JavaScript. Change the source that owns the value.
+An assignment such as `button.enabled = true` replaces the binding on `enabled`; it does not
+temporarily override it. Later changes to `canUndo` would no longer update that button.
 
-QML can be as loose as JavaScript or as strict as C++. Write it strict, and qmllint and the
-QML compiler can check every name and type at build time; the compiler can then turn your
-bindings into C++.
+## Components have typed inputs {#sec-components}
 
-```{.qml filename="SketchbookPage.qml"}
-pragma ComponentBehavior: Bound                     // bound to this file
+A reusable component declares what it needs with `required property` and emits its own
+signals. This makes missing wiring a load-time error instead of a surprising runtime state.
 
-Page {
-    id: root
+For example, `CanvasPage` defines a `Swatch` with a required color and a `picked` signal. The
+parent decides what a picked color means; the swatch only handles its own presentation and input.
 
-    required property SketchbookViewModel viewModel   // typed and required
+::: {.snippet source="src/canvas/CanvasPage.qml"}
 
-    function rename(row: int, name: string): void {   // typed signature
-        root.viewModel.rename(row, name)              // qualified lookup
-    }
-}
+```qml
+    component Swatch: AbstractButton {
+            border.color: swatch.checked ? Theme.accent : Theme.border\n        }\n    }
 ```
 
-Each line replaces a guess with a fact the tools can check: no name that "should exist"
-somewhere above, no untyped argument, no lookup that depends on where the component is used.
-
-Make qmllint fail on any warning and run it in CI, so a typo fails like a C++ typo does.
-
-::: {.more}
-**Template:** `.qmllint.ini`
-
-**Read more:** [qmllint](https://doc.qt.io/qt-6/qtquick-tool-qmllint.html)
 :::
 
-## Order QML objects {#sec-qml-order}
+Typed properties and function parameters let QML tooling check the contract. Qualify access
+to a component's properties through its `id`, so a reader and the tools can see which object
+owns the value. Keep declarations, signals, functions, object properties, and children in a
+consistent order.
 
-Put an object's `id` first, followed by property declarations, signals, functions, object
-properties, and child objects. Separate these groups with blank lines. The order makes a
-component's interface visible before its implementation and layout.
+## Lists use models {#sec-lists}
 
-Use a typed function when a binding or handler needs more than a small expression. It keeps the
-object properties short and gives QML tooling an explicit contract.
+A model reports precise insert, update, and removal changes. The view keeps its scroll
+position and delegates instead of rebuilding everything.
 
-::: {.more}
-**Read more:** [Qt QML coding conventions](https://doc.qt.io/qt-6/qml-codingconventions.html)
-:::
-
-## Lists come from models {#sec-lists}
-
-A `ListView` creates delegates only for the rows that are visible, and drops them as they
-scroll out of view (`reuseItems: true` recycles them instead). Its data comes from a
-**model**, and each delegate receives the data of its row as required properties:
+The sketchbook model exposes roles such as `name` and `strokeCount`. A delegate declares the
+roles it needs as required properties. This adapted example keeps the list and its delegate,
+but leaves out the extra row controls in the real
+[SketchbookPage.qml](https://github.com/deeedob/qt-kickstart/blob/main/src/sketchbook/SketchbookPage.qml):
 
 ```qml
 ListView {
-    id: list
     model: root.viewModel.model
 
     delegate: ItemDelegate {
-        required property int index
-        required property string name   // one property per model role
+        required property string name
         required property int strokeCount
 
-        width: list.width
         text: name
-        onClicked: root.viewModel.open(index)
     }
 }
 ```
 
-Expose collections as models (@sec-item-models), never as a property holding a whole list:
-a model can report "row 3 changed", a list property can only say "everything changed".
+When a sketch is added, the C++ model announces the insertion before and after changing its
+data. The view can then create just the new delegate:
 
-::: {.more}
-**Template:** `src/sketchbook/SketchbookPage.qml`
+::: {.snippet source="src/sketchbook/SketchListModel.cpp"}
 
-**Read more:** [Models and views in Qt Quick](https://doc.qt.io/qt-6/qtquick-modelviewsdata-modelview.html)
-:::
-
-## Positioning: anchors, layouts, positioners {#sec-positioning}
-
-Qt Quick offers three ways to place items. Pick one per container.
-
-| Tool | Use it for |
-|---|---|
-| **Anchors** (`anchors.fill`, `anchors.centerIn`) | relating an item to its parent or a sibling |
-| **Layouts** (`RowLayout`, `ColumnLayout`, `GridLayout`) | sharing space among items that resize |
-| **Positioners** (`Row`, `Column`, `Grid`) | stacking items of fixed size |
-
-```qml
-RowLayout {
-    anchors.fill: parent          // anchors place the layout
-    Label {
-        text: qsTr("Sketchbook")
-        Layout.fillWidth: true    // takes the free space
-    }
-    ToolButton { icon.source: "info.svg" }
-}
+```cpp
+void SketchListModel::prepend
+    endInsertRows();\n}
 ```
 
-::: {.more}
-**Read more:** [Positioning in Qt Quick](https://doc.qt.io/qt-6/qtquick-positioning-topic.html)
 :::
 
-## Keep JavaScript small {#sec-javascript}
+## Layout follows intent {#sec-positioning}
 
-JavaScript in QML is glue. A handler calls one method; an expression formats one value.
+Use anchors for a relationship to an edge, layouts for a row or column, and positioners for
+simple repeated content. Keep logic small. If a QML function starts making decisions about
+application state, move that decision to C++.
 
-```qml
-onClicked: root.viewModel.remove(index)   // good: intent goes to C++
-```
+Anchors express relationships such as filling a parent. Layouts share available space and
+respect implicit, minimum, and preferred sizes. Positioners arrange children without the full
+layout negotiation. Choose the smallest mechanism that expresses the intended relationship,
+and avoid assigning geometry that a layout already controls.
 
-Logic written in QML escapes the compiler's type checks, cannot be tested from C++, and
-mixes with layout code. When a handler grows beyond a few lines, the code belongs in a C++
-view model.
+::: {.more}
+**Template:** `src/canvas/CanvasPage.qml` and `src/sketchbook/SketchListModel.cpp`
+
+**Read more:** [QML coding conventions](https://doc.qt.io/qt-6/qml-codingconventions.html).
+:::

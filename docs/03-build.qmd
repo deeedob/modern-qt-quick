@@ -1,177 +1,152 @@
-# Build essentials {#sec-build}
+# A repeatable path to green {#sec-build}
 
-This chapter is not a CMake course. It covers the four ideas you need to read and extend a
-modern Qt build; the CMake and Qt documentation covers the rest.
+A build should answer one question the same way on every machine: does this change work?
+Targets describe the architecture; presets make the answer repeatable.
 
-## Targets and usage requirements {#sec-targets}
+## Targets carry their own needs {#sec-targets}
 
-A **target** is something CMake builds: a library or an executable. It carries its sources,
-its include paths and its dependencies. When one target links another, it inherits the
-other's **usage requirements**, and the keyword decides how far they travel.
+A target owns its sources, compile settings, and dependencies. `PUBLIC` means a consumer
+needs the dependency to use your headers. `PRIVATE` means only the implementation needs it.
+That small rule keeps build dependencies honest.
 
-```{.cmake filename="CMakeLists.txt"}
-add_library(shapes STATIC src/Recognizer.cpp)
-target_include_directories(shapes PUBLIC include)
+::: {.snippet source="src/canvas/CMakeLists.txt"}
 
-add_library(storage STATIC Storage.cpp)
-target_link_libraries(storage
-    PUBLIC shapes         # <1>
-    PRIVATE glaze::glaze  # <2>
-)
-
-add_executable(app main.cpp)
-target_link_libraries(app PRIVATE storage)  # <3>
+```cmake
+target_link_libraries(app_canvas
+    PRIVATE app_controls\n)
 ```
-1. `storage`'s own headers use `shapes` types, so its users need `shapes` too.
-2. JSON handling is an implementation detail; `storage`'s users never see glaze.
-3. `app` gets `storage` and, through it, `shapes`, but not glaze's headers.
 
-The rule of thumb: **PUBLIC** if the dependency appears in your headers, **PRIVATE** if it
-appears only in your `.cpp` files. Set everything on targets, never through global
-variables, and the build describes your architecture.
-
-::: {.more}
-**Read more:** [cmake-buildsystem(7)](https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html)
 :::
 
-## Qt's CMake API {#sec-qt-cmake}
+## Presets name working configurations {#sec-presets}
 
-Qt adds a handful of commands on top of CMake. Three of them cover a Qt Quick application:
+A preset captures a configuration once. A workflow chains configure, build, and test. Use the
+same names locally and in CI, so a green result means the same thing everywhere.
 
-```{.cmake filename="CMakeLists.txt"}
+| Preset | What it records |
+|---|---|
+| Configure | generator, build directory, and cache values |
+| Build | which configured build to compile |
+| Test | test options and environment |
+| Package | how to package the installed files |
+| Workflow | a sequence of those steps |
+
+The `dev` workflow configures, builds, and tests. `release` adds packaging; `asan` runs the
+tests with sanitizers. Each step can also be run separately when you are iterating.
+
+::: {.callout-note collapse="true"}
+## The dev workflow
+
+The workflow names the configure, build, and test presets it runs, in order:
+
+::: {.snippet source="CMakePresets.json"}
+
+```json
+    {\n      "name": "dev",\n      "displayName": "Debug build and all tests",
+        { "type": "test", "name": "dev" }\n      ]\n    }
+```
+
+:::
+
+:::
+
+::: {.callout-note collapse="true"}
+## The dev configure preset
+
+The configure preset inherits the shared `base` settings and chooses a Debug build:
+
+::: {.snippet source="CMakePresets.json"}
+
+```json
+    { "name": "dev", "inherits": "base", "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" } }
+    { "name": "dev", "inherits": "base", "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" } }
+```
+
+:::
+
+The source links lead to the complete file, including the base, build and test presets and
+the sanitizer and release workflows.
+:::
+
+```sh
+cmake --workflow --preset dev
+cmake --workflow --preset asan
+cmake --workflow --preset release
+```
+
+Put machine-specific Qt locations in the environment. The preset reads `Qt6_ROOT`, which can
+point to the installed Qt kit. Keep project choices in presets so CI and the team share them.
+
+## Static and dynamic libraries {#sec-linking}
+
+A static library becomes part of the linked executable. A dynamic library stays separate and
+must be available when the application runs. Static linking makes the application independent
+of that particular library file, while dynamic linking lets a library be replaced separately.
+The choice affects deployment and license obligations. Sketchbook uses dynamic Qt libraries,
+so its release package must include the required Qt libraries and plugins.
+
+## Qt's CMake commands {#sec-qt-cmake}
+
+Qt adds CMake commands for the parts of an application that need Qt's build tools. This
+**adapted example** brings the main commands together in one file; Sketchbook splits them
+between its top-level build and the application and feature folders:
+
+```cmake
 cmake_minimum_required(VERSION 3.31)
 project(Sketchbook VERSION 0.1.0 LANGUAGES CXX)
 
 find_package(Qt6 6.12 REQUIRED COMPONENTS Quick)
-qt_standard_project_setup(REQUIRES 6.12)  # <1>
+qt_standard_project_setup(REQUIRES 6.12
+    I18N_SOURCE_LANGUAGE en
+    I18N_TRANSLATED_LANGUAGES de es
+)
 
 qt_add_executable(app main.cpp)
-qt_add_qml_module(app                     # <2>
+qt_add_qml_module(app
     URI App
     QML_FILES Main.qml
     SOURCES AppController.cpp AppController.hpp
 )
 target_link_libraries(app PRIVATE Qt::Quick)
 ```
-1. Turns on Qt's code generators (such as moc) and the defaults of the Qt version you name.
-2. A **QML module**: a name to import (`URI`), its QML files and C++ sources, built and
-   checked together.
 
-You will meet `qt_add_qml_module()` again in @sec-cpp-qml. It is the one command that ties
-C++ and QML together.
+- `find_package()` locates Qt and the requested modules. Linking `Qt::Quick` gives the target
+  the usage requirements for Qt Quick.
+- `qt_standard_project_setup()` enables Qt's usual defaults, including automatic `moc` and
+  `uic` processing for targets created afterwards if those settings are not already defined.
+  `REQUIRES 6.12` rejects older Qt versions
+  and opts in to Qt CMake policies through 6.12, so newer Qt releases do not silently change
+  those policy choices. The language options describe the translation languages.
+- `qt_add_executable()` creates an application target with Qt's platform-specific handling.
+  `qt_add_qml_module()` then groups a module's URI, QML files, and C++ types and generates
+  resources and tooling information. See @sec-qml-modules for how that module reaches a view.
 
-::: {.more}
-**Template:** `CMakeLists.txt`, `src/app/CMakeLists.txt`
-
-**Read more:** [Getting started with CMake (Qt)](https://doc.qt.io/qt-6/cmake-get-started.html)
-:::
-
-## Static and dynamic libraries {#sec-linking}
-
-A library reaches your program in one of two ways.
-
-A **static** library (`.a`, `.lib`) is copied into your executable when it is linked. The
-result is one file with everything inside.
-
-A **dynamic** library (`.so`, `.dylib`, `.dll`) stays a separate file. The operating system
-loads it when the program starts, so it must be on the user's machine.
-
-| | Static | Dynamic |
-|---|---|---|
-| Joins the program | at link time | at start-up |
-| On the user's machine | nothing extra | the library, from the system or shipped with the app |
-| Memory | one copy per program | one copy shared by every program that uses it |
-| Updates | rebuild the program | replace the library |
-
-The last two rows explain why systems share libraries such as the C runtime or OpenSSL:
-memory is used once, and a security fix reaches every program at once. For your app, the
-choice decides what you must ship (@sec-shipping) and, for LGPL libraries such as Qt, what
-the license requires (@sec-licenses).
-
-::: {.callout-warning}
-## Works on my machine
-A dynamic library that exists on your computer but not on the user's makes the program fail
-at start-up. Every dynamic dependency is something you must ship or require.
-:::
-
-## Presets: one command, everywhere {#sec-presets}
-
-`CMakePresets.json` writes down how the project is configured, built, tested and packaged.
-It holds one kind of preset per step, plus workflows that chain them:
-
-| Preset | Describes |
-|---|---|
-| `configurePresets` | the generator, the build folder and the cache variables |
-| `buildPresets` | which configured folder to build |
-| `testPresets` | how `ctest` runs: output on failure, environment |
-| `packagePresets` | how `cpack` turns the build into a package |
-| `workflowPresets` | a fixed sequence of the steps above, run with one command |
-
-A workflow is the payoff. Your machine and the release pipeline can run the same named
-sequence:
-
-```{mermaid}
-%%| fig-width: 6.5
-flowchart LR
-    D[your machine] --> W
-    R[release] --> W
-    W["cmake --workflow --preset release"] --> C[configure] --> B[build] --> T[test] --> P[package]
-```
-
-```{.json filename="CMakePresets.json (excerpt)"}
-{
-  "version": 10,
-  "workflowPresets": [
-    {
-      "name": "dev",
-      "steps": [
-        { "type": "configure", "name": "dev" },
-        { "type": "build", "name": "dev" },
-        { "type": "test", "name": "dev" }
-      ]
-    }
-  ],
-  "configurePresets": [
-    {
-      "name": "dev",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
-    }
-  ],
-  "buildPresets": [{ "name": "dev", "configurePreset": "dev" }],
-  "testPresets": [{ "name": "dev", "configurePreset": "dev" }]
-}
-```
-
-```sh
-cmake --list-presets=workflow     # what you can run, with descriptions
-cmake --workflow --preset dev     # configure, build and test
-```
-
-What differs between machines, such as where Qt is installed, comes from the environment. Set
-`Qt6_ROOT` before the first configure when you need a specific Qt kit:
-
-```sh
-cmake --preset dev -DQt6_ROOT=/path/to/Qt/6.12.0/<kit>
-```
-
-CMake stores the value in the build directory. Otherwise, it searches `CMAKE_PREFIX_PATH` and
-its normal locations. To build Qt with vcpkg instead, configure the same preset with
-`cmake --preset dev -DAPP_USE_VCPKG_QT=ON`. The option stays in that build directory until you
-set it to `OFF`.
-
-::: {.callout-important}
-## Keep build settings in presets
-CI runs the configure, build and test presets with an installed Qt. The release workflow uses
-the same presets with vcpkg Qt and adds packaging. Keep shared settings in presets so that
-developers and CI use the same build configuration.
-:::
+In the template, `qt_standard_project_setup()` is in the top-level `CMakeLists.txt`,
+`qt_add_executable()` is in `src/app/CMakeLists.txt`, and each feature has its own QML
+module. The static modules and their plugins are linked into the application.
 
 ::: {.more}
-**Template:** `CMakePresets.json`, with `dev`, `asan` and `release` workflows;
-`CMakeLists.txt`, with the Qt source option; and `.github/workflows/release.yml`,
-which runs `cmake --workflow --preset release`
+**Template:** `CMakeLists.txt`, `src/app/CMakeLists.txt`, `src/canvas/CMakeLists.txt`
 
-**Read more:** [cmake-presets(7)](https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html)
+**Read more:** [Qt standard project setup](https://doc.qt.io/qt-6/qt-standard-project-setup.html),
+[Qt executable targets](https://doc.qt.io/qt-6/qt-add-executable.html), and
+[QML modules with CMake](https://doc.qt.io/qt-6/qt-add-qml-module.html).
+:::
+
+## One quality gate {#sec-build-checks}
+
+Run tests during development and all checks before review:
+
+```sh
+cmake --workflow --preset dev
+cmake --build --preset dev --target check
+```
+
+The first command compiles and tests. The second runs formatting, static checks, QML checks,
+and license validation. CI repeats them on supported platforms.
+
+::: {.more}
+**Template:** `CMakePresets.json` and `.github/workflows/ci.yml`
+
+**Read more:** [CMake presets](https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html).
 :::

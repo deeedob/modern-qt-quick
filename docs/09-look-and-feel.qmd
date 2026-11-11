@@ -1,134 +1,135 @@
 # Look and feel {#sec-look}
 
-An application's look belongs in one place, not scattered over its pages. This chapter
-covers a custom control style and design tokens with light and dark themes. Drawing your own
-items in C++ is covered in the chapter on connecting C++ and QML (@sec-custom-items).
+A style gives controls a consistent appearance. Design tokens give that style a shared set of
+colors, spacing, and typography. Sketchbook keeps both in `App.Controls`, so its feature
+views can concentrate on what the application does.
 
 ## Your own Qt Quick Controls style {#sec-style}
 
-Every Qt Quick control comes in two halves. A **template** in `QtQuick.Templates` holds the
-behavior: what pressed, checked and focused mean. A **style** draws it. Writing your own style
-means drawing the controls you use on top of their templates:
+A Qt Quick control has behaviour and visual parts. The types in `QtQuick.Templates` supply
+the control's behaviour, including states such as pressed, hovered, checked, and focused. A
+style supplies the visuals, such as a button's background and content. You can customize one
+control locally or define a reusable style for the whole application.
 
-```{.qml filename="controls/Button.qml"}
+Sketchbook's `Button.qml` builds on `T.Button`. It uses an icon and label for its content,
+and a rectangle whose color and border follow the button's state. This complete **adapted
+example** leaves out the icon and some sizing details to make the relationship clear:
+
+```qml
 import QtQuick
 import QtQuick.Templates as T
 
 T.Button {
     id: control
 
-    implicitWidth: Math.max(implicitBackgroundWidth,
-                            implicitContentWidth + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight,
-                             implicitContentHeight + topPadding + bottomPadding)
     padding: 8
-    horizontalPadding: 16
 
     contentItem: Text {
         text: control.text
-        font: control.font
         color: control.highlighted ? Theme.accentText : Theme.text
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
     }
 
     background: Rectangle {
-        implicitHeight: 36
+        implicitHeight: Theme.controlHeight
         radius: Theme.radius
         color: control.highlighted ? Theme.accent
-             : control.down ? Theme.pressed : Theme.surface
+             : control.down ? Theme.pressed
+             : control.hovered ? Theme.hover : Theme.surface
+        border.width: control.visualFocus ? 2 : 1
+        border.color: control.visualFocus ? Theme.accent : Theme.border
     }
 }
 ```
 
-Put these files into their own QML module and let it fall back to the Basic style for every
-control you do not restyle:
+In that example:
 
-```{.cmake filename="controls/CMakeLists.txt"}
+- `T.Button` supplies the button's interaction and state, including `down` and `visualFocus`.
+- `contentItem` controls what appears inside the button; `control.text` comes from the caller.
+- `background` draws the button using the shared theme and the control's current state.
+
+The real [Button.qml](https://github.com/deeedob/qt-kickstart/blob/main/src/controls/style/Button.qml)
+also handles icons, flat buttons, and the disabled state. The application uses its own
+`Button` wherever a view imports `App.Controls`.
+
+You do not need to redraw every control. Sketchbook's switch extends the Basic style and
+changes its palette:
+
+::: {.snippet source="src/controls/style/Switch.qml"}
+
+```qml
+import QtQuick.Controls.Basic as Basic
+    palette.light: Theme.pressed\n}
+```
+
+:::
+
+The switch keeps Basic's behaviour and visuals. Its palette values come from `Theme`, so the
+same control follows the rest of the application when the theme changes.
+
+The controls module imports `QtQuick.Controls.Basic` as its fallback, so controls the app
+does not define still have an implementation. The following **adapted example** shows the
+module's essential shape; the actual [CMakeLists.txt](https://github.com/deeedob/qt-kickstart/blob/main/src/controls/CMakeLists.txt)
+also lists the other controls, assets, and licenses:
+
+```cmake
 qt_add_qml_module(app_controls
     URI App.Controls
+    STATIC
     IMPORTS QtQuick.Controls.Basic
-    QML_FILES Button.qml Theme.qml   # and every other control you style
+    QML_FILES
+        style/Button.qml
+        style/Switch.qml
+        Theme.qml
 )
 ```
 
-Views then write `import App.Controls` instead of `import QtQuick.Controls`. Because the style is
-chosen at compile time, qmllint and the QML compiler know the exact type of every control.
-Basic is the style made for customization; the native macOS and Windows styles are not.
+The actual build gives style files resource aliases such as `Button.qml`, placing them at
+the module's root. Views import `App.Controls` instead of `QtQuick.Controls`. The style is
+selected at compile time, so the QML tools know which control types the application uses.
 
-::: {.more}
-**Template:** `src/controls/`
+::: {.callout-note collapse="true"}
+## Native styles and runtime selection
 
-**Read more:** [Customizing Qt Quick Controls](https://doc.qt.io/qt-6/qtquickcontrols-customize.html)
+Qt's macOS and Windows styles use native platform rendering and are not suitable bases for
+this kind of customization. Basic and other cross-platform styles expose visual parts that can
+be replaced. A custom style gives the application a consistent identity across platforms; a
+native style instead follows each platform's controls.
+
+Qt also supports selecting a style at runtime. The template uses compile-time selection, which
+lets the QML compiler see the selected types. Switching light and dark *tokens* does not
+replace the Controls style.
 :::
 
 ## Design tokens and dark mode {#sec-theme}
 
-Colors, spacing, radii and fonts are **design tokens**. Every control reads them from one
-place, never from literals. For an app with a light and a dark theme, a QML singleton is
-enough:
+Colors, spacing, radii, and fonts are **design tokens**: names for decisions shared by the
+style. A control asks for `Theme.surface` or `Theme.radius`, rather than choosing its own
+value. This keeps a theme change in one place.
 
-```{.qml filename="controls/Theme.qml"}
-pragma Singleton
-import QtQuick
+`Theme.qml` defines the tokens as a QML singleton. The module marks it with
+`QT_QML_SINGLETON_TYPE` before `qt_add_qml_module()`; `pragma Singleton` alone does not
+complete the CMake registration. See the actual [Theme.qml](https://github.com/deeedob/qt-kickstart/blob/main/src/controls/Theme.qml)
+and [controls module](https://github.com/deeedob/qt-kickstart/blob/main/src/controls/CMakeLists.txt).
 
-QtObject {
-    property bool dark: Application.styleHints.colorScheme ===
-                        Qt.ColorScheme.Dark
-
-    readonly property color window: dark ? "#17171c" : "#f6f6f8"
-    readonly property color surface: dark ? "#22222a" : "#ffffff"
-    readonly property color pressed: dark ? "#393944" : "#dedee6"
-    readonly property color text: dark ? "#ececf1" : "#1c1c22"
-    readonly property color accent: "#5b5bd6"
-    readonly property color accentText: "#ffffff"
-    readonly property int radius: 8
-}
-```
-
-The tokens follow the system's color scheme, so the whole app switches between light and dark
-with no code in the views. This is the right default.
-
-Some professional applications also let people choose a light or dark appearance explicitly.
-Keep that preference in app state, not in the controls module. The composition root can bind the
-preference to the tokens without making `App.Controls` import the app module:
-
-```{.qml filename="app/Main.qml"}
-Binding {
-    target: Theme
-    property: "dark"
-    value: AppController.darkTheme
-}
-```
-
-Persist that choice with `QSettings`. If no choice exists yet, initialize it from the system
-scheme. A product that needs people to return to system behavior adds a third, `System` mode.
-
-::: {.callout-note}
-## Register the singleton in CMake
-`pragma Singleton` alone is not enough. Mark the file before `qt_add_qml_module()`:
-
-```cmake
-set_source_files_properties(Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
-```
-:::
+Sketchbook initializes the saved theme preference from `QSettings`, or from the system color
+scheme when no preference exists. `Main.qml` binds `Theme.dark` to that application state.
+The app's window also maps tokens onto its palette, so controls supplied by Basic can follow
+the same theme.
 
 ::: {#fig-themes layout-ncol=2}
-![Light theme](images/canvas-light.png)
+![Light theme](images/canvas-light.png){fig-alt="Sketchbook canvas in the light theme."}
 
-![Dark theme with canvas settings open](images/canvas-dark.png)
+![Dark theme](images/canvas-dark.png){fig-alt="Sketchbook canvas in the dark theme with settings open."}
 
 The same canvas in both themes.
 :::
 
-Set the window's `palette` from the tokens as well. The palette reaches every control,
-including the ones you did not restyle, so they match too.
-
-A theme system can grow beyond light and dark: brand themes, a high-contrast mode, colors the
-user picks or loads from a file. Then move the tokens into C++, into a `QML_SINGLETON` class
-whose properties notify on change. The views do not change: they bind to the same token
-names, and every binding updates when a theme is applied at run time.
-
 ::: {.more}
-**Template:** `src/controls/Theme.qml`, `src/controls/style/ApplicationWindow.qml`
+**Template:** `src/controls/style/Button.qml`, `src/controls/style/Switch.qml`,
+`src/controls/style/ApplicationWindow.qml`, `src/controls/Theme.qml`
+
+**Read more:** [Customizing Qt Quick Controls](https://doc.qt.io/qt-6/qtquickcontrols-customize.html)
+and [Styling Qt Quick Controls](https://doc.qt.io/qt-6/qtquickcontrols-styles.html).
 :::

@@ -2,3 +2,9 @@
 $code-bg: #2c2c35;
 $code-color: #e4e4ef;
 $mermaid-edge-color: #a0a0ad;
+
+table thead,
+table tr:first-child,
+.source-snippet > p:first-child {
+  background: rgba(#8b8bf2, 0.16);
+}

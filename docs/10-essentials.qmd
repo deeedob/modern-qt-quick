@@ -1,154 +1,70 @@
 # Application essentials {#sec-essentials}
 
-A demo can skip these. A real application cannot: it speaks the user's language, keeps its
-files in the right place, never loses data, and leaves a trail when something goes wrong.
+Applications earn trust by keeping data, language, and diagnostics predictable. These are small
+features with outsized consequences.
 
-## Translations {#sec-i18n}
+## Text belongs to the user {#sec-i18n}
 
-Wrap every string the user sees: `qsTr()` in QML, `tr()` in C++. Let Qt handle plurals with
-`%n`, and fill in values with `arg()` instead of joining strings, so translators can reorder
-the sentence.
+Put visible QML strings through `qsTr()` and C++ strings through `tr()` or
+`QCoreApplication::translate()`. Translation files then hold language choices
+outside the source, and the UI can switch language without creating a second code path.
 
-```qml
-Label { text: qsTr("%n stroke(s)", "", strokeCount) }   // "1 stroke", "4 strokes"
-Label { text: qsTr("Version %1").arg(Application.version) }
-```
+Qt's translation tools extract source strings into `.ts` files; translators fill in the
+translations and the build compiles them into resources. A language change needs the engine
+to re-evaluate translated bindings, which the application controller connects to
+`QQmlEngine::retranslate()`.
 
-CMake extracts the strings into `.ts` files for translators and compiles them into the app:
+Use placeholders such as `%1` with `arg()` so a translator can change word order. For counts,
+Qt's plural forms let each language provide the forms it needs. Sketchbook's list uses `%n`
+for its stroke count. After adding strings, run the `update_translations` target and fill in
+the `.ts` files before shipping.
 
-```{.cmake filename="CMakeLists.txt"}
-qt_standard_project_setup(REQUIRES 6.12
-    I18N_SOURCE_LANGUAGE en
-    I18N_TRANSLATED_LANGUAGES de
-)
-qt_add_translations(app TS_FILE_BASE app TS_FILE_DIR i18n)
-```
+![The sketch list in German.](images/sketchbook-de.png){width=90%}
 
-Run the `update_translations` target to refresh the `.ts` files, translate them with Qt
-Linguist, and rebuild.
+## Standard paths keep data findable {#sec-paths}
 
-![The same sketchbook in German.](images/sketchbook-de.png){width=80%}
+Use `QStandardPaths` for application data. It follows each platform's rules and keeps user
+files out of an arbitrary working directory.
 
-Switching the language while the app runs takes two steps: install a new `QTranslator`,
-then call `QQmlEngine::retranslate()` so every `qsTr()` binding re-evaluates.
+Set the application name and organization before using standard paths or `QSettings`: they
+help Qt choose application-specific locations. Use `QSettings` for small preferences such as
+a theme choice, and ordinary files for documents users create.
 
-::: {.more}
-**Template:** `AppController::setLanguage()` in `src/app/AppController.cpp`, and `i18n/`
+## Atomic saves keep the old file safe {#sec-save-file}
 
-**Read more:** [Internationalization with Qt](https://doc.qt.io/qt-6/internationalization.html)
-:::
+Write through `QSaveFile`: Qt commits the finished temporary file in place. A crash or full
+disk leaves the previous file intact instead of leaving half a document.
 
-## Standard paths and settings {#sec-paths}
-
-Never hardcode a path. Each platform has its own place for application data, configuration
-and caches, and `QStandardPaths` knows them all:
+::: {.snippet source="src/sketchbook/SketchStorage.cpp"}
 
 ```cpp
-const auto dataDir =
-    QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
-// macOS:   ~/Library/Application Support/<app>
-// Windows: C:/Users/<user>/AppData/Local/<app>
-// Linux:   ~/.local/share/<app>
+            QSaveFile file(path);
+            if (file.write(json->data(), size) != size || !file.commit())\n                return failed(file.errorString());
 ```
 
-The application and organization names you set on `QGuiApplication` become part of these
-paths, so set them first thing in `main()`.
-
-Small preferences, such as the last language or the window size, go into `QSettings`. It
-stores them in the platform's native place:
-
-```cpp
-QSettings settings;
-settings.setValue("language", "de");
-const auto language = settings.value("language", "en").toString();
-```
-
-::: {.more}
-**Template:** `src/app/main.cpp` (the template does not persist preferences yet)
-
-**Read more:** [QStandardPaths](https://doc.qt.io/qt-6/qstandardpaths.html),
-[QSettings](https://doc.qt.io/qt-6/qsettings.html)
 :::
 
-## Saving without losing data {#sec-save-file}
+## Logs explain failures {#sec-logging}
 
-A crash or a full disk in the middle of a write leaves a half-written file, and the user's
-work is gone. Write to a temporary file instead, and replace the old file only when the new
-one is complete. `QSaveFile` does exactly that:
+Write structured logs to a user-accessible session file. Include build and system information
+at startup. When a report arrives, that file gives support a place to start.
 
-```cpp
-QSaveFile file(path);
-if (!file.open(QIODevice::WriteOnly) || file.write(json) < 0 || !file.commit())  // <1>
-    qCWarning(lcStorage) << "Cannot save" << path << file.errorString();
-```
-1. Until `commit()` succeeds, the old file stays untouched.
+Logging categories identify the part of the app that wrote a message and let you filter output
+without removing statements. Sketchbook keeps session logs and exposes their location through
+the About dialog. Logs may contain personal data, so review their contents and retention before
+asking a user to share them.
 
-Save on a worker thread (@sec-threads) so large files never freeze the UI.
+::: {.callout-note collapse="true"}
+## Detail: crash diagnostics
 
-::: {.callout-important}
-## Never write over the user's file in place
-Opening the real file with `QFile` and `WriteOnly` empties it at once, so any failure after
-that point loses the user's data. Every save goes to a new file that replaces the old one
-only when it is complete.
+A terminate handler can record an uncaught C++ exception and a stack trace in the log. The
+operating system remains responsible for native crashes. Add automatic reporting only with a
+clear privacy policy and a user choice.
 :::
 
 ::: {.more}
-**Template:** `src/sketchbook/SketchStorage.cpp`
+**Template:** `src/app/Logging.cpp` and `src/sketchbook/SketchStorage.cpp`
 
-**Read more:** [QSaveFile](https://doc.qt.io/qt-6/qsavefile.html)
-:::
-
-## Logging {#sec-logging}
-
-Give each module its own logging **category** and log through it. You can then switch the debug output of one module on
-at run time, without rebuilding:
-
-```{.cpp filename="SketchStorage.cpp"}
-Q_STATIC_LOGGING_CATEGORY(lcStorage, "app.storage")
-
-qCDebug(lcStorage) << "Saving" << path;
-qCWarning(lcStorage) << "Cannot save" << path << file.errorString();
-```
-
-```sh
-QT_LOGGING_RULES="app.storage.debug=true" ./Sketchbook
-```
-
-Write the log to a file as well, with a message handler (`qInstallMessageHandler`). Start
-every log with the version, the commit, the compiler and the operating system: a log file
-from a user is then enough to reproduce their setup.
-
-![The About dialog shows the same build details and opens the log folder.](images/about.png){width=70%}
-
-::: {.more}
-**Template:** `src/app/Logging.cpp`
-
-**Read more:** [QLoggingCategory](https://doc.qt.io/qt-6/qloggingcategory.html)
-:::
-
-## Crash diagnostics {#sec-crashes}
-
-When an exception escapes, C++ calls `std::terminate()`, and by default the app simply
-disappears. Install a handler that logs a stack trace first:
-
-```{.cpp filename="Logging.cpp"}
-std::set_terminate([] {
-    qCCritical(lcCrash).noquote()
-        << "Uncaught exception\n"
-        << QString::fromStdString(cpptrace::generate_trace().to_string());
-    std::abort();
-});
-```
-
-A stack trace is only readable if the binary still knows its function names. Build releases
-as `RelWithDebInfo` (optimized, with debug information), and keep the symbols when you deploy.
-
-Crashes such as segmentation faults are different: code that runs after memory corruption
-can do further damage. Leave them to the operating system's crash reporter, or to a crash
-reporting service.
-
-::: {.more}
-**Template:** `src/app/Logging.cpp`
-
-**Read more:** [cpptrace](https://github.com/jeremy-rifkin/cpptrace)
+**Read more:** [QSaveFile](https://doc.qt.io/qt-6/qsavefile.html) and
+[QStandardPaths](https://doc.qt.io/qt-6/qstandardpaths.html).
 :::

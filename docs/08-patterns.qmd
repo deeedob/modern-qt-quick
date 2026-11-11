@@ -1,147 +1,114 @@
-# Presentation patterns {#sec-patterns}
+# Patterns serve the flow {#sec-patterns}
 
-The layers of @sec-layers say *where* code lives. A presentation pattern says how the view
-and the code behind it talk. Qt Quick works best with two of them: MVVM for most screens,
-Flux for documents with a history.
+A presentation pattern is useful when it makes state changes easier to follow. It is not a
+badge to apply to every class.
 
-## From MVC to MVVM {#sec-mvc-mvvm}
+## MVVM gives a view a model {#sec-mvvm}
 
-Three patterns share the same goal (keeping logic out of the view) but differ in who updates
-the view:
+Use a view model when a screen needs commands and derived state. QML binds to that model and
+does not know where its data comes from. Sketchbook's list view model opens, creates, renames,
+and deletes sketches.
 
-| Pattern | How the view gets updated | Where you meet it in Qt |
-|---|---|---|
-| **MVC** | the view reads the model; a controller handles input | Qt's model/view classes: an item model, a view, a delegate |
-| **MVP** | a presenter pushes every value into a passive view | many Qt Widgets applications |
-| **MVVM** | the view *binds* to a view model; nothing pushes | Qt Quick |
-
-MVVM fits Qt Quick because bindings do the updating. The view model only has to change its
-properties and emit their signals.
+The view model exposes the state the screen needs, rather than asking the view to inspect
+storage or domain objects. It can then be tested without instantiating the screen. MVC makes
+a different split between a model, view, and controller; the names matter less than where
+state and decisions actually live.
 
 ```{mermaid}
-%%| fig-width: 6.5
 flowchart LR
-    V["View<br/>(QML)"] -- "calls commands" --> VM["ViewModel<br/>(C++)"]
-    VM -. "properties and signals,<br/>picked up by bindings" .-> V
-    VM -- "reads and writes" --> M["Model<br/>(core, storage)"]
+    V[View: QML] -- commands --> VM[View model: C++]
+    VM -. properties and signals .-> V
+    VM -- reads and writes --> M[Model and storage]
 ```
 
-## MVVM {#sec-mvvm}
+Sketchbook's view model exposes the sketch list and the open name as state. The page calls
+commands such as `create()` and `rename()`; validation and storage stay behind those commands.
+A Qt Test can construct the view model, call a command, and inspect the resulting model without
+loading QML.
 
-A view model offers **state** as properties and **commands** as invokable methods. The view
-binds to the state and calls the commands. It decides nothing.
+## Flux makes edits explicit {#sec-flux}
 
-```{.cpp filename="SketchbookViewModel.hpp"}
-class SketchbookViewModel : public QObject
-{
-    Q_OBJECT
-    QML_ELEMENT
-    QML_UNCREATABLE("Created in main()")
-    Q_PROPERTY(SketchListModel *model READ model CONSTANT FINAL)            // <1>
-    Q_PROPERTY(QString openName READ openName NOTIFY openNameChanged FINAL)
+Use Flux when a stateful editor benefits from one direction of change: a view dispatches an
+action, a store produces new state, and the view observes it. Undo and redo fit this model
+naturally because the store owns history.
 
-public:
-    Q_INVOKABLE void create();                                               // <2>
-    Q_INVOKABLE void rename(int row, const QString &name);
-    Q_INVOKABLE void remove(int row);
-    // ...
-};
-```
-1. State: the list of sketches and the name of the open one.
-2. Commands: what the user can do. Validation and storage happen behind them.
+The canvas view sends editing commands to the store. For an edit, the store reduces an action
+into a new sketch state and notifies its observers. Undo and redo instead move through the
+stored history. Flux is a useful fit here, not a requirement for every screen.
 
-```{.qml filename="SketchbookPage.qml"}
-Button {
-    text: qsTr("New sketch")
-    onClicked: root.viewModel.create()
-}
+```{mermaid}
+flowchart LR
+    V[View] -- action --> S[Store]
+    S -- state and action --> R[Reducer]
+    R -- next state --> S
+    S -. changed .-> V
 ```
 
-The view model contains no QML and no visual types, so a plain Qt Test can drive it: call
-`create()`, then check the model's row count (@sec-test-layers).
+Sketchbook represents actions with `std::variant`. Its reducer receives a sketch value and an
+action, then returns the next sketch. The store keeps snapshots and moves an index through them
+for undo and redo. A new edit after undo discards the redo branch; immutable strokes let the
+snapshots share the point data instead of copying every stroke. The history has a size limit.
 
-::: {.more}
-**Template:** `src/sketchbook/`
+The reducer handles the different action types in one place. It receives a sketch by value,
+applies the action to that copy, and returns the result:
+
+::: {.snippet source="src/canvas/Sketch.hpp"}
+
+```cpp
+[[nodiscard]] inline Sketch reduce(Sketch sketch, const Action &action)
+    return sketch;\n}
+```
+
 :::
 
-## Flux {#sec-flux}
+`std::visit` selects the handler for the action held in the variant. For example, `AddStroke`
+appends a stroke to the copied sketch, while `Clear` removes its strokes. The function returns
+that next state without modifying the stored snapshot.
 
-Flux sends every change along one path. The view dispatches an **action**; a pure function,
-the **reducer**, computes the next state from the current state and the action; the
-**store** keeps the result and notifies the views.
+The store decides whether the resulting state belongs in history. A new edit drops states
+after the current position, so redo no longer leads to a discarded branch:
 
-```{mermaid}
-flowchart LR
-    V["View"] -- "action" --> S["Store"]
-    S -- "state + action" --> R["reduce()"]
-    R -- "new state" --> S
-    S -. "changed" .-> V
-```
+::: {.snippet source="src/canvas/CanvasStore.cpp"}
 
-In C++, actions are a `std::variant` and the reducer visits it:
-
-```{.cpp filename="Sketch.hpp"}
-using StrokePtr = std::shared_ptr<const Stroke>;   // <1>
-using Sketch = std::vector<StrokePtr>;
-
-struct AddStroke { StrokePtr stroke; };
-struct Clear {};
-using Action = std::variant<AddStroke, Clear>;
-
-template <typename... Fs>
-struct Overloaded : Fs... { using Fs::operator()...; };
-
-Sketch reduce(Sketch sketch, const Action &action)    // <2>
-{
-    std::visit(Overloaded{
-        [&](const AddStroke &add) { sketch.push_back(add.stroke); },
-        [&](Clear) { sketch.clear(); },
-    }, action);
-    return sketch;
-}
-```
-1. A stroke never changes once drawn, so every state shares it instead of copying it.
-2. Pure: the same sketch and action always give the same result. A new action type that
-   `reduce()` forgets to handle fails to compile.
-
-Because each state is a value, keeping old states gives undo and redo almost for free:
-
-```{.cpp filename="CanvasStore.cpp"}
+```cpp
 void CanvasStore::dispatch(const Action &action)
-{
-    auto next = reduce(m_history[m_current], action);
-    m_history.resize(m_current + 1);            // <1>
-    m_history.push_back(std::move(next));
-    m_current = m_history.size() - 1;
-    Q_EMIT changed();
-}
-
-void CanvasStore::undo()
-{
-    if (m_current > 0) {
-        --m_current;                            // <2>
-        Q_EMIT changed();
-    }
-}
+    moveTo(m_history.size() - 1);\n}
 ```
-1. A new edit drops the states that were undone.
-2. Undo moves a cursor back. No action needs an inverse.
 
-::: {.more}
-**Template:** `src/canvas/Sketch.hpp`, `src/canvas/CanvasStore.cpp`
 :::
 
-## Choosing a pattern {#sec-choosing}
+The equality check skips edits that make no change. `resize()` drops the redo branch,
+`push_back()` saves the new state, and `moveTo()` selects it and notifies observers. The size
+check removes the oldest snapshot when the history reaches its limit.
 
-| Your screen | Pattern |
-|---|---|
-| Lists, forms, settings: state that maps onto controls | MVVM |
-| Editors and documents whose history matters: undo, autosave, replay | Flux |
-| Pure presentation: a dialog that only shows values | plain QML with required properties |
+Undo does not create another action or reverse a stroke. It moves to the previous snapshot;
+`moveTo()` updates the current position and emits the notifications views and storage need.
 
-One app can mix them, one pattern per feature. The template does exactly that: the
-sketchbook is MVVM, the canvas is Flux.
+::: {.snippet source="src/canvas/CanvasStore.cpp"}
 
-For very large documents, copying even a vector of pointers per edit becomes expensive.
-At that point, look into persistent data structures, which share unchanged parts
-automatically.
+```cpp
+void CanvasStore::undo()
+        Q_EMIT historyMoved(false);\n    }\n}
+```
+
+:::
+
+## Choose the smallest pattern {#sec-choosing}
+
+A simple form may need only a QObject with properties. Add a view model when it clarifies a
+screen. Add a store when explicit actions and history pay for themselves. The pattern should
+remove decisions from the view, not create another layer of naming.
+
+| Feature | A useful starting point | Why |
+|---|---|---|
+| Lists, forms, settings | MVVM | Properties and commands map naturally to controls. |
+| An editor with history | Flux | Explicit edits and snapshots make undo easier to reason about. |
+| A display-only component | QML with required properties | It may not need a separate state object. |
+
+These are tradeoffs, not rules. Keeping snapshots uses memory, and a large document may need a
+different history representation. Mixing patterns by feature is fine: Sketchbook uses MVVM
+for its list and Flux for the canvas.
+
+::: {.more}
+**Template:** `src/canvas/CanvasStore.hpp` and `src/sketchbook/SketchbookViewModel.hpp`
+:::

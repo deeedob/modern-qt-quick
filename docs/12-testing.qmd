@@ -1,152 +1,127 @@
-# Testing {#sec-testing}
+# Tests describe the contract {#sec-testing}
 
-The layering from @sec-shape pays off here. Each layer can be tested on its own, most of them
-without a window, and the tests run in seconds.
+A test is a fast answer to “did this behaviour change?” Test the lowest layer that proves the
+rule. Most tests should not need a window.
 
-## Test each layer without the UI {#sec-test-layers}
+## Test at the boundary {#sec-test-layers}
 
-| Layer | Test with | Needs a window |
-|---|---|---|
-| Core (plain C++) | any C++ test framework, such as Catch2 | no |
-| View models and stores | Qt Test | no |
-| QML components | Qt Quick Test | yes, offscreen |
+::: {.content-visible when-format="html"}
 
-A view model test calls commands and checks state and signals, exactly as the view would:
+::: {.panel-tabset}
 
-```{.cpp filename="tst_SketchbookViewModel.cpp"}
-class tst_SketchbookViewModel : public QObject
-{
-    Q_OBJECT
+### Core
 
-private Q_SLOTS:
-    void createAddsAnOpenSketch()
-    {
-        QTemporaryDir dir;                                       // <1>
-        SketchStorage storage(dir.path());
-        CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
-        QSignalSpy opened(&viewModel, &SketchbookViewModel::openNameChanged);  // <2>
+Test a plain C++ library with Qt Test or another C++ framework. It is fast and has no GUI.
 
-        viewModel.create();
+Sketchbook uses Catch2 for its recognizer. This test checks that a template recognizes itself:
 
-        QCOMPARE(viewModel.model()->rowCount(), 1);
-        QCOMPARE(opened.count(), 1);
-    }
-};
+::: {.snippet source="libs/shapes/tests/tst_Recognizer.cpp"}
 
-QTEST_GUILESS_MAIN(tst_SketchbookViewModel)
-#include "tst_SketchbookViewModel.moc"
+```cpp
+TEST_CASE("A template matches itself perfectly")
+    CHECK(match->score > 0.99);\n}
 ```
-1. A fresh folder per test: no test sees another test's files.
-2. `QSignalSpy` records every emission of a signal.
 
-::: {.more}
-**Template:** `tests/sketchbook/`
-
-**Read more:** [Qt Test overview](https://doc.qt.io/qt-6/qtest-overview.html)
 :::
 
-## Test QML components {#sec-quick-test}
+### Store or view model
 
-Qt Quick Test runs test cases written in QML. A test creates the component, simulates input,
-and checks properties and signals:
+Test QObject state, signals, and file behaviour with Qt Test. Sketchbook creates a temporary
+directory and checks the result exactly as the view would.
 
-```{.qml filename="tst_StrokeItem.qml"}
-import QtQuick
-import QtTest
-import App.Canvas
+`QTemporaryDir` gives a test its own file space. `QSignalSpy` records signal emissions, so a
+test can check both the resulting state and whether an observer was notified.
 
-TestCase {
-    id: testCase
-    name: "StrokeItem"
-    width: 200
-    height: 200
-    visible: true
-    when: windowShown
+::: {.snippet source="tests/sketchbook/tst_SketchbookViewModel.cpp"}
 
-    Component {
-        id: itemComponent
-        StrokeItem { anchors.fill: parent }
-    }
-
-    SignalSpy {
-        id: finished
-        signalName: "strokeFinished"
-    }
-
-    function test_dragReportsThePoints(): void {
-        const item = createTemporaryObject(itemComponent, testCase);
-        finished.target = item;
-
-        mousePress(item, 10, 10);
-        mouseMove(item, 90, 80, -1, Qt.LeftButton);
-        mouseRelease(item, 90, 80);
-
-        compare(finished.count, 1);
-    }
-}
+```cpp
+    void createAddsAndOpensAnEmptySketch()
+        QCOMPARE(storage.list().size(), 1);\n    }
 ```
 
-Setting `QT_QPA_PLATFORM=offscreen` lets tests run without a screen, and the template sets
-it in its test presets.
-
-::: {.more}
-**Template:** `tests/canvas/tst_StrokeItem.qml`
-
-**Read more:** [Qt Quick Test](https://doc.qt.io/qt-6/qtquicktest-index.html)
 :::
 
-## Tests must be deterministic {#sec-determinism}
+### QML component
 
-A test that fails one run in twenty is worse than no test: people learn to ignore it.
+Test visual input and component behaviour with Qt Quick Test. The test still creates a window;
+the offscreen platform lets CI run it without a physical display.
 
-- **Never sleep for a fixed time.** Wait for the condition instead: `QTRY_VERIFY` and
-  `QTRY_COMPARE` in C++, `tryVerify()` and `tryCompare()` in QML.
-- **Isolate state.** Use temporary directories instead of real paths, and simple test versions
-  at the seams (@sec-interfaces) instead of the network or the clock.
-- **No order dependence.** Each test sets up what it needs and cleans up after itself.
+::: {.snippet source="tests/canvas/tst_StrokeItem.qml"}
 
-```cpp
-QTest::qWait(500);                    // flaky: sometimes 500 ms is not enough
-QTRY_COMPARE(spy.count(), 1);         // waits until true, or fails after a timeout
+```qml
+    function test_dragReportsTheDrawnPoints(): void {
+    compare(points[2], Qt.point(90, 80));\n}
 ```
 
-## Fail on unexpected warnings
+:::
 
-Warnings often expose a broken binding, a missing resource, or an invalid model change while a
-test still reaches its assertions. Make every test fail on them, then declare the warning when a
-test deliberately causes one:
+:::
+:::
 
-```cpp
-void tst_SketchStorage::init()
-{
-    QTest::failOnWarning();
-}
+::: {.content-visible unless-format="html"}
 
-void tst_SketchStorage::unreadableFilesAreSkipped()
-{
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"broken"_s));
-    QVERIFY(storage.list().empty());
-}
-```
+### Core
 
-Qt clears both rules after each test function, so put `QTest::failOnWarning()` in `init()`.
-In a QML `TestCase`, use `failOnWarning(/.?/)` in `init()` and `ignoreWarning()` for one
-expected warning. The explicit ignore takes precedence.
+Test plain C++ without a GUI. Sketchbook uses Catch2 for its recognizer:
 
-## Check your models {#sec-model-tester}
-
-Item models have strict rules: row counts must match the signals, indexes must stay valid,
-and every change needs the right begin and end calls. `QAbstractItemModelTester` checks all
-of them while your test runs:
+::: {.snippet source="libs/shapes/tests/tst_Recognizer.cpp"}
 
 ```cpp
-SketchListModel model;
-QAbstractItemModelTester tester(
-    &model, QAbstractItemModelTester::FailureReportingMode::QtTest);
-// every change to model is now verified
+TEST_CASE("A template matches itself perfectly")
+    CHECK(match->score > 0.99);\n}
 ```
+
+:::
+
+### Store or view model
+
+Test QObject state, signals, and file behaviour with Qt Test. Use a temporary directory and
+`QSignalSpy` to record emissions while checking the resulting state.
+
+::: {.snippet source="tests/sketchbook/tst_SketchbookViewModel.cpp"}
+
+```cpp
+    void createAddsAndOpensAnEmptySketch()
+        QCOMPARE(storage.list().size(), 1);\n    }
+```
+
+:::
+
+### QML component
+
+Test visual input and component behaviour with Qt Quick Test. The offscreen platform supplies
+a window without requiring a physical display in CI.
+
+::: {.snippet source="tests/canvas/tst_StrokeItem.qml"}
+
+```qml
+    function test_dragReportsTheDrawnPoints(): void {
+    compare(points[2], Qt.point(90, 80));\n}
+```
+
+:::
+
+:::
+
+## Determinism builds trust {#sec-determinism}
+
+Wait for a condition with `QTRY_*` or `tryCompare()`, not a fixed sleep. Create temporary
+files per test. Each test sets up its own state and treats unexpected warnings as failures.
+
+Qt Test can fail on unexpected warnings with `QTest::failOnWarning()` in `init()`; QML tests
+can use `failOnWarning(/.?/)`. A test that deliberately triggers a warning should declare the
+expected message immediately before the operation. That catches broken bindings and invalid
+model updates even when the visible assertion still passes.
+
+## Models need their own checks {#sec-model-tester}
+
+A model must pair every data mutation with correct begin and end signals. Add
+`QAbstractItemModelTester` to model tests: it catches broken model contracts close to the
+change.
 
 ::: {.more}
-**Read more:** [QAbstractItemModelTester](https://doc.qt.io/qt-6/qabstractitemmodeltester.html)
+**Template:** `tests/sketchbook/`, `tests/canvas/`, and `libs/shapes/tests/`
+
+**Read more:** [Qt Test](https://doc.qt.io/qt-6/qtest-overview.html) and
+[Qt Quick Test](https://doc.qt.io/qt-6/qtquicktest-index.html).
 :::

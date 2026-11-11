@@ -1,99 +1,47 @@
-# Learning Qt, and working with AI {#sec-learning}
+# Learn the idea, verify the detail {#sec-learning}
 
-Qt is large, it changes every release, and most of what the internet knows about it is out of
-date. This last chapter is about learning it efficiently and about using AI assistants
-without being misled by them.
+Qt rewards a clear mental model and current references. Know why bindings, event loops, and
+ownership work. Look up exact APIs every time.
 
-## Concepts you own, details you look up {#sec-own-concepts}
+## Read from primary sources {#sec-reading}
 
-Some things you must understand yourself: what a binding does, why the event loop must not
-block, who owns an object. Without them you cannot tell a good answer from a plausible one,
-whether it comes from a colleague, a forum or an AI.
+Start with the Qt module overview, then a current example, then the reference for the types it
+uses. Tests in Qt and this template show supported behaviour better than old snippets online.
 
-Other things nobody memorizes: the argument order of a function, the name of an option. Look
-them up, every time. This guide teaches the first kind and links to the second.
+## Spot old Qt advice {#sec-stale-qt}
 
-## Read in the right order {#sec-reading}
+Qt 5 code often still compiles, but it can teach the wrong shape. Prefer CMake,
+`qt_add_qml_module()`, typed signal connections, `QML_ELEMENT`, and required properties
+over qmake, string-based connections, manual type registration, and context properties.
 
-When you meet a new Qt module, spend fifteen minutes in this order:
-
-1. The module's overview page: what problem it solves, which classes matter.
-2. One example, end to end.
-3. The reference pages of the two or three classes that example used.
-4. Now write your own code.
-
-Qt's own examples and tests show current, working usage. When the documentation leaves a
-question open, the test suite of that class often answers it.
-
-## Recognize stale Qt {#sec-stale-qt}
-
-Most Qt code online, and in the data AI models learned from, is written for Qt 5 or older.
-It often still compiles, but it is not how Qt 6 works. Learn to recognize the signs:
-
-| Outdated | Qt 6 |
+| Older Qt advice | Current Qt Quick approach |
 |---|---|
-| `qmake` and `.pro` files | CMake with `qt_add_qml_module()` |
-| `qmlRegisterType<T>("Uri", 1, 0, "T")` | `QML_ELEMENT` in the class |
-| `setContextProperty("name", &object)` | required properties (@sec-required) |
-| `connect(a, SIGNAL(x()), b, SLOT(y()))` | `connect(a, &A::x, b, &B::y)` |
-| `import QtQuick 2.15` | `import QtQuick` |
-| `onClicked: ...` inside `Connections` | `function onClicked() { ... }` inside `Connections` |
+| qmake and `.pro` files | CMake and `qt_add_qml_module()` |
+| `qmlRegisterType()` in `main()` | declarative QML type registration |
+| context properties | typed required properties |
+| string-based `SIGNAL` and `SLOT` | typed function-pointer connections |
+| `import QtQuick 2.15` | versionless `import QtQuick` |
 
-When an answer contains one of these, check it against the Qt 6 documentation before you use
-it.
+Older examples can still explain a concept, but verify the APIs against the Qt version your
+application uses before adopting the code.
 
-## Give the AI current Qt knowledge {#sec-agent-skills}
+## Give an agent ground truth {#sec-agent-skills}
 
-A coding agent repeats what it learned unless it gets better context. The Qt Company
-publishes **agent skills** for the common AI coding tools. They correct the known mistakes
-and add Qt-specific workflows:
+Project rules belong in `AGENTS.md`. Current Qt documentation and Qt-specific agent skills
+supply the missing API context. Tests, compiler warnings, `qmllint`, and sanitizers decide
+whether a suggested change works.
 
-| Skill | What it does |
-|---|---|
-| `qt-qml` | QML best practices; corrects typical mistakes with bindings, scoping, modules and types |
-| `qt-cmake-project` | Qt 6 CMake projects; corrects qmake habits and old `qt5_*` macros |
-| `qt-qml-review`, `qt-cpp-review` | code review with linters plus deeper analysis |
-| `qt-qml-test` | writes Qt Quick Test cases for a component |
-| `qt-ui-design` | layout, navigation and UX review |
+The Qt agent-skills repository offers focused guidance for QML, CMake, tests, and review, as
+well as a documentation server for looking up APIs. They provide framework context; your
+project's `AGENTS.md` supplies local commands and architecture rules. The same tests and checks
+help a person and an agent find mistakes early.
 
-The same repository provides a **Qt documentation server** (an MCP server) that lets the
-agent look up the current API instead of guessing it.
+## Keep ownership of the result {#sec-own}
 
-The skills cover Qt in general. What is specific to your project, such as its commands, its
-layout and its rules, goes into an [`AGENTS.md`](https://agents.md) at the root of the
-repository. Most coding agents read that file on their own at the start of every session, so
-it is the one place to tell all of them how your project works.
+Read generated code, run the checks, and keep only what you can explain. An assistant can
+accelerate work. It cannot own the release.
 
 ::: {.more}
-**Read more:** [Qt agent skills](https://github.com/TheQtCompanyRnD/agent-skills)
-:::
-
-## Let the tools judge the result {#sec-tools-judge}
-
-An agent is only as good as the feedback it gets. Compiler warnings, qmllint, tests and
-sanitizers give it ground truth instead of its own confidence. A project where one command
-runs every check is a project an agent can work in:
-
-```sh
-cmake --workflow --preset dev                 # build and run every test
-cmake --build --preset dev --target check     # every linter
-```
-
-The quality gates of @sec-quality and the tests of @sec-testing are the same gates you want
-for human contributors. For UI work, a live preview (Qt offers one as an MCP tool) lets the
-agent see a change instead of describing it.
-
-::: {.more}
-**Read more:** [QML Live Preview MCP tool](https://www.qt.io/blog/introducing-the-qml-live-preview-mcp-tool-for-agentic-development-of-embedded-devices)
-:::
-
-## Own what you ship {#sec-own}
-
-Review generated code the way you would review a colleague's: read every line, run it, test
-it. Keep only what you can explain.
-
-::: {.callout-tip}
-## Rule of thumb
-If you could not rewrite it from scratch with an hour and the documentation, you do not
-understand it yet. Go back to the concept.
+**Read more:** [Qt agent skills](https://github.com/TheQtCompanyRnD/agent-skills) and
+[Qt documentation](https://doc.qt.io/qt-6/).
 :::

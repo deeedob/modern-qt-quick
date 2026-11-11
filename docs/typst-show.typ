@@ -33,7 +33,7 @@
   }
 }
 
-#let book(title: none, subtitle: none, author: none, date: none, site: none, repo: none, font-size: 10.5pt, body) = {
+#let book(title: none, subtitle: none, author: none, date: none, site: none, repo: none, build: none, font-size: 10.5pt, body) = {
   set document(title: title, author: if author != none { author } else { () })
   set text(size: font-size)
   set par(justify: true, leading: 0.62em, spacing: 1em)
@@ -87,6 +87,7 @@
   text(size: 2.4em, weight: "bold", title)
   if subtitle != none { block(above: 0.8em, text(size: 1.3em, fill: luma(70), subtitle)) }
   block(above: 1.2em, text(fill: luma(70), [#author #h(0.6em) · #h(0.6em) #date]))
+  if build != none { block(above: 0.45em, text(size: 0.8em, fill: luma(110), build)) }
   if site != none {
     block(above: 1.6em, below: 2.4em, width: 100%, inset: 12pt, radius: 3pt, fill: guide-accent.lighten(90%), stroke: (left: 2.5pt + guide-accent))[
       *Read it online.* This PDF is a snapshot. The guide lives at #link(site), with search,
@@ -121,6 +122,9 @@ $if(book.site-url)$
 $endif$
 $if(book.repo-url)$
   repo: "$book.repo-url$".replace("\\/", "/"),
+$endif$
+$if(build-sha)$
+  build: [Source $if(build-tag)$$build-tag$ · $endif$$build-sha$],
 $endif$
 $if(fontsize)$
   font-size: $fontsize$,
