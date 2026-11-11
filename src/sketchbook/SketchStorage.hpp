@@ -3,16 +3,19 @@
 #include <Sketch.hpp>
 
 #include <QtCore/QDateTime>
+#include <QtCore/QHash>
+#include <QtCore/QObject>
 #include <QtCore/QString>
-#include <QtCore/QThreadPool>
+#include <QtCore/QThread>
+#include <QtCore/QtTypes>
 
-#include <expected>
 #include <string>
 #include <vector>
 
 namespace app::sketchbook {
 
-// What a sketch file holds. glaze reads and writes it by reflection, with no mapping code.
+class SketchStorageWorker;
+
 struct SketchDocument
 {
     std::string name;
@@ -28,24 +31,52 @@ struct SketchEntry
     qsizetype strokeCount = 0;
 };
 
-// One JSON file per sketch. Saves run in order on a worker thread; every other call waits for them.
-class SketchStorage
+class SketchStorage : public QObject
 {
-public:
-    explicit SketchStorage(QString directory);
+    Q_OBJECT
 
-    // Newest first. Files that cannot be read are logged and left out.
-    [[nodiscard]] std::vector<SketchEntry> list();
-    [[nodiscard]] std::expected<SketchDocument, QString> load(const QString &id);
+public:
+    enum class Mutation { Save, Rename, Duplicate };
+    Q_ENUM(Mutation)
+
+    explicit SketchStorage(QString directory, QObject *parent = nullptr);
+    ~SketchStorage() override;
+
+    void list();
+    void load(const QString &id, quint64 requestId);
     void save(const QString &id, SketchDocument document);
+    void rename(const QString &id, QString name);
+    void duplicate(const QString &sourceId, QString id, QString name);
     void remove(const QString &id);
-    void waitForSaves();
+    void retryFailedSaves();
+    [[nodiscard]] bool hasUnsavedChanges() const { return !m_dirty.isEmpty(); }
+
+Q_SIGNALS:
+    void listed(std::vector<app::sketchbook::SketchEntry> entries);
+    void loaded(QString id, quint64 requestId, app::sketchbook::SketchDocument document,
+        QString error);
+    void mutationFinished(QString id, QString sourceId,
+        app::sketchbook::SketchStorage::Mutation mutation, QString error, bool retryable);
+    void removed(QString id, QString error);
+    void unsavedChangesChanged();
+
+private Q_SLOTS:
+    void onMutationFinished(const QString &id, const QString &sourceId, Mutation mutation,
+        quint64 revision, const QString &error, bool retryable);
+    void onRemoved(const QString &id, const QString &error);
 
 private:
-    [[nodiscard]] QString filePath(const QString &id) const;
+    friend class SketchStorageWorker;
 
-    QString m_directory;
-    QThreadPool m_writer;
+    QThread m_thread;
+    QObject *m_worker = nullptr;
+    QHash<QString, quint64> m_dirty;
+    quint64 m_nextRevision = 0;
 };
 
 } // namespace app::sketchbook
+
+Q_DECLARE_METATYPE(app::sketchbook::SketchDocument)
+Q_DECLARE_METATYPE(app::sketchbook::SketchEntry)
+Q_DECLARE_METATYPE(std::vector<app::sketchbook::SketchEntry>)
+Q_DECLARE_METATYPE(app::sketchbook::SketchStorage::Mutation)

@@ -18,6 +18,18 @@ ApplicationWindow {
     visible: true
     title: Application.displayName
 
+    // demo:begin
+    onClosing: function (close) {
+        if (!sketchError.discardUnsavedChanges && window.sketchbook.hasUnsavedChanges) {
+            close.accepted = false;
+            sketchError.closeAfterSave = true;
+            sketchError.message = qsTr("Some sketches have not been saved.");
+            sketchError.retryable = true;
+            sketchError.open();
+        }
+    }
+    // demo:end
+
     Binding {
         target: Theme
         property: "dark"
@@ -126,4 +138,60 @@ ApplicationWindow {
     AboutDialog {
         id: about
     }
+
+    // demo:begin
+    Connections {
+        target: window.sketchbook
+
+        function onErrorOccurred(operation: int, source: string, message: string, retryable: bool):
+        void {
+            sketchError.operation = operation;
+            sketchError.source = source;
+            sketchError.message = message;
+            sketchError.retryable = retryable || window.sketchbook.hasUnsavedChanges;
+            sketchError.open();
+        }
+
+        function onUnsavedChangesChanged(): void {
+            if (!window.sketchbook.hasUnsavedChanges) {
+                sketchError.retryable = false;
+                if (sketchError.closeAfterSave)
+                    window.close();
+            }
+        }
+    }
+
+    Dialog {
+        id: sketchError
+
+        property string message: ""
+        property int operation: 0
+        property string source: ""
+        property bool retryable: false
+        property bool closeAfterSave: false
+        property bool discardUnsavedChanges: false
+
+        title: qsTr("Sketchbook error")
+        standardButtons: sketchError.closeAfterSave ? Dialog.Retry | Dialog.Discard | Dialog.Cancel :
+                                                      sketchError.retryable ? Dialog.Retry
+                                                                              | Dialog.Cancel :
+                                                                              Dialog.Ok
+        onAccepted: {
+            if (sketchError.retryable) {
+                sketchError.retryable = false;
+                window.sketchbook.retryFailedSaves();
+            }
+        }
+        onRejected: sketchError.closeAfterSave = false
+        onDiscarded: {
+            sketchError.closeAfterSave = false;
+            sketchError.discardUnsavedChanges = true;
+            window.close();
+        }
+        contentItem: Label {
+            text: sketchError.message
+            wrapMode: Text.Wrap
+        }
+    }
+    // demo:end
 }

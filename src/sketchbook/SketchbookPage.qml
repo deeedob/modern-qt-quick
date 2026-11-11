@@ -4,13 +4,11 @@ import QtQuick
 import QtQuick.Layouts
 import App.Controls
 
-// An MVVM view: binds to the view model's list and calls its commands. It knows no files.
 Page {
     id: root
 
     required property SketchbookViewModel viewModel
 
-    // Asks the window to show the canvas, where the opened sketch is now loaded.
     signal opened
 
     padding: Theme.spacing
@@ -23,10 +21,7 @@ Page {
             text: qsTr("New sketch")
             icon.source: Theme.icon("plus")
             highlighted: true
-            onClicked: {
-                root.viewModel.create();
-                root.opened();
-            }
+            onClicked: root.viewModel.create()
         }
 
         ListView {
@@ -38,7 +33,6 @@ Page {
             spacing: 2
             model: root.viewModel.model
 
-            // Roles arrive as required properties; user intent leaves through the view model.
             delegate: ItemDelegate {
                 id: row
 
@@ -49,10 +43,7 @@ Page {
 
                 width: list.width
                 text: name
-                onClicked: {
-                    root.viewModel.open(index);
-                    root.opened();
-                }
+                onClicked: root.viewModel.open(index)
 
                 contentItem: RowLayout {
                     spacing: Theme.spacing
@@ -70,7 +61,8 @@ Page {
 
                         Label {
                             Layout.fillWidth: true
-                            text: qsTr("%n stroke(s)", "", row.strokeCount) + " · " + row.modified.toLocaleString(Qt.locale(), Locale.ShortFormat)
+                            text: qsTr("%n stroke(s)", "", row.strokeCount) + " · " + row.modified.toLocaleString(
+                                      Qt.locale(), Locale.ShortFormat)
                             color: Theme.mutedText
                             font.pixelSize: 12
                             elide: Text.ElideRight
@@ -99,7 +91,7 @@ Page {
 
             Label {
                 anchors.centerIn: parent
-                visible: list.count === 0
+                visible: list.count === 0 && root.viewModel.initialized
                 text: qsTr("No sketches yet")
                 color: Theme.mutedText
             }
@@ -128,6 +120,14 @@ Page {
             id: nameField
 
             onAccepted: renameDialog.accept()
+        }
+    }
+
+    Connections {
+        target: root.viewModel
+
+        function onOpened(): void {
+            root.opened();
         }
     }
 }

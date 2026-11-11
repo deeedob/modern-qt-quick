@@ -4,7 +4,7 @@
 <context>
     <name>Main</name>
     <message numerus="yes">
-        <location filename="../src/app/Main.qml" line="70"/>
+        <location filename="../src/app/Main.qml" line="82"/>
         <source>%n stroke(s)</source>
         <translation>
             <numerusform>%n stroke</numerusform>
@@ -12,7 +12,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/Main.qml" line="70"/>
+        <location filename="../src/app/Main.qml" line="82"/>
         <source>%n point(s)</source>
         <translation>
             <numerusform>%n point</numerusform>
@@ -23,7 +23,7 @@
 <context>
     <name>SketchbookPage</name>
     <message numerus="yes">
-        <location filename="../src/sketchbook/SketchbookPage.qml" line="73"/>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="64"/>
         <source>%n stroke(s)</source>
         <translation>
             <numerusform>%n stroke</numerusform>

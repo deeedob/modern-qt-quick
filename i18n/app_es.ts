@@ -29,27 +29,27 @@
         <translation>Configurado</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="96"/>
+        <location filename="../src/app/AboutDialog.qml" line="97"/>
         <source>Source code</source>
         <translation>Código fuente</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="104"/>
+        <location filename="../src/app/AboutDialog.qml" line="105"/>
         <source>Guide</source>
         <translation>Guía</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="115"/>
+        <location filename="../src/app/AboutDialog.qml" line="117"/>
         <source>Built with Qt, used under the LGPL version 3. The licenses of all third-party components ship with the application, in its licenses folder.</source>
         <translation>Creado con Qt, utilizado bajo la LGPL versión 3. Las licencias de los componentes de terceros se incluyen en la carpeta de licencias de la aplicación.</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="126"/>
+        <location filename="../src/app/AboutDialog.qml" line="128"/>
         <source>Open licenses folder</source>
         <translation>Abrir carpeta de licencias</translation>
     </message>
     <message>
-        <location filename="../src/app/AboutDialog.qml" line="130"/>
+        <location filename="../src/app/AboutDialog.qml" line="132"/>
         <source>Open log folder</source>
         <translation>Abrir carpeta de registros</translation>
     </message>
@@ -62,14 +62,14 @@
         <translation>Tinta %1</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="121"/>
-        <location filename="../src/canvas/CanvasPage.qml" line="122"/>
-        <location filename="../src/canvas/CanvasPage.qml" line="123"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="113"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="114"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="115"/>
         <source>Snap shapes</source>
         <translation>Ajustar formas</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="140"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="132"/>
         <source>Undo</source>
         <translation>Deshacer</translation>
     </message>
@@ -89,17 +89,17 @@
         <translation>Rayado</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="147"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="139"/>
         <source>Redo</source>
         <translation>Rehacer</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="154"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="146"/>
         <source>Clear</source>
         <translation>Borrar</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="111"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="107"/>
         <source>%1 px</source>
         <translation>%1 px</translation>
     </message>
@@ -144,42 +144,42 @@
         <translation>Grosor</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="276"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="268"/>
         <source>Draw here. Circles, rectangles and triangles snap into shape.</source>
         <translation>Dibuja aquí. Los círculos, rectángulos y triángulos se ajustan a su forma.</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="286"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="278"/>
         <source>%1%</source>
         <translation>%1%</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="315"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="307"/>
         <source>Fit canvas to window</source>
         <translation>Ajustar lienzo a la ventana</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="360"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="352"/>
         <source>Snapped to a circle</source>
         <translation>Ajustado a un círculo</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="363"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="355"/>
         <source>Snapped to a rectangle</source>
         <translation>Ajustado a un rectángulo</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="366"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="358"/>
         <source>Snapped to a triangle</source>
         <translation>Ajustado a un triángulo</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="373"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="365"/>
         <source>Redone</source>
         <translation>Rehecho</translation>
     </message>
     <message>
-        <location filename="../src/canvas/CanvasPage.qml" line="373"/>
+        <location filename="../src/canvas/CanvasPage.qml" line="365"/>
         <source>Undone</source>
         <translation>Deshecho</translation>
     </message>
@@ -210,12 +210,17 @@
 <context>
     <name>Main</name>
     <message>
-        <location filename="../src/app/Main.qml" line="40"/>
+        <location filename="../src/app/Main.qml" line="26"/>
+        <source>Some sketches have not been saved.</source>
+        <translation>Algunos bocetos no se han guardado.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/Main.qml" line="52"/>
         <source>Back</source>
         <translation>Volver</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/Main.qml" line="70"/>
+        <location filename="../src/app/Main.qml" line="82"/>
         <source>%n stroke(s)</source>
         <translation>
             <numerusform>%n trazo</numerusform>
@@ -223,7 +228,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/Main.qml" line="70"/>
+        <location filename="../src/app/Main.qml" line="82"/>
         <source>%n point(s)</source>
         <translation>
             <numerusform>%n punto</numerusform>
@@ -231,19 +236,47 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/app/Main.qml" line="78"/>
+        <location filename="../src/app/Main.qml" line="90"/>
         <source>Switch to light theme</source>
         <translation>Cambiar al tema claro</translation>
     </message>
     <message>
-        <location filename="../src/app/Main.qml" line="78"/>
+        <location filename="../src/app/Main.qml" line="90"/>
         <source>Switch to dark theme</source>
         <translation>Cambiar al tema oscuro</translation>
     </message>
     <message>
-        <location filename="../src/app/Main.qml" line="90"/>
+        <location filename="../src/app/Main.qml" line="102"/>
         <source>About</source>
         <translation>Acerca de</translation>
+    </message>
+    <message>
+        <location filename="../src/app/Main.qml" line="174"/>
+        <source>Sketchbook error</source>
+        <translation>Error del cuaderno de bocetos</translation>
+    </message>
+</context>
+<context>
+    <name>SketchStorage</name>
+    <message>
+        <location filename="../src/sketchbook/SketchStorage.cpp" line="221"/>
+        <source>Sketch was deleted</source>
+        <translation>El boceto se eliminó</translation>
+    </message>
+    <message>
+        <location filename="../src/sketchbook/SketchStorage.cpp" line="233"/>
+        <source>Sketch contains an invalid stroke</source>
+        <translation>El boceto contiene un trazo no válido</translation>
+    </message>
+    <message>
+        <location filename="../src/sketchbook/SketchStorage.cpp" line="255"/>
+        <source>Cannot serialize sketch</source>
+        <translation>No se puede serializar el boceto</translation>
+    </message>
+    <message>
+        <location filename="../src/sketchbook/SketchStorage.cpp" line="257"/>
+        <source>Cannot create the sketch directory</source>
+        <translation>No se puede crear la carpeta de bocetos</translation>
     </message>
 </context>
 <context>
@@ -257,12 +290,12 @@
 <context>
     <name>SketchbookPage</name>
     <message>
-        <location filename="../src/sketchbook/SketchbookPage.qml" line="23"/>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="21"/>
         <source>New sketch</source>
         <translation>Nuevo dibujo</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/sketchbook/SketchbookPage.qml" line="73"/>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="64"/>
         <source>%n stroke(s)</source>
         <translation>
             <numerusform>%n trazo</numerusform>
@@ -270,27 +303,27 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/sketchbook/SketchbookPage.qml" line="82"/>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="74"/>
         <source>Duplicate</source>
         <translation>Duplicar</translation>
     </message>
     <message>
-        <location filename="../src/sketchbook/SketchbookPage.qml" line="88"/>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="80"/>
         <source>Rename</source>
         <translation>Renombrar</translation>
     </message>
     <message>
-        <location filename="../src/sketchbook/SketchbookPage.qml" line="94"/>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="86"/>
         <source>Delete</source>
         <translation>Eliminar</translation>
     </message>
     <message>
-        <location filename="../src/sketchbook/SketchbookPage.qml" line="103"/>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="95"/>
         <source>No sketches yet</source>
         <translation>Aún no hay dibujos</translation>
     </message>
     <message>
-        <location filename="../src/sketchbook/SketchbookPage.qml" line="123"/>
+        <location filename="../src/sketchbook/SketchbookPage.qml" line="115"/>
         <source>Rename sketch</source>
         <translation>Renombrar dibujo</translation>
     </message>
@@ -298,12 +331,37 @@
 <context>
     <name>app::sketchbook::SketchbookViewModel</name>
     <message>
-        <location filename="../src/sketchbook/SketchbookViewModel.cpp" line="35"/>
+        <location filename="../src/sketchbook/SketchbookViewModel.cpp" line="48"/>
         <source>Sketch %1</source>
         <translation>Dibujo %1</translation>
     </message>
     <message>
-        <location filename="../src/sketchbook/SketchbookViewModel.cpp" line="141"/>
+        <location filename="../src/sketchbook/SketchbookViewModel.cpp" line="148"/>
+        <source>Could not open sketch: %1</source>
+        <translation>No se pudo abrir el boceto: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/sketchbook/SketchbookViewModel.cpp" line="189"/>
+        <source>Could not rename sketch: %1</source>
+        <translation>No se pudo renombrar el boceto: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/sketchbook/SketchbookViewModel.cpp" line="198"/>
+        <source>Could not duplicate sketch: %1</source>
+        <translation>No se pudo duplicar el boceto: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/sketchbook/SketchbookViewModel.cpp" line="209"/>
+        <source>Could not delete sketch: %1</source>
+        <translation>No se pudo eliminar el boceto: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/sketchbook/SketchbookViewModel.cpp" line="186"/>
+        <source>Could not save sketch: %1</source>
+        <translation>No se pudo guardar el boceto: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/sketchbook/SketchbookViewModel.cpp" line="261"/>
         <source> copy</source>
         <translation> copia</translation>
     </message>
