@@ -2,21 +2,21 @@ pragma Singleton
 
 import QtQuick
 
-// Design tokens: the one place for colors, sizes and type. Basic's controls get them via the palette.
 QtObject {
     property bool dark: Application.styleHints.colorScheme === Qt.ColorScheme.Dark
 
-    readonly property color window: dark ? "#17171c" : "#f6f6f8"
-    readonly property color surface: dark ? "#22222a" : "#ffffff"
-    readonly property color hover: dark ? "#2d2d36" : "#ececf1"
-    readonly property color pressed: dark ? "#393944" : "#dedee6"
-    readonly property color border: dark ? "#3a3a45" : "#d6d6de"
-    readonly property color text: dark ? "#ececf1" : "#1c1c22"
-    readonly property color mutedText: dark ? "#9b9ba8" : "#6c6c78"
-    readonly property color accent: "#5b5bd6"
-    readonly property color accentPressed: "#4a4ac0"
-    readonly property color accentText: "#ffffff"
-    readonly property color overlay: "#252533"
+    readonly property color window: dark ? "#1e2326" : "#f2efdf"
+    readonly property color surface: dark ? "#272e33" : "#fffbef"
+    readonly property color hover: dark ? "#2e383c" : "#f8f5e4"
+    readonly property color pressed: dark ? "#374145" : "#edeada"
+    readonly property color border: dark ? "#495156" : "#bec5b2"
+    readonly property color text: dark ? "#d3c6aa" : "#5c6a72"
+    readonly property color mutedText: dark ? "#859289" : "#708089"
+    readonly property color accent: dark ? "#7fbbb3" : "#3a94c5"
+    readonly property color accentPressed: Qt.darker(accent, 1.15)
+    readonly property color accentText: "#1e2326"
+    readonly property color overlay: dark ? "#1e2326" : "#5c6a72"
+    readonly property color overlayText: dark ? "#d3c6aa" : "#fffbef"
 
     readonly property int spacing: 12
     readonly property int radius: 8

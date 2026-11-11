@@ -7,11 +7,13 @@ Basic.ComboBox {
     id: control
 
     implicitHeight: Theme.controlHeight
+    font.family: Theme.fontFamily
 
     indicator: Text {
         x: control.mirrored ? control.leftPadding : control.width - width - control.rightPadding
         y: (control.height - height) / 2
         text: "⌄"
+        font.family: control.font.family
         font.pixelSize: 20
         color: Theme.text
     }

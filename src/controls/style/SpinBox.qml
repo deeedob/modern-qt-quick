@@ -38,6 +38,7 @@ T.SpinBox {
         Text {
             anchors.centerIn: parent
             text: "+"
+            font.family: control.font.family
             font.pixelSize: 20
             color: control.enabled && (control.wrap || control.value < Math.max(control.from,
                                                                                 control.to))
@@ -55,6 +56,7 @@ T.SpinBox {
         Text {
             anchors.centerIn: parent
             text: "−"
+            font.family: control.font.family
             font.pixelSize: 20
             color: control.enabled && (control.wrap || control.value > Math.min(control.from,
                                                                                 control.to))

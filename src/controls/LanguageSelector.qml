@@ -105,15 +105,19 @@ ToolButton {
                             color: Theme.accent
                         }
                         Rectangle {
+                            objectName: "languageCodeBadge"
                             implicitWidth: 30
                             implicitHeight: 22
                             radius: Theme.radius / 2
                             color: Theme.hover
+                            border.width: 1
+                            border.color: Theme.border
                             Label {
                                 anchors.centerIn: parent
                                 text: languageItem.languageCode.toUpperCase()
                                 font.pixelSize: 10
                                 font.weight: Font.DemiBold
+                                color: Theme.mutedText
                             }
                         }
                         Label {

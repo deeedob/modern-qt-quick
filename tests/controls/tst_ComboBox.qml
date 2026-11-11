@@ -11,7 +11,10 @@ TestCase {
     when: windowShown
 
     function init(): void {
-        failOnWarning(/.?/);
+        const fontWarning = 'Populating font family aliases took .*'
+              + 'Replace uses of missing font family "Sans Serif"'
+              + ' with one that exists to avoid this cost\\.';
+        failOnWarning(new RegExp('^(?!' + fontWarning + ').*$'));
     }
 
     Component {
@@ -23,7 +26,6 @@ TestCase {
     }
 
     function test_borderAndSelection(): void {
-        ignoreWarning(/Populating font family aliases took .*Replace uses of missing font family "Sans Serif".*/);
         const combo = createTemporaryObject(comboComponent, testCase);
         compare(combo.background.border.width, 1);
         mouseClick(combo);
