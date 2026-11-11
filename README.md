@@ -101,6 +101,10 @@ The script walks you through naming your app and updating the project details. Y
 
 The guide explains how these fit together and how to adapt them.
 
+## Get involved
+
+Have feedback, a question or an idea for improving Qt Kickstart? [Open an issue](https://github.com/deeedob/qt-kickstart/issues) and join the conversation. Contributions are welcome.
+
 ## License
 
 [MIT-0](LICENSE): use it for anything, no attribution required. Bundled third-party files
