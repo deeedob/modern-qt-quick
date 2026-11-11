@@ -23,6 +23,22 @@ function(app_add_notice name file)
     set_property(GLOBAL APPEND PROPERTY APP_NOTICE_FILES "${name}|${file}")
 endfunction()
 
+function(app_copy_notices target)
+    get_property(notices GLOBAL PROPERTY APP_NOTICE_FILES)
+    set(directory "${CMAKE_CURRENT_BINARY_DIR}/licenses")
+    set(commands COMMAND "${CMAKE_COMMAND}" -E make_directory "${directory}")
+    foreach(notice IN LISTS notices)
+        string(REPLACE "|" ";" parts "${notice}")
+        list(GET parts 0 name)
+        list(GET parts 1 file)
+        list(APPEND commands COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${file}" "${directory}/${name}.txt")
+    endforeach()
+    add_custom_command(TARGET ${target} POST_BUILD ${commands}
+        COMMENT "Copying license notices for the development build" VERBATIM)
+    target_compile_definitions(${target} PRIVATE APP_DEV_LICENSES_DIRECTORY="${directory}")
+endfunction()
+
 # vcpkg installs each port's license as share/<port>/copyright.
 file(GLOB _app_copyrights "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/*/copyright")
 foreach(_file IN LISTS _app_copyrights)
