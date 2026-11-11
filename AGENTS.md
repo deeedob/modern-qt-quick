@@ -39,14 +39,12 @@ Report missing tools, skipped checks and warnings. Warnings are errors for proje
   history without coordination. Use `git revise` for authorized fixes to earlier commits on
   your own branch; after rewriting a published branch, use `--force-with-lease` if pushing is
   authorized.
-- For supported release lines, fix `main` first when possible, then backport the atomic fix
-  with `git cherry-pick -x` and test it on the maintenance branch. Tag tested releases.
 
 ## Layout
 
 ```
-libs/<name>/          separable plain C++ library: include/<name>/ (public .h), src/, tests/
-src/<feature>/        one folder and one static QML module per feature: C++ and QML together
+libs/<name>/          separable library: include/<name>/ (public .h), src/, tests/
+src/<feature>/        one folder and one QML module per feature: C++ and QML together
 src/controls/         the Qt Quick Controls style (QML module App.Controls) and Theme tokens
 src/app/              the executable: main.cpp creates and wires every long-lived object
 tests/<feature>/      tests for src/, mirroring its folders
@@ -62,9 +60,11 @@ external/vcpkg/       vcpkg as a git submodule: never edit
   or call upward.
 - Dependencies follow `target_link_libraries`. Never add an include path or link to get
   around a missing dependency; if code needs something above it, it is in the wrong layer.
-- `main()` is the composition root: it creates long-lived objects before the
-  `QQmlApplicationEngine` and passes them to QML. No globals, no hidden singletons.
-- Code that does not need Qt goes into `libs/` as plain C++ with its own tests.
+- `main()` is the composition root: it creates long-lived objects, or one application manager
+  that owns them, before the `QQmlApplicationEngine` and passes them to QML. No globals, no
+  hidden singletons.
+- Separable code goes into `libs/` with its own tests. A library may depend on Qt when that
+  serves its public design.
 
 ## C++
 
@@ -72,6 +72,9 @@ external/vcpkg/       vcpkg as a git submodule: never edit
   helpers go into an unnamed namespace. No `using namespace` at file scope in headers.
 - One class per file, named after it. `.h` for public headers of `libs/`, `.hpp` for the rest.
   Include Qt by module: `#include <QtCore/QObject>`.
+- Include a type's header when the declaration needs its definition. Otherwise forward-declare
+  Qt types with `QT_FORWARD_DECLARE_CLASS`; define special members that destroy owning pointers
+  in the `.cpp` that includes the complete type.
 - `QT_NO_KEYWORDS` is on: write `Q_EMIT`, `Q_SIGNALS`, `Q_SLOTS`.
 - Qt's strict mode (6.12) and `QT_NO_CAST_FROM_ASCII` are on: no implicit `char *` to `QString`
   (write `u"..."_s` or `"..."_L1`), no `QUrl` from a `QString` (`QUrl::fromLocalFile()`), every
@@ -90,7 +93,8 @@ external/vcpkg/       vcpkg as a git submodule: never edit
 
 ## Connecting C++ and QML
 
-- Register types with `QML_ELEMENT` in `qt_add_qml_module(... STATIC ...)`. Link the module's
+- Register types with `QML_ELEMENT` in `qt_add_qml_module()`. Use `STATIC` for a module private
+  to one executable; consider a shared module for multiple consumers. Link a static module's
   `<target>plugin` into the executable and into QML tests, or it does not register.
 - Objects created in `main()` reach QML as typed `required property`s through
   `setInitialProperties()`, and their classes are `QML_UNCREATABLE`. Never use
@@ -98,8 +102,8 @@ external/vcpkg/       vcpkg as a git submodule: never edit
 - App-wide state only: `QML_SINGLETON` with the instance from `setExternalSingletonInstance()`.
 - Collections the user sees are `QAbstractListModel`s; report changes with
   `beginInsertRows()`/`dataChanged()`, not model resets.
-- Custom drawing: a `QQuickItem` with a scene graph `updatePaintNode()`, which only builds
-  nodes and reuses them between frames.
+- For custom rendering, prefer a custom render item. Use another custom Qt Quick component when
+  composition fits better.
 - C++ never reaches into QML: no `findChild()`, no `invokeMethod()` on QML objects.
 
 ## QML
@@ -107,6 +111,8 @@ external/vcpkg/       vcpkg as a git submodule: never edit
 - Typed QML: `pragma ComponentBehavior: Bound`, typed properties (never `property var` when a
   type exists), typed function signatures (`function f(x: real): void`), qualified access
   (`root.model`, not a bare `model`). Enums are numbers in QML: annotate parameters as `int`.
+- Order each QML object as `id`, properties, signals, functions, object properties, then child
+  objects. Separate those groups with blank lines.
 - Bindings, not assignments: never overwrite a bound property from JavaScript; change its
   source.
 - Components declare their inputs as `required property` and their outputs as signals.
