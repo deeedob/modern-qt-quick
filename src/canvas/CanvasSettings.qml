@@ -11,6 +11,7 @@ ToolButton {
     required property CanvasStore store
     property bool aspectLinked: false
     property real aspectRatio: 1.0
+
     objectName: "paperSettingsButton"
     icon.source: Theme.icon("settings-2")
     text: qsTr("Canvas settings")
@@ -38,6 +39,20 @@ ToolButton {
             }
 
             GridLayout {
+                id: pageProperties
+
+                function constrainedHeight(width: int): int {
+                    if (!root.aspectLinked)
+                        return root.store.pageHeight;
+                    return Math.max(100, Math.min(4096, Math.round(width / root.aspectRatio)));
+                }
+
+                function constrainedWidth(height: int): int {
+                    if (!root.aspectLinked)
+                        return root.store.pageWidth;
+                    return Math.max(100, Math.min(4096, Math.round(height * root.aspectRatio)));
+                }
+
                 columns: 3
                 columnSpacing: Theme.spacing / 2
                 rowSpacing: Theme.spacing / 2
@@ -52,11 +67,8 @@ ToolButton {
                     to: 4096
                     editable: true
                     value: root.store.pageWidth
-                    onValueModified: root.store.setPageSize(value, root.aspectLinked ? Math.max(100,
-                                                                                                Math.min(4096,
-                                                                                                         Math.round(
-                                                                                                             value / root.aspectRatio))) :
-                                                                                       root.store.pageHeight)
+                    onValueModified: root.store.setPageSize(value, pageProperties.constrainedHeight(
+                                                                value))
                 }
                 ToolButton {
                     objectName: "aspectLink"
@@ -80,11 +92,7 @@ ToolButton {
                     to: 4096
                     editable: true
                     value: root.store.pageHeight
-                    onValueModified: root.store.setPageSize(root.aspectLinked ? Math.max(100,
-                                                                                         Math.min(4096,
-                                                                                                  Math.round(
-                                                                                                      value * root.aspectRatio))) :
-                                                                                root.store.pageWidth,
+                    onValueModified: root.store.setPageSize(pageProperties.constrainedWidth(value),
                                                             value)
                 }
                 Item {

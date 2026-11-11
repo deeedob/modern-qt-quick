@@ -32,11 +32,9 @@ namespace {
 
     QRectF bounds(std::span<const shapes::Point> points)
     {
-        const auto [minX,
-            maxX] = std::ranges::minmax(points | std::views::transform(&shapes::Point::x));
-        const auto [minY,
-            maxY] = std::ranges::minmax(points | std::views::transform(&shapes::Point::y));
-        return { QPointF(minX, minY), QPointF(maxX, maxY) };
+        const auto xBounds = std::ranges::minmax(points | std::views::transform(&shapes::Point::x));
+        const auto yBounds = std::ranges::minmax(points | std::views::transform(&shapes::Point::y));
+        return { QPointF(xBounds.min, yBounds.min), QPointF(xBounds.max, yBounds.max) };
     }
 
     // The clean outline of a recognized shape. Drawn into a unit square, it is also the template.

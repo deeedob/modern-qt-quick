@@ -10,7 +10,6 @@
 #include <variant>
 #include <vector>
 
-// The drawing as plain C++: the state, the actions that change it, and the reducer.
 namespace app::canvas {
 
 Q_NAMESPACE
@@ -23,7 +22,7 @@ struct Stroke
     double width = 4.0;
 };
 
-// A stroke never changes once drawn, so every snapshot of the sketch shares it.
+// Immutable strokes let undo and redo share point data across history snapshots.
 using StrokePtr = std::shared_ptr<const Stroke>;
 
 enum class PaperBackground { Plain, Dots, Ruled };
@@ -76,7 +75,7 @@ struct Overloaded : Fs...
     using Fs::operator()...;
 };
 
-// A pure function: the same sketch and action always give the same new sketch.
+// A value snapshot makes every action produce a history entry without inverse operations.
 [[nodiscard]] inline Sketch reduce(Sketch sketch, const Action &action)
 {
     std::visit(
