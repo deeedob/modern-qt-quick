@@ -74,7 +74,7 @@ Build the showcase utility and give it an existing output directory:
 
 ```sh
 cmake --build --preset dev --target showcase
-./build/dev/tests/showcase/showcase /path/to/output
+./build/dev/tools/showcase/showcase /path/to/output
 ```
 
 It writes four PNG files, replacing files with the same names. Run it in a native Qt graphics

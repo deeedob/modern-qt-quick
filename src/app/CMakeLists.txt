@@ -10,14 +10,44 @@ target_link_libraries(app_support
 )
 app_target_defaults(app_support)
 
+if(CMAKE_CROSSCOMPILING)
+    if(APPLE OR WIN32)
+        find_program(APP_ICON_GENERATOR NAMES app_icon_generator NO_CMAKE_FIND_ROOT_PATH
+            DOC "Host executable for generating application icons")
+        if(NOT APP_ICON_GENERATOR)
+            message(FATAL_ERROR "Set APP_ICON_GENERATOR to a host-built app_icon_generator executable.")
+        endif()
+        set(_icon_generator "${APP_ICON_GENERATOR}")
+    endif()
+else()
+    set(_icon_generator app_icon_generator)
+endif()
+
 qt_add_executable(app MACOSX_BUNDLE WIN32 main.cpp)
 if(APPLE)
-    target_sources(app PRIVATE icons/app.icns)
-    set_source_files_properties(icons/app.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    set(_app_icon "${CMAKE_CURRENT_BINARY_DIR}/app.icns")
+    add_custom_command(
+        OUTPUT "${_app_icon}"
+        COMMAND "${_icon_generator}" "${CMAKE_CURRENT_SOURCE_DIR}/icons/app.svg" "${CMAKE_CURRENT_BINARY_DIR}/app.iconset"
+        COMMAND iconutil -c icns "${CMAKE_CURRENT_BINARY_DIR}/app.iconset" -o "${_app_icon}"
+        DEPENDS "${_icon_generator}" icons/app.svg
+        VERBATIM
+    )
+    target_sources(app PRIVATE "${_app_icon}")
+    set_source_files_properties("${_app_icon}" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 elseif(WIN32)
     # Windows takes the executable's icon from a resource script.
-    file(CONFIGURE OUTPUT app.rc CONTENT "IDI_ICON1 ICON \"${CMAKE_CURRENT_SOURCE_DIR}/icons/app.ico\"\n")
-    target_sources(app PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/app.rc")
+    set(_app_icon "${CMAKE_CURRENT_BINARY_DIR}/app.ico")
+    add_custom_command(
+        OUTPUT "${_app_icon}"
+        COMMAND "${_icon_generator}" "${CMAKE_CURRENT_SOURCE_DIR}/icons/app.svg" "${_app_icon}"
+        DEPENDS "${_icon_generator}" icons/app.svg
+        VERBATIM
+    )
+    file(CONFIGURE OUTPUT app.rc CONTENT "IDI_ICON1 ICON \"${_app_icon}\"\n")
+    set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/app.rc" PROPERTIES OBJECT_DEPENDS "${_app_icon}")
+    set_source_files_properties("${_app_icon}" PROPERTIES HEADER_FILE_ONLY TRUE)
+    target_sources(app PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/app.rc" "${_app_icon}")
 endif()
 set_target_properties(app PROPERTIES
     OUTPUT_NAME "${PROJECT_NAME}"

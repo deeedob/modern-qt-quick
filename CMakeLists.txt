@@ -51,7 +51,9 @@ find_package(cpptrace CONFIG REQUIRED)
 find_package(glaze CONFIG REQUIRED) # demo
 
 add_subdirectory(libs/shapes) # demo
+add_subdirectory(tools/icon-generator)
 add_subdirectory(src)
+add_subdirectory(tools/showcase) # demo
 if(BUILD_TESTING)
     find_package(Qt6 6.12 REQUIRED COMPONENTS Test QuickTest)
     add_subdirectory(tests)
