@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.31)
 
+include(cmake/SelectQt.cmake)
+
 project(Sketchbook
     VERSION 0.1.0
     DESCRIPTION "A sketchbook that recognizes shapes: a Qt Kickstart template"
@@ -23,6 +25,7 @@ include(AppTargetDefaults)
 include(BuildInfo)
 include(Packaging)
 
+app_configure_qt_source()
 find_package(Qt6 6.12 COMPONENTS
     Core Gui Qml QmlModels Quick QuickControls2 Concurrent Svg LinguistTools Test QuickTest
 )
@@ -31,9 +34,9 @@ if(NOT Qt6_FOUND)
         "Qt 6.12 or newer was not found.\n"
         "Install it with the Qt Online Installer or aqtinstall, then point QT_ROOT_DIR at it:\n"
         "  export QT_ROOT_DIR=~/Qt/6.12.0/macos\n"
-        "Alternatively, copy CMakeUserPresets.example.json to CMakeUserPresets.json "
-        "and run: cmake --workflow --preset dev-vcpkg")
+        "Alternatively, enable APP_USE_VCPKG_QT to build Qt with vcpkg.")
 endif()
+app_validate_qt_source()
 
 qt_standard_project_setup(REQUIRES 6.12
     I18N_SOURCE_LANGUAGE en

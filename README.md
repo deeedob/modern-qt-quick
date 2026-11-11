@@ -50,22 +50,17 @@ cmake --build --preset dev --target run
 
 ### Building Qt with vcpkg
 
-If you do not already have a `CMakeUserPresets.json`, copy the example:
+Enable the Qt feature for the `dev` build directory, then build, test and run:
 
 ```sh
-cmake -E copy CMakeUserPresets.example.json CMakeUserPresets.json
+cmake --preset dev -DAPP_USE_VCPKG_QT=ON
+cmake --workflow --preset dev
+cmake --build --preset dev --target run
 ```
 
-Then build, test and run:
-
-```sh
-cmake --workflow --preset dev-vcpkg
-cmake --build --preset dev-vcpkg --target run
-```
-
-The first Qt build can take hours; later builds can use vcpkg's cache. Outside Windows, install
-autotools first. The example also provides `asan-vcpkg` and `release-vcpkg` workflows.
-The user preset file is ignored by Git, so you can customize it for your machine.
+The first Qt build can take hours; later builds can use vcpkg's binary cache. Outside Windows,
+install autotools first. Set `APP_USE_VCPKG_QT=OFF` to use an installed Qt again. Set the
+option separately for the `asan` or `release` preset when needed.
 
 ## Git hooks
 

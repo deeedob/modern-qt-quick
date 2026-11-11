@@ -1,4 +1,4 @@
-name: Qt from source
+name: Release packages
 
 # Builds Qt itself with vcpkg. The first run takes hours, so it runs on
 # demand only; later runs reuse the binary cache.
@@ -49,17 +49,26 @@ jobs:
       - uses: actions/cache/restore@v6
         with:
           path: .vcpkg-cache
-          key: qt-from-source-${{ matrix.os }}-${{ steps.vcpkg.outputs.commit }}-${{ hashFiles('vcpkg.json', 'cmake/vcpkg-triplets/**/*.cmake') }}
-          restore-keys: qt-from-source-${{ matrix.os }}-
+          key: release-vcpkg-${{ matrix.os }}-${{ steps.vcpkg.outputs.commit }}-${{ hashFiles('vcpkg.json', 'cmake/vcpkg-triplets/**/*.cmake') }}
+          restore-keys: release-vcpkg-${{ matrix.os }}-
 
       - name: Configure, build, test and package
         run: |
-          cmake -E copy CMakeUserPresets.example.json CMakeUserPresets.json
-          cmake --workflow --preset release-vcpkg
+          cmake --preset release -DAPP_USE_VCPKG_QT=ON
+          cmake --workflow --preset release
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-package-${{ matrix.os }}
+          path: |
+            build/release/*.dmg
+            build/release/*.zip
+            build/release/*.tar.gz
+          if-no-files-found: error
 
       # Saved even when a step fails, so the hours spent building Qt are not lost.
       - uses: actions/cache/save@v6
         if: always()
         with:
           path: .vcpkg-cache
-          key: qt-from-source-${{ matrix.os }}-${{ steps.vcpkg.outputs.commit }}-${{ hashFiles('vcpkg.json', 'cmake/vcpkg-triplets/**/*.cmake') }}
+          key: release-vcpkg-${{ matrix.os }}-${{ steps.vcpkg.outputs.commit }}-${{ hashFiles('vcpkg.json', 'cmake/vcpkg-triplets/**/*.cmake') }}

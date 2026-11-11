@@ -118,12 +118,13 @@ This is a summary of obligations, not legal advice.
 **Read more:** [Qt licensing](https://doc.qt.io/qt-6/licensing.html)
 :::
 
-## CI builds what you ship {#sec-ci}
+## CI and release builds {#sec-ci}
 
-Every change should build, test and package on every platform you support, on a machine that
-is not yours. Use the same preset command that developers run:
+Build and test every change on each supported platform using an installed Qt. The manual
+release workflow builds Qt with vcpkg, tests the application, and uploads the packages as
+workflow artifacts:
 
-```{.yaml filename=".github/workflows/ci.yml"}
+```{.yaml filename=".github/workflows/release.yml (excerpt)"}
 jobs:
   build:
     strategy:
@@ -134,17 +135,13 @@ jobs:
       - uses: actions/checkout@v5
         with:
           submodules: true
-      - uses: jurplel/install-qt-action@v4
-        with:
-          version: "6.12.0"
-          cache: true
+      - run: cmake --preset release -DAPP_USE_VCPKG_QT=ON
       - run: cmake --workflow --preset release
 ```
 
 A complete workflow also sets up the compiler environment on Windows. Cache the dependency
 builds between runs (vcpkg's binary cache does this), or every run rebuilds them from
-scratch. Upload the packages as build artifacts, so every change produces
-something you can download and try.
+scratch. Download the release workflow artifacts to test the packages before shipping.
 
 ::: {.callout-tip}
 ## Package for an empty machine
@@ -155,7 +152,7 @@ the result on such a machine.
 :::
 
 ::: {.more}
-**Template:** `.github/workflows/ci.yml`
+**Template:** `.github/workflows/ci.yml`, `.github/workflows/release.yml`
 :::
 
 ## Versions, releases and backports {#sec-versions-and-backports}

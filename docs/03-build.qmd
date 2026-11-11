@@ -107,14 +107,13 @@ It holds one kind of preset per step, plus workflows that chain them:
 | `packagePresets` | how `cpack` turns the build into a package |
 | `workflowPresets` | a fixed sequence of the steps above, run with one command |
 
-A workflow is the payoff. Your machine, CI and the release pipeline all run the same named
+A workflow is the payoff. Your machine and the release pipeline can run the same named
 sequence:
 
 ```{mermaid}
 %%| fig-width: 6.5
 flowchart LR
     D[your machine] --> W
-    CI[CI] --> W
     R[release] --> W
     W["cmake --workflow --preset release"] --> C[configure] --> B[build] --> T[test] --> P[package]
 ```
@@ -152,22 +151,20 @@ cmake --workflow --preset dev     # configure, build and test
 
 What differs between machines, such as where Qt is installed, comes from the environment.
 The template's presets read `$env{QT_ROOT_DIR}`, which CI sets for its Qt installation.
-CMake can also find Qt in its normal search paths. For local choices, copy
-`CMakeUserPresets.example.json` to `CMakeUserPresets.json` if you do not already have one.
-Git ignores the user file. Its `dev-vcpkg` workflow inherits the shared Debug settings and
-uses a separate build directory from `dev`, which uses an installed Qt.
+CMake can also find Qt in its normal search paths. To build Qt with vcpkg instead, configure
+the same preset with `cmake --preset dev -DAPP_USE_VCPKG_QT=ON`. The option stays in that
+build directory until you set it to `OFF`.
 
 ::: {.callout-important}
-## The workflow is the only way the product is built
-CI, the release and every developer run the same named workflow, so the package CI ships is
-one you can rebuild at your desk with one command. A CI script that types its own flags is a
-second build system, and it drifts. When a step changes, change the preset, and it changes
-for everyone.
+## Keep build settings in presets
+CI runs the configure, build and test presets with an installed Qt. The release workflow uses
+the same presets with vcpkg Qt and adds packaging. Keep shared settings in presets so that
+developers and CI use the same build configuration.
 :::
 
 ::: {.more}
 **Template:** `CMakePresets.json`, with `dev`, `asan` and `release` workflows;
-`CMakeUserPresets.example.json`, with Qt source choices; and `.github/workflows/ci.yml`,
+`CMakeLists.txt`, with the Qt source option; and `.github/workflows/release.yml`,
 which runs `cmake --workflow --preset release`
 
 **Read more:** [cmake-presets(7)](https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html)

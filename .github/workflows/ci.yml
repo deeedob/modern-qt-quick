@@ -59,19 +59,14 @@ jobs:
           key: vcpkg-${{ matrix.os }}-${{ steps.vcpkg.outputs.commit }}-${{ hashFiles('vcpkg.json', 'cmake/vcpkg-triplets/**/*.cmake') }}
           restore-keys: vcpkg-${{ matrix.os }}-
 
-      - name: Configure, build, test and package
-        run: cmake --workflow --preset release
+      - name: Configure, build and test
+        run: |
+          cmake --preset release
+          cmake --build --preset release
+          ctest --preset release
 
       - name: Format, qmllint and REUSE
         if: runner.os == 'Linux'
         run: |
           cmake --build --preset release --target check
           bash .githooks/test_git_hooks.sh
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: package-${{ matrix.os }}
-          path: |
-            build/release/*.dmg
-            build/release/*.zip
-            build/release/*.tar.gz
