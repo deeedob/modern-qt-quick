@@ -12,8 +12,6 @@ Page {
     readonly property list<color> inks: ["#1c1c22", "#e5484d", "#30a46c", "#0090ff"]
     property color penColor: inks[0]
     property real penWidth: 4.0
-    property bool aspectLinked: false
-    property real aspectRatio: 1.0
 
     component Swatch: AbstractButton {
         id: swatch
@@ -93,124 +91,8 @@ Page {
                     Layout.fillWidth: true
                 }
 
-                ToolButton {
-                    id: paperButton
-                    objectName: "paperSettingsButton"
-                    icon.source: Theme.icon("settings-2")
-                    text: qsTr("Canvas settings")
-                    onClicked: paperSettings.open()
-
-                    Popup {
-                        id: paperSettings
-                        x: paperButton.width - width
-                        y: paperButton.height + Theme.spacing / 2
-                        padding: Theme.spacing
-                        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-
-                        background: Rectangle {
-                            color: Theme.surface
-                            radius: Theme.radius
-                            border.color: Theme.border
-                        }
-
-                        contentItem: ColumnLayout {
-                            spacing: Theme.spacing / 2
-
-                            Label {
-                                text: qsTr("Canvas")
-                                font.weight: Font.DemiBold
-                            }
-
-                            GridLayout {
-                                columns: 3
-                                columnSpacing: Theme.spacing / 2
-                                rowSpacing: Theme.spacing / 2
-
-                                Label {
-                                    text: qsTr("Width")
-                                }
-                                SpinBox {
-                                    objectName: "pageWidth"
-                                    Layout.fillWidth: true
-                                    from: 100
-                                    to: 4096
-                                    editable: true
-                                    value: root.store.pageWidth
-                                    onValueModified: root.store.setPageSize(value, root.aspectLinked ? Math.max(100, Math.min(4096, Math.round(value / root.aspectRatio))) : root.store.pageHeight)
-                                }
-                                ToolButton {
-                                    objectName: "aspectLink"
-                                    checkable: true
-                                    checked: root.aspectLinked
-                                    icon.source: Theme.icon(root.aspectLinked ? "link-2" : "unlink-2")
-                                    text: root.aspectLinked ? qsTr("Unlock aspect ratio") : qsTr("Lock aspect ratio")
-                                    onClicked: {
-                                        root.aspectRatio = root.store.pageWidth / root.store.pageHeight;
-                                        root.aspectLinked = !root.aspectLinked;
-                                    }
-                                }
-                                Label {
-                                    text: qsTr("Height")
-                                }
-                                SpinBox {
-                                    objectName: "pageHeight"
-                                    Layout.fillWidth: true
-                                    from: 100
-                                    to: 4096
-                                    editable: true
-                                    value: root.store.pageHeight
-                                    onValueModified: root.store.setPageSize(root.aspectLinked ? Math.max(100, Math.min(4096, Math.round(value * root.aspectRatio))) : root.store.pageWidth, value)
-                                }
-                                Item {
-                                    Layout.preferredWidth: Theme.controlHeight
-                                }
-
-                                ComboBox {
-                                    Layout.fillWidth: true
-                                    Layout.columnSpan: 3
-                                    model: [qsTr("Plain"), qsTr("Dots"), qsTr("Ruled")]
-                                    currentIndex: root.store.paperBackground
-                                    onActivated: index => root.store.setPaperBackground(index)
-                                }
-
-                                Label {
-                                    visible: root.store.paperBackground !== 0
-                                    text: qsTr("Spacing")
-                                }
-                                SpinBox {
-                                    visible: root.store.paperBackground !== 0
-                                    Layout.fillWidth: true
-                                    from: 8
-                                    to: 128
-                                    editable: true
-                                    value: root.store.paperSpacing
-                                    onValueModified: root.store.setPaperPattern(value, root.store.paperThickness)
-                                }
-                                Item {
-                                    visible: root.store.paperBackground !== 0
-                                    Layout.preferredWidth: Theme.controlHeight
-                                }
-
-                                Label {
-                                    visible: root.store.paperBackground !== 0
-                                    text: qsTr("Thickness")
-                                }
-                                SpinBox {
-                                    visible: root.store.paperBackground !== 0
-                                    Layout.fillWidth: true
-                                    from: 1
-                                    to: 8
-                                    editable: true
-                                    value: root.store.paperThickness
-                                    onValueModified: root.store.setPaperPattern(root.store.paperSpacing, value)
-                                }
-                                Item {
-                                    visible: root.store.paperBackground !== 0
-                                    Layout.preferredWidth: Theme.controlHeight
-                                }
-                            }
-                        }
-                    }
+                CanvasSettings {
+                    store: root.store
                 }
 
                 ToolButton {
@@ -240,7 +122,8 @@ Page {
     // Zoom belongs to this view, not to the sketch, so it lives here instead of in the store.
     property real zoom: 1.0
     property bool zoomActive: false
-    readonly property real fitZoom: Math.min(viewport.width / paper.width, viewport.height / paper.height)
+    readonly property real fitZoom: Math.min(viewport.width / paper.width, viewport.height
+                                             / paper.height)
     readonly property real minimumZoom: fitZoom * 0.85
 
     onZoomChanged: {
@@ -256,22 +139,24 @@ Page {
 
     // Clamps directly: Flickable.returnToBounds() would start an animation on every pinch step.
     function scrollTo(x: real, y: real): void {
-        viewport.contentX = Math.max(0, Math.min(x, viewport.contentWidth - viewport.width));
-        viewport.contentY = Math.max(0, Math.min(y, viewport.contentHeight - viewport.height));
-    }
+    viewport.contentX = Math.max(0, Math.min(x, viewport.contentWidth - viewport.width));
+    viewport.contentY = Math.max(0, Math.min(y, viewport.contentHeight - viewport.height));
+}
 
     // Keeps the paper point under `position`, in viewport coordinates, where it is.
     function zoomBy(factor: real, position: point): void {
-        const next = Math.min(Math.max(root.zoom * factor, root.minimumZoom), 4);
-        const ratio = next / root.zoom;
-        root.zoom = next;
-        root.scrollTo((viewport.contentX + position.x) * ratio - position.x, (viewport.contentY + position.y) * ratio - position.y);
-    }
+    const next = Math.min(Math.max(root.zoom * factor, root.minimumZoom), 4);
+    const ratio = next / root.zoom;
+    root.zoom = next;
+    root.scrollTo((viewport.contentX + position.x) * ratio - position.x, (viewport.contentY
+    + position.y) * ratio - position.y);
+}
 
     function fitPage(): void {
-        root.zoom = root.fitZoom;
-        root.scrollTo((viewport.contentWidth - viewport.width) / 2, (viewport.contentHeight - viewport.height) / 2);
-    }
+                            root.zoom = root.fitZoom;
+                            root.scrollTo((viewport.contentWidth - viewport.width) / 2, (
+                                              viewport.contentHeight - viewport.height) / 2);
+                        }
 
     // One finger or the mouse draws. The wheel, the trackpad, the scroll bars and two fingers
     // move the paper; Ctrl+wheel and pinching zoom it.
@@ -329,7 +214,9 @@ Page {
                 visible: root.store.paperBackground === 2
 
                 Repeater {
-                    model: root.store.paperBackground === 2 ? Math.ceil(paper.height / root.store.paperSpacing) : 0
+                    model: root.store.paperBackground === 2 ? Math.ceil(paper.height
+                                                                        / root.store.paperSpacing) :
+                                                              0
 
                     delegate: Rectangle {
                         required property int index
@@ -348,7 +235,8 @@ Page {
                 store: root.store
                 penColor: root.penColor
                 penWidth: root.penWidth
-                onStrokeFinished: points => root.store.addStroke(points, root.penColor, root.penWidth)
+                onStrokeFinished: points => root.store.addStroke(points, root.penColor,
+                                                                 root.penWidth)
             }
         }
     }
@@ -459,33 +347,33 @@ Page {
         target: root.store
 
         function onShapeSnapped(shape: int): void {
-            switch (shape) {
+        switch (shape) {
             case CanvasStore.Shape.Circle:
                 snapHint.text = qsTr("Snapped to a circle");
-                break;
+            break;
             case CanvasStore.Shape.Rectangle:
                 snapHint.text = qsTr("Snapped to a rectangle");
-                break;
+            break;
             case CanvasStore.Shape.Triangle:
                 snapHint.text = qsTr("Snapped to a triangle");
-                break;
-            }
-            fade.restart();
+            break;
         }
+        fade.restart();
+    }
 
         function onHistoryMoved(redo: bool): void {
-            snapHint.text = redo ? qsTr("Redone") : qsTr("Undone");
-            fade.restart();
+        snapHint.text = redo ? qsTr("Redone") : qsTr("Undone");
+        fade.restart();
+    }
+    }
+
+        Shortcut {
+            sequences: [StandardKey.Undo]
+            onActivated: root.store.undo()
+        }
+
+        Shortcut {
+            sequences: [StandardKey.Redo]
+            onActivated: root.store.redo()
         }
     }
-
-    Shortcut {
-        sequences: [StandardKey.Undo]
-        onActivated: root.store.undo()
-    }
-
-    Shortcut {
-        sequences: [StandardKey.Redo]
-        onActivated: root.store.redo()
-    }
-}

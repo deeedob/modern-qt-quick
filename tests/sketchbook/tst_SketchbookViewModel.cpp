@@ -1,4 +1,4 @@
-#include "SketchbookViewModel.h"
+#include "SketchbookViewModel.hpp"
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Sketch.h"
+#include "Sketch.hpp"
 
 #include <QtCore/QList>
 #include <QtCore/QObject>
@@ -26,7 +26,8 @@ class CanvasStore : public QObject
     Q_PROPERTY(int pointCount READ pointCount NOTIFY changed FINAL)
     Q_PROPERTY(int pageWidth READ pageWidth NOTIFY changed FINAL)
     Q_PROPERTY(int pageHeight READ pageHeight NOTIFY changed FINAL)
-    Q_PROPERTY(int paperBackground READ paperBackgroundValue NOTIFY changed FINAL)
+    Q_PROPERTY(
+        app::canvas::PaperBackground paperBackground READ paperBackground NOTIFY changed FINAL)
     Q_PROPERTY(int paperSpacing READ paperSpacing NOTIFY changed FINAL)
     Q_PROPERTY(int paperThickness READ paperThickness NOTIFY changed FINAL)
     Q_PROPERTY(bool snapShapes READ snapShapes WRITE setSnapShapes NOTIFY snapShapesChanged FINAL)
@@ -48,7 +49,7 @@ public:
     [[nodiscard]] int pointCount() const;
     [[nodiscard]] int pageWidth() const;
     [[nodiscard]] int pageHeight() const;
-    [[nodiscard]] int paperBackgroundValue() const;
+    [[nodiscard]] PaperBackground paperBackground() const;
     [[nodiscard]] int paperSpacing() const;
     [[nodiscard]] int paperThickness() const;
     [[nodiscard]] bool snapShapes() const;
@@ -59,9 +60,8 @@ public:
         double width = 4.0);
     Q_INVOKABLE void clear();
     Q_INVOKABLE void setPageSize(int width, int height);
-    Q_INVOKABLE void setPaperBackground(int background);
+    Q_INVOKABLE void setPaperBackground(PaperBackground background);
     Q_INVOKABLE void setPaperPattern(int spacing, int thickness);
-    void setPaperBackground(PaperBackground background);
     Q_INVOKABLE void undo();
     Q_INVOKABLE void redo();
 

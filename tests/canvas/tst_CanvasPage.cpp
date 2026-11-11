@@ -1,4 +1,4 @@
-#include "CanvasStore.h"
+#include "CanvasStore.hpp"
 
 #include <QtCore/QRegularExpression>
 #include <QtGui/QPointingDevice>
@@ -124,7 +124,7 @@ private Q_SLOTS:
         const QPointF linkCenter(link->width() / 2, link->height() / 2);
         const QPoint linkPoint = link->mapToScene(linkCenter).toPoint();
         QTest::mouseClick(&page.view, Qt::LeftButton, Qt::NoModifier, linkPoint);
-        QVERIFY(page.root->property("aspectLinked").toBool());
+        QVERIFY(link->property("checked").toBool());
         auto *input = width->property("contentItem").value<QQuickItem *>();
         QVERIFY(input);
         input->forceActiveFocus();

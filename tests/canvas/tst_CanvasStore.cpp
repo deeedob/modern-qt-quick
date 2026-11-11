@@ -1,4 +1,6 @@
-#include "CanvasStore.h"
+#include "CanvasStore.hpp"
+
+#include <QtCore/QMetaProperty>
 
 #include <QtCore/QRegularExpression>
 #include <QtTest/QSignalSpy>
@@ -6,7 +8,6 @@
 
 #include <cmath>
 #include <numbers>
-#include <optional>
 
 using namespace Qt::StringLiterals;
 using app::canvas::CanvasStore;
@@ -251,14 +252,11 @@ private Q_SLOTS:
         QVERIFY(store.sketch().strokes.front()->points == points);
     }
 
-    void paperBackgroundsUseStableNames()
+    void paperBackgroundIsAnEnumProperty()
     {
-        QCOMPARE(app::canvas::paperBackgroundName(PaperBackground::Plain), "plain");
-        QCOMPARE(app::canvas::paperBackgroundName(PaperBackground::Dots), "dots");
-        QCOMPARE(app::canvas::paperBackgroundName(PaperBackground::Ruled), "ruled");
-        QCOMPARE(app::canvas::paperBackgroundFromName("dots"),
-            std::optional{ PaperBackground::Dots });
-        QVERIFY(!app::canvas::paperBackgroundFromName("graph"));
+        const auto &meta = app::canvas::CanvasStore::staticMetaObject;
+        const auto property = meta.property(meta.indexOfProperty("paperBackground"));
+        QVERIFY(property.isEnumType());
     }
 
     void historyIsBounded()

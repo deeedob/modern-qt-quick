@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Sketch.h>
+#include <Sketch.hpp>
 
 #include <QtCore/QDateTime>
 #include <QtCore/QString>

@@ -1,4 +1,4 @@
-#include "SketchStorage.h"
+#include "SketchStorage.hpp"
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -61,38 +61,41 @@ private Q_SLOTS:
         QVERIFY(saved.readAll().contains("\"background\":\"dots\""));
     }
 
-    void legacySketchesGetTheDefaultPage()
+    void backgroundNamesRoundTrip()
     {
         QTemporaryDir dir;
-        QFile file(QDir(dir.path()).filePath("old.json"_L1));
-        QVERIFY(file.open(QIODevice::WriteOnly));
-        file.write(R"({"name":"Old","strokes":[]})");
-        file.close();
         SketchStorage storage(dir.path());
-
-        const auto loaded = storage.load("old"_L1);
-
-        QVERIFY2(loaded, qPrintable(loaded.error_or({})));
-        QCOMPARE(loaded->page.width, 1600);
-        QCOMPARE(loaded->page.height, 1200);
-        QCOMPARE(loaded->page.background, PaperBackground::Plain);
-        QCOMPARE(loaded->page.spacing, 32);
-        QCOMPARE(loaded->page.thickness, 1);
+        for (const auto &[background, name] : {
+                 std::pair{ PaperBackground::Plain, "plain" },
+                 std::pair{ PaperBackground::Dots,  "dots"  },
+                 std::pair{ PaperBackground::Ruled, "ruled" }
+        }) {
+            auto document = twoStrokes();
+            document.page.background = background;
+            storage.save("a"_L1, document);
+            const auto loaded = storage.load("a"_L1);
+            QVERIFY(loaded);
+            QCOMPARE(loaded->page.background, background);
+            QFile file(QDir(dir.path()).filePath("a.json"_L1));
+            QVERIFY(file.open(QIODevice::ReadOnly));
+            QVERIFY(file.readAll().contains(QByteArray("\"background\":\"") + name + "\""));
+        }
+        QFile file(QDir(dir.path()).filePath("invalid.json"_L1));
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.write(R"({"name":"Invalid","strokes":[],"page":{"background":"graph"}})");
+        file.close();
+        QVERIFY(!storage.load("invalid"_L1));
     }
 
-    void existingPageGetsPatternDefaults()
+    void incompleteDocumentsAreRejected()
     {
         QTemporaryDir dir;
-        QFile file(QDir(dir.path()).filePath("old.json"_L1));
+        QFile file(QDir(dir.path()).filePath("incomplete.json"_L1));
         QVERIFY(file.open(QIODevice::WriteOnly));
-        file.write(
-            R"({"name":"Old","strokes":[],"page":{"width":900,"height":600,"background":"dots"}})");
+        file.write(R"({"name":"Incomplete","strokes":[]})");
         file.close();
         SketchStorage storage(dir.path());
-        const auto loaded = storage.load("old"_L1);
-        QVERIFY2(loaded, qPrintable(loaded.error_or({})));
-        QCOMPARE(loaded->page.spacing, 32);
-        QCOMPARE(loaded->page.thickness, 1);
+        QVERIFY(!storage.load("incomplete"_L1));
     }
 
     void listDescribesEachSketch()

@@ -1,4 +1,4 @@
-#include "SketchStorage.h"
+#include "SketchStorage.hpp"
 
 #include <QtConcurrent/QtConcurrentRun>
 #include <QtCore/QDir>
@@ -11,35 +11,24 @@
 
 #include <algorithm>
 
+template <>
+struct glz::meta<app::canvas::PaperBackground>
+{
+    using enum app::canvas::PaperBackground;
+    static constexpr auto value = enumerate("plain", Plain, "dots", Dots, "ruled", Ruled);
+};
+
 using namespace Qt::StringLiterals;
 
 Q_STATIC_LOGGING_CATEGORY(lcStorage, "app.storage")
 
 namespace app::sketchbook {
 
-struct SerializablePage
-{
-    int width = 1600;
-    int height = 1200;
-    std::string background = "plain";
-    int spacing = 32;
-    int thickness = 1;
-};
-
-// glaze 9 silently leaves a shared_ptr<const T> empty when reading, so read mutable strokes.
-// Not in an anonymous namespace: glaze's reflection needs a type with external linkage.
 struct ReadableDocument
 {
     std::string name;
     std::vector<std::shared_ptr<canvas::Stroke>> strokes;
-    SerializablePage page;
-};
-
-struct WritableDocument
-{
-    std::string name;
-    std::vector<canvas::StrokePtr> strokes;
-    SerializablePage page;
+    canvas::Page page;
 };
 
 SketchStorage::SketchStorage(QString directory)
@@ -79,20 +68,14 @@ std::expected<SketchDocument, QString> SketchStorage::load(const QString &id)
     const auto json = file.readAll().toStdString();
 
     ReadableDocument parsed;
-    if (const auto error = glz::read_json(parsed, json))
+    if (const auto error = glz::read<glz::opts{ .error_on_missing_keys = true }>(parsed, json))
         return std::unexpected(QString::fromStdString(glz::format_error(error, json)));
-    const auto background = canvas::paperBackgroundFromName(parsed.page.background);
-    if (!background)
-        return std::unexpected(u"Unknown paper background \"%1\""_s.arg(
-            QString::fromStdString(parsed.page.background)));
+    parsed.page.spacing = std::clamp(parsed.page.spacing, 8, 128);
+    parsed.page.thickness = std::clamp(parsed.page.thickness, 1, 8);
     return SketchDocument{
         .name = std::move(parsed.name),
         .strokes = { parsed.strokes.begin(), parsed.strokes.end() },
-        .page = { .width = parsed.page.width,
-                    .height = parsed.page.height,
-                    .background = *background,
-                    .spacing = std::clamp(parsed.page.spacing, 8, 128),
-                    .thickness = std::clamp(parsed.page.thickness, 1, 8) },
+        .page = parsed.page,
     };
 }
 
@@ -101,16 +84,7 @@ void SketchStorage::save(const QString &id, SketchDocument document)
     // The strokes are immutable and shared with the canvas: the worker reads them without a lock or a copy.
     std::ignore = QtConcurrent::run(&m_writer,
         [path = filePath(id), document = std::move(document)]() mutable {
-            const auto json = glz::write_json(WritableDocument{
-                .name = std::move(document.name),
-                .strokes = std::move(document.strokes),
-                .page = { .width = document.page.width,
-                         .height = document.page.height,
-                         .background = std::string(
-                        canvas::paperBackgroundName(document.page.background)),
-                         .spacing = document.page.spacing,
-                         .thickness = document.page.thickness },
-            });
+            const auto json = glz::write_json(document);
             if (!json) {
                 qCWarning(lcStorage) << "Cannot serialize" << path;
                 return;

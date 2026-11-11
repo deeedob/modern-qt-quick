@@ -2,16 +2,19 @@
 
 #include <shapes/Recognizer.h>
 
-#include <cstdint>
+#include <QtCore/QObject>
+#include <QtQmlIntegration/qqmlintegration.h>
+
 #include <memory>
-#include <optional>
 #include <string>
-#include <string_view>
 #include <variant>
 #include <vector>
 
 // The drawing as plain C++: the state, the actions that change it, and the reducer.
 namespace app::canvas {
+
+Q_NAMESPACE
+QML_NAMED_ELEMENT(Paper)
 
 struct Stroke
 {
@@ -23,32 +26,8 @@ struct Stroke
 // A stroke never changes once drawn, so every snapshot of the sketch shares it.
 using StrokePtr = std::shared_ptr<const Stroke>;
 
-enum class PaperBackground : std::uint8_t { Plain, Dots, Ruled };
-
-[[nodiscard]] constexpr std::string_view paperBackgroundName(PaperBackground background)
-{
-    switch (background) {
-    case PaperBackground::Plain:
-        return "plain";
-    case PaperBackground::Dots:
-        return "dots";
-    case PaperBackground::Ruled:
-        return "ruled";
-    }
-    return "plain";
-}
-
-[[nodiscard]] constexpr std::optional<PaperBackground> paperBackgroundFromName(
-    std::string_view name)
-{
-    if (name == "plain")
-        return PaperBackground::Plain;
-    if (name == "dots")
-        return PaperBackground::Dots;
-    if (name == "ruled")
-        return PaperBackground::Ruled;
-    return std::nullopt;
-}
+enum class PaperBackground { Plain, Dots, Ruled };
+Q_ENUM_NS(PaperBackground)
 
 struct Page
 {

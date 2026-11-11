@@ -1,9 +1,9 @@
 #pragma once
 
 #include "SketchListModel.hpp"
-#include "SketchStorage.h"
+#include "SketchStorage.hpp"
 
-#include <CanvasStore.h>
+#include <CanvasStore.hpp>
 
 #include <QtCore/QObject>
 #include <QtQmlIntegration/qqmlintegration.h>

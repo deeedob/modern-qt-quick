@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SketchStorage.h"
+#include "SketchStorage.hpp"
 
 #include <QtCore/QAbstractListModel>
 #include <QtQmlIntegration/qqmlintegration.h>

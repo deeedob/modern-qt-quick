@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CanvasStore.h"
+#include "CanvasStore.hpp"
 
 #include <QtCore/QPointer>
 #include <QtGui/QColor>

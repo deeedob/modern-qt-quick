@@ -6,9 +6,9 @@ qt_add_qml_module(app_sketchbook
     QML_FILES
         SketchbookPage.qml
     SOURCES
-        SketchbookViewModel.cpp SketchbookViewModel.h
+        SketchbookViewModel.cpp SketchbookViewModel.hpp
         SketchListModel.cpp SketchListModel.hpp
-        SketchStorage.cpp SketchStorage.h
+        SketchStorage.cpp SketchStorage.hpp
 )
 target_include_directories(app_sketchbook PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(app_sketchbook

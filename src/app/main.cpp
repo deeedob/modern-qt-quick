@@ -4,9 +4,9 @@
 #include "BuildInfo.hpp"
 #include "Logging.hpp"
 
-#include <CanvasStore.h>         // demo
-#include <SketchStorage.h>       // demo
-#include <SketchbookViewModel.h> // demo
+#include <CanvasStore.hpp>         // demo
+#include <SketchStorage.hpp>       // demo
+#include <SketchbookViewModel.hpp> // demo
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>

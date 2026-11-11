@@ -31,7 +31,7 @@ flowchart LR
 A view model offers **state** as properties and **commands** as invokable methods. The view
 binds to the state and calls the commands. It decides nothing.
 
-```{.cpp filename="SketchbookViewModel.h"}
+```{.cpp filename="SketchbookViewModel.hpp"}
 class SketchbookViewModel : public QObject
 {
     Q_OBJECT
@@ -80,7 +80,7 @@ flowchart LR
 
 In C++, actions are a `std::variant` and the reducer visits it:
 
-```{.cpp filename="Sketch.h"}
+```{.cpp filename="Sketch.hpp"}
 using StrokePtr = std::shared_ptr<const Stroke>;   // <1>
 using Sketch = std::vector<StrokePtr>;
 
@@ -128,7 +128,7 @@ void CanvasStore::undo()
 2. Undo moves a cursor back. No action needs an inverse.
 
 ::: {.more}
-**Template:** `src/canvas/Sketch.h`, `src/canvas/CanvasStore.cpp`
+**Template:** `src/canvas/Sketch.hpp`, `src/canvas/CanvasStore.cpp`
 :::
 
 ## Choosing a pattern {#sec-choosing}

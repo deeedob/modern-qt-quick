@@ -1,4 +1,4 @@
-#include "CanvasStore.h"
+#include "CanvasStore.hpp"
 
 #include <QtCore/QLoggingCategory>
 #include <QtCore/QRectF>
@@ -129,9 +129,9 @@ int CanvasStore::pageHeight() const
     return sketch().page.height;
 }
 
-int CanvasStore::paperBackgroundValue() const
+PaperBackground CanvasStore::paperBackground() const
 {
-    return static_cast<int>(sketch().page.background);
+    return sketch().page.background;
 }
 
 int CanvasStore::paperSpacing() const
@@ -201,16 +201,10 @@ void CanvasStore::setPageSize(int width, int height)
     dispatch(action::SetPage{ page });
 }
 
-void CanvasStore::setPaperBackground(int background)
-{
-    if (background < static_cast<int>(PaperBackground::Plain)
-        || background > static_cast<int>(PaperBackground::Ruled))
-        return;
-    setPaperBackground(static_cast<PaperBackground>(background));
-}
-
 void CanvasStore::setPaperBackground(PaperBackground background)
 {
+    if (background < PaperBackground::Plain || background > PaperBackground::Ruled)
+        return;
     auto page = sketch().page;
     page.background = background;
     dispatch(action::SetPage{ page });

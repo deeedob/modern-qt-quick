@@ -1,4 +1,4 @@
-#include "SketchbookViewModel.h"
+#include "SketchbookViewModel.hpp"
 
 #include <QtCore/QLoggingCategory>
 #include <QtCore/QUuid>
