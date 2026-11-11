@@ -19,7 +19,7 @@ Dialog {
 
         Image {
             Layout.alignment: Qt.AlignHCenter
-            source: "app.svg"
+            source: "icons/app.svg"
             sourceSize: Qt.size(72, 72)
         }
 

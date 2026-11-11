@@ -12,11 +12,11 @@ app_target_defaults(app_support)
 
 qt_add_executable(app MACOSX_BUNDLE WIN32 main.cpp)
 if(APPLE)
-    target_sources(app PRIVATE app.icns)
-    set_source_files_properties(app.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    target_sources(app PRIVATE icons/app.icns)
+    set_source_files_properties(icons/app.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 elseif(WIN32)
     # Windows takes the executable's icon from a resource script.
-    file(CONFIGURE OUTPUT app.rc CONTENT "IDI_ICON1 ICON \"${CMAKE_CURRENT_SOURCE_DIR}/app.ico\"\n")
+    file(CONFIGURE OUTPUT app.rc CONTENT "IDI_ICON1 ICON \"${CMAKE_CURRENT_SOURCE_DIR}/icons/app.ico\"\n")
     target_sources(app PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/app.rc")
 endif()
 set_target_properties(app PROPERTIES
@@ -42,7 +42,7 @@ qt_add_qml_module(app_ui
         AppController.cpp AppController.hpp
         "${_build_info_header}"
     RESOURCES
-        app.svg
+        icons/app.svg
 )
 target_link_libraries(app_ui
     PUBLIC app_support Qt::Quick
