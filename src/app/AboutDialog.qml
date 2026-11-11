@@ -7,6 +7,14 @@ Dialog {
     padding: Theme.spacing * 2
     standardButtons: Dialog.Close
 
+    component DetailLabel: Label {
+        Layout.fillWidth: true
+        font.pixelSize: 12
+        color: Theme.mutedText
+        wrapMode: Text.Wrap
+        horizontalAlignment: Text.AlignHCenter
+    }
+
     contentItem: ColumnLayout {
         spacing: Theme.spacing
 
@@ -30,13 +38,27 @@ Dialog {
             horizontalAlignment: Text.AlignHCenter
         }
 
-        Label {
+        ColumnLayout {
             Layout.fillWidth: true
-            text: AppController.buildDetails.gitSha + " · " + AppController.buildDetails.buildType + "\n" + AppController.buildDetails.compiler + " · Qt " + AppController.buildDetails.qtVersion + "\n" + AppController.buildDetails.system + "\n" + qsTr("Configured: %1").arg(AppController.buildDetails.timestamp)
-            font.pixelSize: 12
-            color: Theme.mutedText
-            wrapMode: Text.Wrap
-            horizontalAlignment: Text.AlignHCenter
+            spacing: 0
+
+            DetailLabel {
+                text: "%1 · %2".arg(AppController.buildDetails.gitSha,
+                                    AppController.buildDetails.buildType)
+            }
+
+            DetailLabel {
+                text: "%1 · Qt %2".arg(AppController.buildDetails.compiler,
+                                       AppController.buildDetails.qtVersion)
+            }
+
+            DetailLabel {
+                text: AppController.buildDetails.system
+            }
+
+            DetailLabel {
+                text: qsTr("Configured: %1").arg(AppController.buildDetails.timestamp)
+            }
         }
 
         MenuSeparator {
@@ -65,7 +87,8 @@ Dialog {
 
         Label {
             Layout.fillWidth: true
-            text: qsTr("Built with Qt, used under the LGPL version 3. The licenses of all third-party components ship with the application, in its licenses folder.")
+            text: qsTr(
+                      "Built with Qt, used under the LGPL version 3. The licenses of all third-party components ship with the application, in its licenses folder.")
             font.pixelSize: 12
             color: Theme.mutedText
             wrapMode: Text.Wrap
