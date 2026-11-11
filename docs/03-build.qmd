@@ -149,11 +149,17 @@ cmake --list-presets=workflow     # what you can run, with descriptions
 cmake --workflow --preset dev     # configure, build and test
 ```
 
-What differs between machines, such as where Qt is installed, comes from the environment.
-The template's presets read `$env{QT_ROOT_DIR}`, which CI sets for its Qt installation.
-CMake can also find Qt in its normal search paths. To build Qt with vcpkg instead, configure
-the same preset with `cmake --preset dev -DAPP_USE_VCPKG_QT=ON`. The option stays in that
-build directory until you set it to `OFF`.
+What differs between machines, such as where Qt is installed, comes from the environment. Set
+`Qt6_ROOT` before the first configure when you need a specific Qt kit:
+
+```sh
+cmake --preset dev -DQt6_ROOT=/path/to/Qt/6.12.0/<kit>
+```
+
+CMake stores the value in the build directory. Otherwise, it searches `CMAKE_PREFIX_PATH` and
+its normal locations. To build Qt with vcpkg instead, configure the same preset with
+`cmake --preset dev -DAPP_USE_VCPKG_QT=ON`. The option stays in that build directory until you
+set it to `OFF`.
 
 ::: {.callout-important}
 ## Keep build settings in presets

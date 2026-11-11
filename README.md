@@ -40,8 +40,14 @@ cd qt-kickstart
 
 ### With an installed Qt
 
-Use a Qt installation in CMake's search path, or point `QT_ROOT_DIR` or `CMAKE_PREFIX_PATH`
-to your Qt kit. Then build, test and run:
+Before configuring, set `Qt6_ROOT` to a Qt kit prefix. CMake stores it in the build directory:
+
+```sh
+cmake --preset dev -DQt6_ROOT=/path/to/Qt/6.12.0/<kit>
+```
+
+Otherwise, CMake searches `CMAKE_PREFIX_PATH` and its normal system locations. Then build, test
+and run:
 
 ```sh
 cmake --workflow --preset dev

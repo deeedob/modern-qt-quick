@@ -42,7 +42,7 @@
       "toolchainFile": "${sourceDir}/external/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "environment": { "MACOSX_DEPLOYMENT_TARGET": "14.4" },
       "cacheVariables": {
-        "CMAKE_PREFIX_PATH": "$env{QT_ROOT_DIR}",
+        "Qt6_ROOT": "$env{Qt6_ROOT}",
         "CMAKE_COLOR_DIAGNOSTICS": true,
         "CMAKE_EXPORT_COMPILE_COMMANDS": true,
         "CMAKE_COMPILE_WARNING_AS_ERROR": true,

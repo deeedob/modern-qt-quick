@@ -103,7 +103,7 @@ on your code.
 Qt is a dependency like any other, just a large one. You have two good options:
 
 - **The [Qt Online Installer](https://www.qt.io/development/download-qt-installer-oss).**
-  Ready in minutes. Point CMake at it with `CMAKE_PREFIX_PATH`.
+  Ready in minutes. Set `Qt6_ROOT` to the kit prefix when you need that specific installation.
 - **Build Qt yourself**, from source or through your package manager. A full build takes
   hours, so build only the modules you use. In return, every flag and every dependency of Qt
   is under your control, on every platform.
