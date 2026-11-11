@@ -40,8 +40,8 @@ for the QML tools. The tools learn every type, property and method of the module
 what makes typed QML (@sec-typed-qml) possible.
 
 `STATIC` builds the module into the executable instead of a plugin that Qt loads at run
-time. The app then ships with its QML inside, and nothing can go missing on the user's
-machine. For the modules of one application, that is the simpler choice.
+time. Use it for a module private to one executable. For several consumers, consider a shared
+module to avoid each executable carrying its own copy.
 
 ::: {.callout-warning}
 ## Static modules need their plugin

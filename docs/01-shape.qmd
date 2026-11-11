@@ -112,8 +112,9 @@ move it down, or pass the dependency in from `main()`.
 ## One place wires everything {#sec-composition-root}
 
 Some code has to know every concrete type and connect them. Keep that code in one place,
-`main()`, and nowhere else. It creates the long-lived objects, gives each one its dependencies,
-and passes them to QML.
+`main()`, and nowhere else. It creates the long-lived objects, or an application manager that
+owns them, gives each one its dependencies, and passes them to QML. The manager is an ordinary
+object owned by `main()`, not a global or a hidden singleton.
 
 ```{.cpp filename="main.cpp"}
 int main(int argc, char *argv[])

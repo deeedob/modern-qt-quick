@@ -108,6 +108,19 @@ Make qmllint fail on any warning and run it in CI, so a typo fails like a C++ ty
 **Read more:** [qmllint](https://doc.qt.io/qt-6/qtquick-tool-qmllint.html)
 :::
 
+## Order QML objects {#sec-qml-order}
+
+Put an object's `id` first, followed by property declarations, signals, functions, object
+properties, and child objects. Separate these groups with blank lines. The order makes a
+component's interface visible before its implementation and layout.
+
+Use a typed function when a binding or handler needs more than a small expression. It keeps the
+object properties short and gives QML tooling an explicit contract.
+
+::: {.more}
+**Read more:** [Qt QML coding conventions](https://doc.qt.io/qt-6/qml-codingconventions.html)
+:::
+
 ## Lists come from models {#sec-lists}
 
 A `ListView` creates delegates only for the rows that are visible, and drops them as they

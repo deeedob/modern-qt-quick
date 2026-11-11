@@ -155,14 +155,15 @@ consumer really has to see it.
 
 Ask of every piece of code: *would someone use this without our app?* An algorithm, a file
 parser or a protocol passes that test. It then becomes a library under `libs/`, with its own
-tests and, ideally, no Qt at all.
+tests and a public design that does not depend on the application. A library can use Qt when Qt
+serves that design. Separability matters more than avoiding a dependency.
 
 Such a library is the easiest code in the project to test, to reason about, and to reuse.
 Code that only serves one feature fails the test and stays inside that feature.
 
 ::: {.more}
-**Template:** `libs/shapes/`, a shape recognizer in plain C++. It does not link Qt, so a Qt
-include there fails to compile.
+**Template:** `libs/shapes/`, a shape recognizer in plain C++. It demonstrates a library that
+does not need Qt.
 :::
 
 ## Group by feature, then by role {#sec-features}
@@ -213,3 +214,31 @@ Write Qt includes with their module, and your own libraries' includes with their
 
 Every include then tells the reader which module or library a type comes from, in the same
 form for Qt and for your own code.
+
+## Forward declare incomplete types {#sec-forward-declarations}
+
+Include the header for a base class, a value member, or an inline function that calls the type.
+For a pointer or reference that only appears in a declaration, forward-declare the type instead.
+For Qt types, use `QT_FORWARD_DECLARE_CLASS` so the declaration follows a Qt build configured
+with a namespace:
+
+```cpp
+#include <QtCore/QObject>
+
+QT_FORWARD_DECLARE_CLASS(QSettings)
+
+class Preferences : public QObject
+{
+    Q_OBJECT
+
+public:
+    explicit Preferences(QSettings &settings);
+
+private:
+    QSettings &m_settings;
+};
+```
+
+An owning pointer such as `std::unique_ptr<QTranslator>` also permits a forward declaration,
+but its destructor must be declared in the header and defined in the `.cpp` after including the
+complete type.
