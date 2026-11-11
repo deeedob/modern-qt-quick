@@ -40,7 +40,7 @@ cmake --build --preset dev --target run
 Use this repository as a GitHub template, then run:
 
 ```sh
-python3 tools/make_it_yours.py
+python3 tools/make-it-yours/make_it_yours.py
 ```
 
 The script renames the application and project details. The guide covers the reasoning,

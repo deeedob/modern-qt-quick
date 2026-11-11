@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-PROJECT = Path(__file__).resolve().parent.parent
+PROJECT = Path(__file__).resolve().parents[2]
 import make_it_yours as setup
 
 
@@ -80,12 +80,28 @@ class TemplateSetupTest(unittest.TestCase):
         self.assertNotIn("github.com/deeedob/qt-kickstart", about.read_text())
         self.assertNotIn("deeedob.github.io/qt-kickstart", about.read_text())
 
-    def test_customization_removes_template_tests(self):
+    def test_customization_removes_template_tests_and_cmake_registration(self):
         for path in ("CMakeLists.txt", "LICENSE", "REUSE.toml", "src/app/AboutDialog.qml"):
             self.copy(path)
-        test = self.copy("tools/test_make_it_yours.py")
+        test = self.copy("tools/make-it-yours/test_make_it_yours.py")
+        cmake = self.copy("tools/make-it-yours/CMakeLists.txt")
+        script = self.copy("tools/make-it-yours/make_it_yours.py")
         setup.apply(self.plan())
         self.assertFalse(test.exists())
+        self.assertFalse(cmake.exists())
+        self.assertTrue(script.exists())
+
+    def test_customization_removes_script_and_test_registration(self):
+        for path in ("CMakeLists.txt", "LICENSE", "REUSE.toml", "src/app/AboutDialog.qml"):
+            self.copy(path)
+        test = self.copy("tools/make-it-yours/test_make_it_yours.py")
+        script = self.copy("tools/make-it-yours/make_it_yours.py")
+        cmake = self.copy("tools/make-it-yours/CMakeLists.txt")
+        setup.apply(self.plan(remove_script=True))
+        self.assertFalse(test.exists())
+        self.assertFalse(script.exists())
+        self.assertFalse(cmake.exists())
+        self.assertFalse(cmake.parent.exists())
 
 
 if __name__ == "__main__":

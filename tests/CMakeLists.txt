@@ -4,16 +4,6 @@
 
 set_directory_properties(PROPERTIES QT_EXCLUDE_FROM_TRANSLATION ON)
 
-if(EXISTS "${PROJECT_SOURCE_DIR}/tools/test_make_it_yours.py")
-    find_package(Python3 QUIET COMPONENTS Interpreter)
-    if(Python3_Interpreter_FOUND)
-        add_test(NAME test_make_it_yours
-            COMMAND Python3::Interpreter "${PROJECT_SOURCE_DIR}/tools/test_make_it_yours.py")
-    else()
-        message(STATUS "Template setup tests unavailable: Python 3 was not found")
-    endif()
-endif()
-
 function(app_add_qt_test name)
     cmake_parse_arguments(PARSE_ARGV 1 arg "" "" "SOURCES;LIBRARIES")
     qt_add_executable(${name} ${arg_SOURCES})

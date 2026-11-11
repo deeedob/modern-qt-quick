@@ -4,7 +4,7 @@
 Asks for your app's identity and what to keep, shows the plan, and applies it after you
 confirm. Run it once, right after creating your repository from the template:
 
-    python3 tools/make_it_yours.py
+    python3 tools/make-it-yours/make_it_yours.py
 
 The demo app is its folders plus the lines marked in the shared files: a line that ends in
 `// demo` or `# demo`, and every line from a `demo:begin` comment through `demo:end`.
@@ -19,7 +19,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 
 DEMO_FOLDERS = ["libs/shapes", "src/canvas", "src/sketchbook", "tests/canvas", "tests/sketchbook", "tools/showcase"]
 DEMO_DEPENDENCIES = ["glaze"]
@@ -242,7 +242,7 @@ def print_plan(plan):
     if plan.remove_guide:
         print(f"  remove {', '.join(GUIDE_PATHS)} and replace README.md")
     if plan.remove_script:
-        print("  delete tools/make_it_yours.py")
+        print("  delete tools/make-it-yours/make_it_yours.py")
 
 
 def apply(plan):
@@ -255,11 +255,12 @@ def apply(plan):
         print("Removed the guide.")
     if plan.prefix != "App":
         print(f"Renamed the prefix in {rename_prefix(plan.prefix)} files.")
-    remove("tools/test_make_it_yours.py")
+    remove("tools/make-it-yours/test_make_it_yours.py")
+    remove("tools/make-it-yours/CMakeLists.txt")
     if plan.remove_script:
-        remove("tools/make_it_yours.py")
-        if (ROOT / "tools").is_dir() and not any((ROOT / "tools").iterdir()):
-            (ROOT / "tools").rmdir()
+        remove("tools/make-it-yours/make_it_yours.py")
+        if (ROOT / "tools/make-it-yours").is_dir() and not any((ROOT / "tools/make-it-yours").iterdir()):
+            (ROOT / "tools/make-it-yours").rmdir()
 
 
 def main():
