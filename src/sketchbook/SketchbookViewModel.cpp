@@ -200,9 +200,10 @@ void SketchbookViewModel::onMutationFinished(const QString &id, const QString &s
         if (mutation == SketchStorage::Mutation::Duplicate) {
             const int row = m_model.rowOf(id);
             if (row >= 0) {
-                m_notifications.post({ .message = tr("Duplicated %1").arg(m_model.entry(row).name),
-                                         .severity = notify::Message::Severity::Success },
-                    this);
+                notify::Options options;
+                options.message = tr("Duplicated %1").arg(m_model.entry(row).name);
+                options.severity = notify::Message::Severity::Success;
+                m_notifications.post(options, this);
             }
         }
         if (mutation == SketchStorage::Mutation::Save && !m_storage.hasUnsavedChanges())
@@ -241,9 +242,10 @@ void SketchbookViewModel::onRemoved(const QString &id, const QString &error)
     }
     const int row = m_model.rowOf(id);
     if (row >= 0) {
-        m_notifications.post({ .message = tr("Deleted %1").arg(m_model.entry(row).name),
-                                 .severity = notify::Message::Severity::Success },
-            this);
+        notify::Options options;
+        options.message = tr("Deleted %1").arg(m_model.entry(row).name);
+        options.severity = notify::Message::Severity::Success;
+        m_notifications.post(options, this);
         m_model.removeAt(row);
     }
     if (id == m_openId) {
@@ -311,41 +313,39 @@ void SketchbookViewModel::reportError(Operation operation, const QString &source
         showSaveError();
         return;
     }
-    notify::Options options{
-        .title = std::move(title),
-        .message = tr("%1: %2").arg(source, message),
-        .severity = notify::Message::Severity::Error,
-    };
+    notify::Options options;
+    options.title = std::move(title);
+    options.message = tr("%1: %2").arg(source, message);
+    options.severity = notify::Message::Severity::Error;
     m_notifications.post(options, this);
 }
 
 void SketchbookViewModel::showSaveError()
 {
     QList<notify::Action> actions{
-        { .text = tr("Retry"), .triggered = [this] { retryFailedSaves(); } },
+        { .id = {}, .text = tr("Retry"), .triggered = [this] { retryFailedSaves(); } },
     };
     if (m_closePending) {
-        actions.append({ .text = tr("Discard"), .triggered = [this] {
+        actions.append({ .id = {}, .text = tr("Discard"), .triggered = [this] {
                             m_closePending = false;
                             m_discardApproved = true;
                             Q_EMIT closeReady();
                         } });
-        actions.append({ .text = tr("Keep editing"), .triggered = [this] { keepEditing(); } });
+        actions.append(
+            { .id = {}, .text = tr("Keep editing"), .triggered = [this] { keepEditing(); } });
     }
-    notify::Options options{
-        .title = tr("Could not save sketch"),
-        .message = m_recoveryMessage,
-        .severity = notify::Message::Severity::Error,
-        .presentation = m_closePending
-            ? notify::Message::Presentation::Decision
-            : notify::Message::Presentation::Persistent,
-        .actions = actions,
-        .finished =
-            [this](notify::Message::FinishReason reason) {
-                m_recovery = nullptr;
-                if (reason == notify::Message::FinishReason::Dismissed)
-                    keepEditing();
-            },
+    notify::Options options;
+    options.title = tr("Could not save sketch");
+    options.message = m_recoveryMessage;
+    options.severity = notify::Message::Severity::Error;
+    options.presentation = m_closePending
+        ? notify::Message::Presentation::Decision
+        : notify::Message::Presentation::Persistent;
+    options.actions = actions;
+    options.finished = [this](notify::Message::FinishReason reason) {
+        m_recovery = nullptr;
+        if (reason == notify::Message::FinishReason::Dismissed)
+            keepEditing();
     };
     if (m_recovery) {
         m_recovery->setMessage(options.message);

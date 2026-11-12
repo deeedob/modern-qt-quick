@@ -401,8 +401,8 @@ void tst_Center::autoIdsActionsAndRunsCallbacksOnce()
     app::notify::Options options;
     options.presentation = app::notify::Message::Presentation::Persistent;
     options.actions = {
-        { .text = u"Retry"_s, .triggered = [&triggeredCount] { ++triggeredCount; } },
-        { .text = u"Again"_s, .triggered = [&triggeredCount] { ++triggeredCount; } },
+        { .id = {}, .text = u"Retry"_s, .triggered = [&triggeredCount] { ++triggeredCount; } },
+        { .id = {}, .text = u"Again"_s, .triggered = [&triggeredCount] { ++triggeredCount; } },
     };
     auto *notification = center.post(options, &context);
     QVERIFY(notification);
@@ -433,7 +433,7 @@ void tst_Center::suppressesActionCallbackWhenContextDiesDuringFinish()
     app::notify::Options options;
     options.presentation = app::notify::Message::Presentation::Persistent;
     options.actions = {
-        { .text = u"Retry"_s, .triggered = [&triggeredCount] { ++triggeredCount; } },
+        { .id = {}, .text = u"Retry"_s, .triggered = [&triggeredCount] { ++triggeredCount; } },
     };
     auto *notification = center.post(options, context);
     QVERIFY(notification);
