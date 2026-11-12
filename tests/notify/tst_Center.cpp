@@ -31,6 +31,7 @@ private Q_SLOTS:
     void init();
     void keepsOverlappingMessages();
     void dismissesOnlyPassiveMessages();
+    void dismissPassiveHandlesDeletedMessages();
     void newestMessagesFollowPriority();
     void finishesOnceBeforeNotifying();
     void cancelsWhenContextIsDestroyed();
@@ -89,6 +90,25 @@ void tst_Center::dismissesOnlyPassiveMessages()
     QVERIFY(!persistent->isFinished());
     QVERIFY(!decision->isFinished());
     QCOMPARE(center.count(), 1);
+}
+
+void tst_Center::dismissPassiveHandlesDeletedMessages()
+{
+    app::notify::NotificationCenter center;
+    QObject context;
+    auto *later = center.postMessage(u"later"_s, &context);
+    auto *first = center.postMessage(u"first"_s, &context);
+    QPointer<app::notify::Message> guardedLater(later);
+    connect(first, &app::notify::Message::finished, &center,
+        [later](app::notify::Message::FinishReason, const QString &) {
+            later->dismiss();
+            delete later;
+        });
+
+    center.dismissPassive();
+
+    QVERIFY(guardedLater.isNull());
+    QCOMPARE(center.count(), 0);
 }
 
 void tst_Center::newestMessagesFollowPriority()

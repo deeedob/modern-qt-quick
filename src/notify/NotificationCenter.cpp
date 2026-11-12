@@ -94,9 +94,11 @@ void NotificationCenter::dismissPassive()
     for (auto *message : m_cards)
         if (message->presentation() == Message::Presentation::Passive)
             passive.emplace_back(message);
-    for (const auto &message : passive)
-        if (message && message->presentation() == Message::Presentation::Passive)
-            message->dismiss();
+    for (const auto &message : passive) {
+        auto *current = message.data();
+        if (current && current->presentation() == Message::Presentation::Passive)
+            current->dismiss();
+    }
 }
 
 void NotificationCenter::shutdown()
