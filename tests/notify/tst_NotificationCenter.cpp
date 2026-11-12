@@ -478,6 +478,6 @@ void tst_NotificationCenter::callsCompletionWithLiveContext()
     QCOMPARE(calls, 1);
 }
 
-QTEST_GUILESS_MAIN(tst_NotificationCenter)
+QTEST_MAIN(tst_NotificationCenter)
 
 #include "tst_NotificationCenter.moc"
