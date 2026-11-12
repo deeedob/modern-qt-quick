@@ -44,7 +44,7 @@ bool writeIco(QSvgRenderer &svg, const QString &path)
     QDataStream out(&file);
     out.setByteOrder(QDataStream::LittleEndian);
     out << quint16(0) << quint16(1) << quint16(sizes.size());
-    quint32 offset = 6 + 16 * sizes.size();
+    auto offset = quint32(6 + 16 * sizes.size());
     for (size_t i = 0; i < sizes.size(); ++i) {
         const auto dimension = quint8(sizes[i] == 256 ? 0 : sizes[i]);
         const auto length = quint32(images[i].size());
