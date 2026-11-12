@@ -21,24 +21,25 @@ Page {
 
     // Clamps directly: Flickable.returnToBounds() would start an animation on every pinch step.
     function scrollTo(x: real, y: real): void {
-    viewport.contentX = Math.max(0, Math.min(x, viewport.contentWidth - viewport.width));
-    viewport.contentY = Math.max(0, Math.min(y, viewport.contentHeight - viewport.height));
-}
+        viewport.contentX = Math.max(0, Math.min(x, viewport.contentWidth - viewport.width));
+        viewport.contentY = Math.max(0, Math.min(y, viewport.contentHeight - viewport.height));
+    }
 
     // Keeps the paper point under `position`, in viewport coordinates, where it is.
     function zoomBy(factor: real, position: point): void {
-    const next = Math.min(Math.max(root.zoom * factor, root.minimumZoom), 4);
-    const ratio = next / root.zoom;
-    root.manualZoom = next;
-    root.scrollTo((viewport.contentX + position.x) * ratio - position.x, (viewport.contentY
-    + position.y) * ratio - position.y);
-}
+        const next = Math.min(Math.max(root.zoom * factor, root.minimumZoom), 4);
+        const ratio = next / root.zoom;
+        root.manualZoom = next;
+        root.scrollTo((viewport.contentX + position.x) * ratio - position.x, (viewport.contentY
+                                                                              + position.y) * ratio
+                      - position.y);
+    }
 
     function fitPage(): void {
-                            root.manualZoom = 0;
-                            root.scrollTo((viewport.contentWidth - viewport.width) / 2, (
-                                              viewport.contentHeight - viewport.height) / 2);
-                        }
+        root.manualZoom = 0;
+        root.scrollTo((viewport.contentWidth - viewport.width) / 2, (viewport.contentHeight
+                                                                     - viewport.height) / 2);
+    }
 
     component Swatch: AbstractButton {
         id: swatch
@@ -347,28 +348,28 @@ Page {
         target: root.store
 
         function onShapeSnapped(shape: int): void {
-        switch (shape) {
+            switch (shape) {
             case CanvasStore.Shape.Circle:
                 snapHint.text = qsTr("Snapped to a circle");
-            break;
+                break;
             case CanvasStore.Shape.Rectangle:
                 snapHint.text = qsTr("Snapped to a rectangle");
-            break;
+                break;
             case CanvasStore.Shape.Triangle:
                 snapHint.text = qsTr("Snapped to a triangle");
-            break;
+                break;
+            }
+            fade.restart();
         }
-        fade.restart();
-    }
     }
 
-        Shortcut {
-            sequences: [StandardKey.Undo]
-            onActivated: root.store.undo()
-        }
-
-        Shortcut {
-            sequences: [StandardKey.Redo]
-            onActivated: root.store.redo()
-        }
+    Shortcut {
+        sequences: [StandardKey.Undo]
+        onActivated: root.store.undo()
     }
+
+    Shortcut {
+        sequences: [StandardKey.Redo]
+        onActivated: root.store.redo()
+    }
+}
