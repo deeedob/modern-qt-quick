@@ -120,8 +120,17 @@ int main(int argc, char **argv)
         Qt::black, 5);
     if (!save(window, output, u"canvas-light.png"_s))
         return 1;
-    controller.setDarkTheme(true);
     auto *settingsButton = window->findChild<QQuickItem *>(u"paperSettingsButton"_s);
+    controller.setLanguage("de"_L1);
+    if (!click(window, settingsButton))
+        return 1;
+    QTest::mouseMove(window, QPoint(10, window->height() - 10));
+    if (!save(window, output, u"canvas-de.png"_s))
+        return 1;
+    if (!click(window, settingsButton))
+        return 1;
+    controller.setLanguage("en"_L1);
+    controller.setDarkTheme(true);
     if (!click(window, settingsButton))
         return 1;
     QTest::mouseMove(window, QPoint(10, window->height() - 10));

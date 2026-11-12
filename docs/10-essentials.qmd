@@ -19,7 +19,7 @@ Qt's plural forms let each language provide the forms it needs. Sketchbook's lis
 for its stroke count. After adding strings, run the `update_translations` target and fill in
 the `.ts` files before shipping.
 
-![The sketch list in German.](images/sketchbook-de.png){width=90%}
+![The canvas in German, with translated paper settings.](images/canvas-de.png){width=90%}
 
 ## Standard paths keep data findable {#sec-paths}
 
