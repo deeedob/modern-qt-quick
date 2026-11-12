@@ -38,8 +38,8 @@ disk leaves the previous file intact instead of leaving half a document.
 ::: {.snippet source="src/sketchbook/SketchStorage.cpp"}
 
 ```cpp
-            QSaveFile file(path);
-            if (file.write(json->data(), size) != size || !file.commit())\n                return failed(file.errorString());
+        QSaveFile file(path);
+        if (file.write(json->data(), size) != size || !file.commit())\n            return failed(file.errorString());
 ```
 
 :::

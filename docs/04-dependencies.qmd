@@ -24,7 +24,7 @@ Finding a package makes its imported target available. Sketchbook links the impo
 
 ```cmake
 target_link_libraries(app_sketchbook
-    PRIVATE Qt::Concurrent glaze::glaze app_controls\n)
+app_target_defaults(app_sketchbook)
 ```
 
 :::

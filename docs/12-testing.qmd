@@ -36,7 +36,7 @@ test can check both the resulting state and whether an observer was notified.
 
 ```cpp
     void createAddsAndOpensAnEmptySketch()
-        QCOMPARE(storage.list().size(), 1);\n    }
+        QCOMPARE(entries(storage).size(), 1);\n    }
 ```
 
 :::
@@ -82,7 +82,7 @@ Test QObject state, signals, and file behaviour with Qt Test. Use a temporary di
 
 ```cpp
     void createAddsAndOpensAnEmptySketch()
-        QCOMPARE(storage.list().size(), 1);\n    }
+        QCOMPARE(entries(storage).size(), 1);\n    }
 ```
 
 :::
