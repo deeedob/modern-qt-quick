@@ -23,7 +23,7 @@ public:
 
 } // namespace
 
-class tst_Center : public QObject
+class tst_NotificationCenter : public QObject
 {
     Q_OBJECT
 
@@ -50,12 +50,12 @@ private Q_SLOTS:
     void callsCompletionWithLiveContext();
 };
 
-void tst_Center::init()
+void tst_NotificationCenter::init()
 {
     QTest::failOnWarning();
 }
 
-void tst_Center::keepsOverlappingMessages()
+void tst_NotificationCenter::keepsOverlappingMessages()
 {
     app::notify::NotificationCenter center;
     QObject context;
@@ -75,7 +75,7 @@ void tst_Center::keepsOverlappingMessages()
         first);
 }
 
-void tst_Center::dismissesOnlyPassiveMessages()
+void tst_NotificationCenter::dismissesOnlyPassiveMessages()
 {
     app::notify::NotificationCenter center;
     QObject context;
@@ -92,7 +92,7 @@ void tst_Center::dismissesOnlyPassiveMessages()
     QCOMPARE(center.count(), 1);
 }
 
-void tst_Center::dismissPassiveHandlesDeletedMessages()
+void tst_NotificationCenter::dismissPassiveHandlesDeletedMessages()
 {
     app::notify::NotificationCenter center;
     QObject context;
@@ -111,7 +111,7 @@ void tst_Center::dismissPassiveHandlesDeletedMessages()
     QCOMPARE(center.count(), 0);
 }
 
-void tst_Center::newestMessagesFollowPriority()
+void tst_NotificationCenter::newestMessagesFollowPriority()
 {
     app::notify::NotificationCenter center;
     QObject context;
@@ -131,7 +131,7 @@ void tst_Center::newestMessagesFollowPriority()
         first);
 }
 
-void tst_Center::finishesOnceBeforeNotifying()
+void tst_NotificationCenter::finishesOnceBeforeNotifying()
 {
     app::notify::NotificationCenter center;
     QObject context;
@@ -154,7 +154,7 @@ void tst_Center::finishesOnceBeforeNotifying()
     QTRY_VERIFY(guardedNotification.isNull());
 }
 
-void tst_Center::cancelsWhenContextIsDestroyed()
+void tst_NotificationCenter::cancelsWhenContextIsDestroyed()
 {
     app::notify::NotificationCenter center;
     auto *context = new QObject;
@@ -170,7 +170,7 @@ void tst_Center::cancelsWhenContextIsDestroyed()
     QTRY_COMPARE(center.rowCount(), 0);
 }
 
-void tst_Center::defersCancellationUntilContextDestructionCompletes()
+void tst_NotificationCenter::defersCancellationUntilContextDestructionCompletes()
 {
     app::notify::NotificationCenter center;
     auto *context = new DestructionContext;
@@ -188,7 +188,7 @@ void tst_Center::defersCancellationUntilContextDestructionCompletes()
     QCOMPARE(center.count(), 0);
 }
 
-void tst_Center::cancelsAllRequestsOnShutdown()
+void tst_NotificationCenter::cancelsAllRequestsOnShutdown()
 {
     app::notify::NotificationCenter center;
     QObject context;
@@ -206,7 +206,7 @@ void tst_Center::cancelsAllRequestsOnShutdown()
     QVERIFY(center.postMessage(u"late"_s, &context) == nullptr);
 }
 
-void tst_Center::passiveTimeoutStartsWhenPresented()
+void tst_NotificationCenter::passiveTimeoutStartsWhenPresented()
 {
     app::notify::NotificationCenter center;
     QObject context;
@@ -228,7 +228,7 @@ void tst_Center::passiveTimeoutStartsWhenPresented()
         app::notify::Message::FinishReason::Expired);
 }
 
-void tst_Center::reportsIndependentTimerProgress()
+void tst_NotificationCenter::reportsIndependentTimerProgress()
 {
     app::notify::NotificationCenter center;
     QObject context;
@@ -247,7 +247,7 @@ void tst_Center::reportsIndependentTimerProgress()
     QCOMPARE(first->timeRemaining(), paused);
 }
 
-void tst_Center::prioritizesWaitingCardsWithoutMovingVisibleCards()
+void tst_NotificationCenter::prioritizesWaitingCardsWithoutMovingVisibleCards()
 {
     app::notify::NotificationCenter center;
     QAbstractItemModelTester modelTester(&center,
@@ -271,7 +271,7 @@ void tst_Center::prioritizesWaitingCardsWithoutMovingVisibleCards()
         visible);
 }
 
-void tst_Center::serializesDecisionRequests()
+void tst_NotificationCenter::serializesDecisionRequests()
 {
     app::notify::NotificationCenter center;
     QAbstractItemModelTester modelTester(&center,
@@ -297,7 +297,7 @@ void tst_Center::serializesDecisionRequests()
         card);
 }
 
-void tst_Center::modalCompletionResumesCardTimeout()
+void tst_NotificationCenter::modalCompletionResumesCardTimeout()
 {
     app::notify::NotificationCenter center;
     QObject context;
@@ -321,7 +321,7 @@ void tst_Center::modalCompletionResumesCardTimeout()
         app::notify::Message::FinishReason::Expired);
 }
 
-void tst_Center::presentedOverflowCardsCanExpire()
+void tst_NotificationCenter::presentedOverflowCardsCanExpire()
 {
     app::notify::NotificationCenter center;
     QObject context;
@@ -336,7 +336,7 @@ void tst_Center::presentedOverflowCardsCanExpire()
     QVERIFY(first->isFinished() == false);
 }
 
-void tst_Center::ignoresUnknownAndDisabledActions()
+void tst_NotificationCenter::ignoresUnknownAndDisabledActions()
 {
     app::notify::NotificationCenter center;
     QObject context;
@@ -362,7 +362,7 @@ void tst_Center::ignoresUnknownAndDisabledActions()
     QCOMPARE(finished.first().at(1).toString(), u"save"_s);
 }
 
-void tst_Center::resumesOverdueCardsWithoutSynchronousCompletion()
+void tst_NotificationCenter::resumesOverdueCardsWithoutSynchronousCompletion()
 {
     app::notify::NotificationCenter center;
     QObject context;
@@ -393,7 +393,7 @@ void tst_Center::resumesOverdueCardsWithoutSynchronousCompletion()
     QCOMPARE(center.count(), 0);
 }
 
-void tst_Center::autoIdsActionsAndRunsCallbacksOnce()
+void tst_NotificationCenter::autoIdsActionsAndRunsCallbacksOnce()
 {
     app::notify::NotificationCenter center;
     QObject context;
@@ -425,7 +425,7 @@ void tst_Center::autoIdsActionsAndRunsCallbacksOnce()
     QVERIFY(updatedActions.at(0).id != updatedActions.at(1).id);
 }
 
-void tst_Center::suppressesActionCallbackWhenContextDiesDuringFinish()
+void tst_NotificationCenter::suppressesActionCallbackWhenContextDiesDuringFinish()
 {
     app::notify::NotificationCenter center;
     auto *context = new QObject;
@@ -450,7 +450,7 @@ void tst_Center::suppressesActionCallbackWhenContextDiesDuringFinish()
     QVERIFY(context == nullptr);
 }
 
-void tst_Center::callsCompletionWithLiveContext()
+void tst_NotificationCenter::callsCompletionWithLiveContext()
 {
     app::notify::NotificationCenter center;
     QObject context;
@@ -478,6 +478,6 @@ void tst_Center::callsCompletionWithLiveContext()
     QCOMPARE(calls, 1);
 }
 
-QTEST_GUILESS_MAIN(tst_Center)
+QTEST_GUILESS_MAIN(tst_NotificationCenter)
 
-#include "tst_Center.moc"
+#include "tst_NotificationCenter.moc"
