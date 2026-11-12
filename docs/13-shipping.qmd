@@ -83,8 +83,28 @@ flowchart LR
 
 A release workflow should build, test, deploy, package, and archive the result on every
 supported platform. Symbol files make crash reports useful, so a production release process
-should preserve matching debug symbols when it strips distributed binaries. The template does
-not yet implement a complete cross-platform symbol archival process.
+must preserve matching debug symbols before removing debug information from distributed
+binaries. The template archives application symbols separately from each release package: a
+`.dSYM` on macOS, a linker `.pdb` with MSVC on Windows, and a `.debug` file on Linux.
+The symbol artifact includes the commit, version, platform, and architecture. Keep it with the
+matching package; rebuilding the same commit does not guarantee matching binary identities.
+
+Packaging removes debug information from the staged macOS and Linux application while keeping
+function symbols for runtime traces. The build-tree executable stays unchanged. Windows keeps
+debug information in its separate PDB. The archive covers the application and its linked static
+code, not the deployed Qt libraries or other shared dependencies. Preserve matching dependency
+symbols separately when you need to diagnose those libraries.
+
+Use the archive for offline analysis: match a macOS crash report's binary UUID to the dSYM
+with `dwarfdump --uuid`, load the matching executable and `.debug` file into GDB on Linux,
+or load the matching executable and PDB into Visual Studio or WinDbg on Windows. The commit
+metadata helps locate a build; the debugger's binary identity check establishes the symbol
+match. Keep the exact distributed executable as well as its symbols.
+
+Application logs can capture handled errors and stack traces while the process still runs.
+The template does not collect operating-system crash reports or minidumps automatically, and
+it has no crash-report upload service. External symbols support investigation once you obtain
+a crash report or dump; they do not add crash collection.
 
 The template's release workflow is started manually. It builds and tests on the configured
 platforms, packages the app, and uploads workflow artifacts for inspection. Download and test
@@ -107,5 +127,8 @@ information for repository files, and the REUSE check helps find files without c
 
 **Read more:** [Qt deployment with CMake](https://doc.qt.io/qt-6/cmake-deployment.html),
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html), and
-[Git cherry-pick](https://git-scm.com/docs/git-cherry-pick).
+[Git cherry-pick](https://git-scm.com/docs/git-cherry-pick),
+[GNU separate debug files](https://sourceware.org/binutils/docs/binutils/objcopy.html),
+[LLVM dSYM generation](https://llvm.org/docs/CommandGuide/dsymutil.html), and
+[CMake linker PDB files](https://cmake.org/cmake/help/v3.31/prop_tgt/PDB_NAME.html).
 :::

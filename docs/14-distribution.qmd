@@ -5,12 +5,13 @@ a user. Signing connects the package to its publisher and detects later changes.
 
 ## Sign the final artifact {#sec-signing}
 
-Deploy first, then sign every contained binary, then sign the installer or disk image. A file
+Archive symbols and remove application debug information during deployment, then sign every
+contained binary, then sign the installer or disk image. A file
 changed after signing loses its signature.
 
 ```{mermaid}
 flowchart LR
-    B[Build] --> T[Test] --> D[Deploy] --> S[Sign application]
+    B[Build] --> T[Test] --> D[Deploy and archive symbols] --> S[Sign application]
     S --> P[Package] --> SP[Sign package] --> N[Notarize on macOS]
 ```
 
@@ -30,6 +31,20 @@ Sign executables and installers with an Authenticode certificate and a timestamp
 keeps a signature valid after the certificate expires. Use a hardware-backed or cloud signing
 service for CI keys.
 
+## Linux packages use an install prefix {#sec-linux-package}
+
+The Linux `.tar.gz` contains the deployed install prefix: `bin/` holds the application, with
+runtime libraries, Qt plugins, QML imports, and notices in their installed locations. Extract
+the whole archive and run the executable from `bin/`; keep the directory structure intact.
+This layout is not an AppImage or an AppDir.
+
+Qt deployment gathers runtime dependencies, but a package still depends on the host's Linux
+ABI, glibc, graphics stack, and display services. A package built on a newer distribution may
+not run on an older one. Build on the oldest distribution you support and test the extracted
+archive on clean target systems without the development Qt installation. The release workflow
+builds on its configured Ubuntu runner; it does not establish compatibility with every Linux
+distribution or perform that clean-system test.
+
 ## Stores trade control for services {#sec-stores}
 
 A store handles discovery, trust, and updates, but adds its own sandbox, review process, and
@@ -37,5 +52,6 @@ package rules. Choose it when those services are worth the platform constraints.
 
 ::: {.more}
 **Read more:** [Qt macOS deployment](https://doc.qt.io/qt-6/macos-deployment.html) and
-[Microsoft code signing](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options).
+[Microsoft code signing](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options),
+and [Qt Linux deployment](https://doc.qt.io/qt-6/linux-deployment.html).
 :::

@@ -125,6 +125,9 @@ install(TARGETS app
     BUNDLE DESTINATION .
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
+include(Symbols)
+app_archive_symbols(app)
+
 if(WIN32)
     # The deploy tool knows Qt's DLLs but not vcpkg's.
     install(FILES "$<TARGET_RUNTIME_DLLS:app>" DESTINATION "${CMAKE_INSTALL_BINDIR}")
@@ -135,7 +138,7 @@ qt_generate_deploy_qml_app_script(
     NO_UNSUPPORTED_PLATFORM_ERROR
     # Qt's own strings are already merged into the app's translations (MERGE_QT_TRANSLATIONS).
     NO_TRANSLATIONS
-    # Keep symbols so crash traces in the log name functions, not just addresses.
+    # Dependency symbols have no separate archive; preserve them during deployment.
     DEPLOY_TOOL_OPTIONS $<$<PLATFORM_ID:Darwin>:-no-strip>
 )
 install(SCRIPT "${_deploy_script}")
