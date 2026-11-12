@@ -1,7 +1,8 @@
 #include "CanvasStore.hpp"
 
 #include <QtCore/QCoreApplication>
-#include <QtCore/QRegularExpression>
+#include <QtGui/QFontDatabase>
+#include <QtGui/QGuiApplication>
 #include <QtGui/QNativeGestureEvent>
 #include <QtGui/QPointingDevice>
 #include <QtQuick/QQuickItem>
@@ -100,16 +101,20 @@ private:
     }
 
 private Q_SLOTS:
+    void initTestCase()
+    {
+        const int fontId = QFontDatabase::addApplicationFont(
+            u":/qt/qml/App/Controls/fonts/InterVariable.ttf"_s);
+        QVERIFY(fontId >= 0);
+        QGuiApplication::setFont(
+            QFont(QFontDatabase::applicationFontFamilies(fontId).constFirst()));
+    }
+
     void init() { QTest::failOnWarning(); }
 
     void canvasSettingsMaintainAspectRatio()
     {
         Page page;
-#ifdef Q_OS_MACOS
-        QTest::ignoreMessage(QtWarningMsg,
-            QRegularExpression(
-                uR"(Populating font family aliases took .*Replace uses of missing font family "Sans Serif".*)"_s));
-#endif
         QVERIFY(load(page));
         auto *settings = page.root->findChild<QQuickItem *>(u"paperSettingsButton"_s);
         QVERIFY(settings);

@@ -11,10 +11,7 @@ TestCase {
     when: windowShown
 
     function init(): void {
-        const fontWarning = 'Populating font family aliases took .*'
-              + 'Replace uses of missing font family "Sans Serif"'
-              + ' with one that exists to avoid this cost\\.';
-        failOnWarning(new RegExp('^(?!' + fontWarning + ').*$'));
+        failOnWarning(/.?/);
     }
 
     Component {
