@@ -10,6 +10,7 @@ function(app_add_qt_test name)
     target_link_libraries(${name} PRIVATE Qt::Test ${arg_LIBRARIES})
     app_target_defaults(${name})
     add_test(NAME ${name} COMMAND ${name})
+    set_tests_properties(${name} PROPERTIES ENVIRONMENT "QT_QPA_FONTDIR=${PROJECT_SOURCE_DIR}/src/controls/fonts")
 endfunction()
 
 # Static QML modules register only when their plugin is linked: pass the *plugin targets.
@@ -20,6 +21,7 @@ function(app_add_quick_test name)
     target_link_libraries(${name} PRIVATE Qt::QuickTest ${arg_LIBRARIES})
     app_target_defaults(${name})
     add_test(NAME ${name} COMMAND ${name})
+    set_tests_properties(${name} PROPERTIES ENVIRONMENT "QT_QPA_FONTDIR=${PROJECT_SOURCE_DIR}/src/controls/fonts")
 endfunction()
 
 add_subdirectory(app)
