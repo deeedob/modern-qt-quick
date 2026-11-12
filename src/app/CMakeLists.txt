@@ -35,6 +35,12 @@ if(APPLE)
     )
     target_sources(app PRIVATE "${_app_icon}")
     set_source_files_properties("${_app_icon}" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    set_property(TARGET app APPEND PROPERTY LINK_DEPENDS "${_app_icon}")
+    # macOS caches bundle icons until the bundle directory changes.
+    add_custom_command(TARGET app POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E touch "$<TARGET_BUNDLE_DIR:app>"
+        VERBATIM
+    )
 elseif(WIN32)
     # Windows takes the executable's icon from a resource script.
     set(_app_icon "${CMAKE_CURRENT_BINARY_DIR}/app.ico")
