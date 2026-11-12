@@ -22,21 +22,20 @@ Dialog {
     component InfoBox: GroupBox {
         id: infoBox
 
-        required property color fillColor
-
         Layout.fillWidth: true
         padding: Theme.spacing
+        topPadding: implicitLabelHeight + Theme.spacing * 1.5
 
         label: Label {
-            x: infoBox.leftPadding
-            width: infoBox.availableWidth
+            x: (infoBox.width - width) / 2
             text: infoBox.title
             font.weight: Font.DemiBold
             horizontalAlignment: Text.AlignHCenter
             padding: Theme.spacing / 2
 
             background: Rectangle {
-                color: infoBox.fillColor
+                radius: Theme.radius
+                color: Theme.window
             }
         }
 
@@ -47,8 +46,10 @@ Dialog {
         }
 
         background: Rectangle {
+            y: infoBox.implicitLabelHeight + Theme.spacing / 2
+            height: infoBox.height - y
             radius: Theme.radius
-            color: infoBox.fillColor
+            color: Theme.window
             border.color: Theme.border
         }
     }
@@ -89,7 +90,6 @@ Dialog {
             InfoBox {
                 objectName: "buildInfoBox"
                 title: qsTr("Build info")
-                fillColor: Theme.surface
 
                 DetailLabel {
                     text: qsTr("Build")
@@ -133,7 +133,6 @@ Dialog {
             InfoBox {
                 objectName: "runtimeInfoBox"
                 title: qsTr("Runtime info")
-                fillColor: Theme.hover
 
                 DetailLabel {
                     text: qsTr("Operating system")
