@@ -81,15 +81,6 @@ operations need one long-lived, ordered event loop.
 result. Copy the input into the task, return a value, then handle it through a context-bound
 continuation:
 
-::: {.snippet source="tests/app/tst_Threading.cpp"}
-
-```cpp
-QFuture<void> removeFile(QObject *context, const QString &path,
-    }).then(context, std::move(completion));\n}
-```
-
-:::
-
 The continuation runs in the context object's thread and is canceled if that object is
 destroyed. The task itself does not access the object. Destroying a future does not cancel its
 running work, and `QtConcurrent::run()` futures cannot be canceled.

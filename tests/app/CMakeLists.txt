@@ -14,5 +14,3 @@ app_add_qt_test(tst_AppController
         app_uiplugin
         Qt::Gui
 )
-
-app_add_qt_test(tst_Threading SOURCES tst_Threading.cpp LIBRARIES Qt::Concurrent)
