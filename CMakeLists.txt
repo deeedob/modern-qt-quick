@@ -56,9 +56,7 @@ add_subdirectory(src)
 add_subdirectory(tools/showcase) # demo
 if(BUILD_TESTING)
     find_package(Qt6 6.12 REQUIRED COMPONENTS Test QuickTest)
-    if(EXISTS "${PROJECT_SOURCE_DIR}/tools/make-it-yours/CMakeLists.txt")
-        add_subdirectory(tools/make-it-yours)
-    endif()
+    add_subdirectory(tools/make-it-yours)
     add_subdirectory(tests)
 endif()
 

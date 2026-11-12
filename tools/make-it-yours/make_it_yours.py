@@ -255,6 +255,7 @@ def apply(plan):
         print("Removed the guide.")
     if plan.prefix != "App":
         print(f"Renamed the prefix in {rename_prefix(plan.prefix)} files.")
+    replace_in("CMakeLists.txt", r"^    add_subdirectory\(tools/make-it-yours\)\n", "")
     remove("tools/make-it-yours/test_make_it_yours.py")
     remove("tools/make-it-yours/CMakeLists.txt")
     if plan.remove_script:

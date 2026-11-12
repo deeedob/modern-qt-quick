@@ -112,6 +112,8 @@ class TemplateSetupTest(unittest.TestCase):
         self.assertFalse(test.exists())
         self.assertFalse(cmake.exists())
         self.assertTrue(script.exists())
+        self.assertNotIn("add_subdirectory(tools/make-it-yours)",
+                         (self.root / "CMakeLists.txt").read_text())
 
     def test_customization_removes_script_and_test_registration(self):
         for path in ("CMakeLists.txt", "LICENSE", "REUSE.toml", "src/app/AboutDialog.qml"):
@@ -124,6 +126,8 @@ class TemplateSetupTest(unittest.TestCase):
         self.assertFalse(script.exists())
         self.assertFalse(cmake.exists())
         self.assertFalse(cmake.parent.exists())
+        self.assertNotIn("add_subdirectory(tools/make-it-yours)",
+                         (self.root / "CMakeLists.txt").read_text())
 
 
 if __name__ == "__main__":
