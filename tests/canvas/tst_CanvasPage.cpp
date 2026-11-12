@@ -142,6 +142,19 @@ private Q_SLOTS:
         QCOMPARE(page.store.pageHeight(), 900);
     }
 
+    void canvasFitsOnOpening()
+    {
+        Page page;
+        QVERIFY(load(page));
+
+        QTRY_COMPARE(page.zoom(), page.root->property("fitZoom").toDouble());
+        QVERIFY(page.viewport->property("contentWidth").toDouble() <= page.viewport->width());
+        QVERIFY(page.viewport->property("contentHeight").toDouble() <= page.viewport->height());
+        page.view.resize(1000, 800);
+        QTRY_COMPARE(page.root->width(), 1000.0);
+        QTRY_COMPARE(page.zoom(), page.root->property("fitZoom").toDouble());
+    }
+
     void zoomControlStaysDiscoverable()
     {
         Page page;
@@ -150,7 +163,7 @@ private Q_SLOTS:
         QVERIFY(button);
         QVERIFY(button->opacity() > 0);
         QVERIFY(button->property("text").toString().endsWith(u'%'));
-        QVERIFY(page.root->setProperty("zoom", 2.0));
+        QVERIFY(page.root->setProperty("manualZoom", 2.0));
         const QPointF center(button->width() / 2, button->height() / 2);
         QTest::mouseClick(&page.view, Qt::LeftButton, Qt::NoModifier,
             button->mapToScene(center).toPoint());
@@ -180,6 +193,7 @@ private Q_SLOTS:
         Page page;
         QVERIFY(load(page));
 
+        QVERIFY(page.root->setProperty("manualZoom", 1.0));
         pinch(page, { 300, 200 }, 0.02, 20, true);
         if (QTest::currentTestFailed())
             return;
@@ -191,6 +205,7 @@ private Q_SLOTS:
     {
         Page page;
         QVERIFY(load(page));
+        QVERIFY(page.root->setProperty("manualZoom", 1.0));
         pinch(page, { 300, 200 }, 0.05, 10, true);
         if (QTest::currentTestFailed())
             return;

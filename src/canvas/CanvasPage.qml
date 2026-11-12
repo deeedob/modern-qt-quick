@@ -12,7 +12,8 @@ Page {
     readonly property list<color> inks: ["#1c1c22", "#e5484d", "#30a46c", "#0090ff"]
     property color penColor: inks[0]
     property real penWidth: 4.0
-    property real zoom: 1.0
+    property real manualZoom: 0.0
+    readonly property real zoom: manualZoom > 0 ? manualZoom : fitZoom
     property bool zoomActive: false
     readonly property real fitZoom: Math.min(viewport.width / paper.width, viewport.height
                                              / paper.height)
@@ -20,25 +21,24 @@ Page {
 
     // Clamps directly: Flickable.returnToBounds() would start an animation on every pinch step.
     function scrollTo(x: real, y: real): void {
-        viewport.contentX = Math.max(0, Math.min(x, viewport.contentWidth - viewport.width));
-        viewport.contentY = Math.max(0, Math.min(y, viewport.contentHeight - viewport.height));
-    }
+    viewport.contentX = Math.max(0, Math.min(x, viewport.contentWidth - viewport.width));
+    viewport.contentY = Math.max(0, Math.min(y, viewport.contentHeight - viewport.height));
+}
 
     // Keeps the paper point under `position`, in viewport coordinates, where it is.
     function zoomBy(factor: real, position: point): void {
-        const next = Math.min(Math.max(root.zoom * factor, root.minimumZoom), 4);
-        const ratio = next / root.zoom;
-        root.zoom = next;
-        root.scrollTo((viewport.contentX + position.x) * ratio - position.x, (viewport.contentY
-                                                                              + position.y) * ratio
-                      - position.y);
-    }
+    const next = Math.min(Math.max(root.zoom * factor, root.minimumZoom), 4);
+    const ratio = next / root.zoom;
+    root.manualZoom = next;
+    root.scrollTo((viewport.contentX + position.x) * ratio - position.x, (viewport.contentY
+    + position.y) * ratio - position.y);
+}
 
     function fitPage(): void {
-        root.zoom = root.fitZoom;
-        root.scrollTo((viewport.contentWidth - viewport.width) / 2, (viewport.contentHeight
-                                                                     - viewport.height) / 2);
-    }
+                            root.manualZoom = 0;
+                            root.scrollTo((viewport.contentWidth - viewport.width) / 2, (
+                                              viewport.contentHeight - viewport.height) / 2);
+                        }
 
     component Swatch: AbstractButton {
         id: swatch
@@ -347,28 +347,28 @@ Page {
         target: root.store
 
         function onShapeSnapped(shape: int): void {
-            switch (shape) {
+        switch (shape) {
             case CanvasStore.Shape.Circle:
                 snapHint.text = qsTr("Snapped to a circle");
-                break;
+            break;
             case CanvasStore.Shape.Rectangle:
                 snapHint.text = qsTr("Snapped to a rectangle");
-                break;
+            break;
             case CanvasStore.Shape.Triangle:
                 snapHint.text = qsTr("Snapped to a triangle");
-                break;
-            }
-            fade.restart();
+            break;
+        }
+        fade.restart();
+    }
+    }
+
+        Shortcut {
+            sequences: [StandardKey.Undo]
+            onActivated: root.store.undo()
+        }
+
+        Shortcut {
+            sequences: [StandardKey.Redo]
+            onActivated: root.store.redo()
         }
     }
-
-    Shortcut {
-        sequences: [StandardKey.Undo]
-        onActivated: root.store.undo()
-    }
-
-    Shortcut {
-        sequences: [StandardKey.Redo]
-        onActivated: root.store.redo()
-    }
-}
