@@ -1,5 +1,0 @@
-app_add_notice(qt "${CMAKE_CURRENT_LIST_DIR}/licenses/NOTICE.txt")
-if(NOT APP_USE_VCPKG_QT)
-    app_add_notice(qt-lgpl-3.0 "${CMAKE_CURRENT_LIST_DIR}/licenses/LGPL-3.0-only.txt")
-    app_add_notice(qt-gpl-3.0 "${CMAKE_CURRENT_LIST_DIR}/licenses/GPL-3.0-only.txt")
-endif()

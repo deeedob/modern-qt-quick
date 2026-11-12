@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.31)
 
 option(APP_USE_VCPKG_QT "Build Qt with vcpkg instead of using an installed Qt" OFF)
 
-include(cmake/SelectQt.cmake)
+include(cmake/Qt.cmake)
 
 project(Sketchbook
     VERSION 0.1.0

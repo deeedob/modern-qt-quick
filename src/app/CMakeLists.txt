@@ -116,7 +116,7 @@ target_link_libraries(app PRIVATE
 app_target_defaults(app)
 add_custom_target(run COMMAND app USES_TERMINAL VERBATIM)
 
-include(QtLicensing)
+app_add_qt_notices()
 
 app_copy_notices(app)
 
@@ -125,7 +125,6 @@ install(TARGETS app
     BUNDLE DESTINATION .
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
-include(Symbols)
 app_archive_symbols(app)
 
 if(WIN32)
