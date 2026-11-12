@@ -1,5 +1,5 @@
 This application uses the Qt framework (https://www.qt.io) under the GNU Lesser General
-Public License version 3 (LGPL-3.0-only.txt, which incorporates GPL-3.0-only.txt).
+Public License version 3. The LGPLv3 and GPLv3 license texts ship alongside this notice.
 
 The Qt libraries are linked dynamically and ship as separate files, so you can replace them
 with your own build. The Qt source code is available at

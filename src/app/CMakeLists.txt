@@ -116,14 +116,7 @@ target_link_libraries(app PRIVATE
 app_target_defaults(app)
 add_custom_target(run COMMAND app USES_TERMINAL VERBATIM)
 
-# Qt is linked dynamically under the LGPLv3, which asks for its license texts in the package.
-# A Qt built by vcpkg brings them in its own copyright file, which Packaging.cmake ships.
-app_add_notice(qt licenses/NOTICE.txt)
-cmake_path(IS_PREFIX VCPKG_INSTALLED_DIR "${Qt6_DIR}" NORMALIZE _qt_from_vcpkg)
-if(NOT _qt_from_vcpkg)
-    app_add_notice(qt-lgpl-3.0 licenses/LGPL-3.0-only.txt)
-    app_add_notice(qt-gpl-3.0 licenses/GPL-3.0-only.txt)
-endif()
+include(QtLicensing)
 
 app_copy_notices(app)
 
