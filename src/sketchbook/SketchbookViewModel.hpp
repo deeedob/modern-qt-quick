@@ -37,7 +37,6 @@ public:
     Q_INVOKABLE void renameOpen(const QString &name);
     Q_INVOKABLE void duplicate(int row);
     Q_INVOKABLE void remove(int row);
-    Q_INVOKABLE void retryFailedSaves();
     Q_INVOKABLE bool requestClose();
 
 Q_SIGNALS:
@@ -59,13 +58,6 @@ private Q_SLOTS:
 private:
     enum class Operation { Open, Rename, Duplicate, Save, Remove };
 
-    struct PendingRename
-    {
-        QString originalName;
-        QString currentName;
-    };
-
-    void save(const QString &id, SketchDocument document);
     void saveOpenSketch();
     void activate(const QString &id, SketchDocument document);
     void reportError(Operation operation, const QString &source, const QString &message,
@@ -81,8 +73,7 @@ private:
     QPointer<notify::Message> m_recovery;
     SketchListModel m_model{ this };
     QString m_openId;
-    QHash<QString, PendingRename> m_pendingRenames;
-    quint64 m_nextRequestId = 0;
+    QHash<QString, QString> m_pendingRenames;
     quint64 m_openRequestId = 0;
     bool m_initialized = false;
     bool m_closePending = false;

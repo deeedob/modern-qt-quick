@@ -137,7 +137,11 @@ private Q_SLOTS:
         canvas.addStroke(zigzag(), Qt::black);
         QTRY_COMPARE(notifications.count(), 1);
         QVERIFY(QFile::remove(dir.filePath("blocker"_L1)));
-        viewModel.retryFailedSaves();
+        auto *recovery = qvariant_cast<app::notify::Message *>(notifications.data(
+            notifications.index(0), app::notify::NotificationCenter::NotificationRole));
+        QVERIFY(recovery);
+        QCOMPARE(recovery->actions().front().text, "Retry"_L1);
+        recovery->choose(recovery->actions().front().id);
         QTRY_VERIFY(!viewModel.hasUnsavedChanges());
         const auto stored = entries(storage);
         QCOMPARE(stored.size(), 1);
@@ -263,6 +267,51 @@ private Q_SLOTS:
         QCOMPARE(stored.front().strokeCount, 1);
     }
 
+    void failedRenameRollsBackUnlessSuperseded_data()
+    {
+        QTest::addColumn<int>("renameCount");
+        QTest::addColumn<bool>("edit");
+        QTest::newRow("missing source") << 1 << false;
+        QTest::newRow("consecutive renames") << 2 << false;
+        QTest::newRow("superseding edit") << 2 << true;
+    }
+
+    void failedRenameRollsBackUnlessSuperseded()
+    {
+        QFETCH(int, renameCount);
+        QFETCH(bool, edit);
+        QTemporaryDir dir;
+        SketchStorage storage(dir.path());
+        CanvasStore canvas;
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
+        viewModel.create();
+        QTRY_VERIFY(!storage.hasUnsavedChanges());
+        const auto stored = entries(storage);
+        QCOMPARE(stored.size(), 1);
+        QVERIFY(QFile::remove(dir.filePath(stored.front().id + ".json"_L1)));
+        if (!edit)
+            QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Rename sketch failed.*"_s));
+
+        for (int rename = 1; rename <= renameCount; ++rename)
+            viewModel.renameOpen(u"Title %1"_s.arg(rename));
+        if (edit)
+            canvas.addStroke(zigzag(), Qt::black);
+
+        QTRY_VERIFY(!storage.hasUnsavedChanges());
+        const auto expectedName = edit ? u"Title %1"_s.arg(renameCount) : u"Sketch 1"_s;
+        QCOMPARE(viewModel.openName(), expectedName);
+        QCOMPARE(data(viewModel, 0, SketchListModel::NameRole), expectedName);
+        QCOMPARE(notifications.count(), edit ? 0 : 1);
+        if (edit) {
+            const auto document = load(storage, stored.front().id);
+            QCOMPARE(QString::fromStdString(document.name), expectedName);
+            QCOMPARE(document.strokes.size(), 1);
+        } else {
+            QVERIFY(!QFile::exists(dir.filePath(stored.front().id + ".json"_L1)));
+        }
+    }
+
     void renameAndDuplicateReadTheLatestRetainedDocument()
     {
         QTemporaryDir dir;
@@ -287,7 +336,11 @@ private Q_SLOTS:
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Duplicate sketch failed.*"_s));
         viewModel.duplicate(0);
         QVERIFY(QFile::remove(dir.filePath("blocker"_L1)));
-        viewModel.retryFailedSaves();
+        auto *recovery = qvariant_cast<app::notify::Message *>(notifications.data(
+            notifications.index(0), app::notify::NotificationCenter::NotificationRole));
+        QVERIFY(recovery);
+        QCOMPARE(recovery->actions().front().text, "Retry"_L1);
+        recovery->choose(recovery->actions().front().id);
         QTRY_VERIFY(!storage.hasUnsavedChanges());
         const auto stored = entries(storage);
         QCOMPARE(stored.size(), 2);

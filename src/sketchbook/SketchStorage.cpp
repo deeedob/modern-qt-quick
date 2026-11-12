@@ -290,7 +290,7 @@ SketchStorage::SketchStorage(QString directory, QObject *parent)
 
 SketchStorage::~SketchStorage()
 {
-    auto *worker = static_cast<SketchStorageWorker *>(m_worker);
+    auto *worker = m_worker;
     QMetaObject::invokeMethod(worker, [worker] { worker->stop(); }, Qt::QueuedConnection);
     m_thread.wait();
 }
@@ -298,31 +298,32 @@ SketchStorage::~SketchStorage()
 void SketchStorage::list()
 {
     QMetaObject::invokeMethod(
-        m_worker, [worker = static_cast<SketchStorageWorker *>(m_worker)] { worker->list(); },
-        Qt::QueuedConnection);
+        m_worker, [worker = m_worker] { worker->list(); }, Qt::QueuedConnection);
 }
 
 void SketchStorage::load(const QString &id, quint64 requestId)
 {
     QMetaObject::invokeMethod(
-        m_worker,
-        [worker = static_cast<SketchStorageWorker *>(m_worker), id, requestId] {
-            worker->load(id, requestId);
-        },
+        m_worker, [worker = m_worker, id, requestId] { worker->load(id, requestId); },
         Qt::QueuedConnection);
 }
 
-void SketchStorage::save(const QString &id, SketchDocument document)
+quint64 SketchStorage::markDirty(const QString &id)
 {
     const auto revision = ++m_nextRevision;
     const bool wasDirty = hasUnsavedChanges();
     m_dirty.insert(id, revision);
     if (!wasDirty)
         Q_EMIT unsavedChangesChanged();
+    return revision;
+}
+
+void SketchStorage::save(const QString &id, SketchDocument document)
+{
+    const auto revision = markDirty(id);
     QMetaObject::invokeMethod(
         m_worker,
-        [worker = static_cast<SketchStorageWorker *>(m_worker), id, revision,
-            document = std::move(document)]() mutable {
+        [worker = m_worker, id, revision, document = std::move(document)]() mutable {
             worker->save(id, revision, std::move(document));
         },
         Qt::QueuedConnection);
@@ -330,48 +331,35 @@ void SketchStorage::save(const QString &id, SketchDocument document)
 
 void SketchStorage::rename(const QString &id, QString name)
 {
-    const auto revision = ++m_nextRevision;
-    const bool wasDirty = hasUnsavedChanges();
-    m_dirty.insert(id, revision);
-    if (!wasDirty)
-        Q_EMIT unsavedChangesChanged();
+    const auto revision = markDirty(id);
     QMetaObject::invokeMethod(
         m_worker,
-        [worker = static_cast<SketchStorageWorker *>(m_worker), id, revision,
-            name = std::move(name)] { worker->rename(id, revision, name); },
+        [worker = m_worker, id, revision, name = std::move(name)] {
+            worker->rename(id, revision, name);
+        },
         Qt::QueuedConnection);
 }
 
 void SketchStorage::duplicate(const QString &sourceId, QString id, QString name)
 {
-    const auto revision = ++m_nextRevision;
-    const bool wasDirty = hasUnsavedChanges();
-    m_dirty.insert(id, revision);
-    if (!wasDirty)
-        Q_EMIT unsavedChangesChanged();
+    const auto revision = markDirty(id);
     QMetaObject::invokeMethod(
         m_worker,
-        [worker = static_cast<SketchStorageWorker *>(m_worker), sourceId, id = std::move(id),
-            revision, name = std::move(name)]() mutable {
-            worker->duplicate(sourceId, id, revision, name);
-        },
+        [worker = m_worker, sourceId, id = std::move(id), revision,
+            name = std::move(name)]() mutable { worker->duplicate(sourceId, id, revision, name); },
         Qt::QueuedConnection);
 }
 
 void SketchStorage::remove(const QString &id)
 {
     QMetaObject::invokeMethod(
-        m_worker,
-        [worker = static_cast<SketchStorageWorker *>(m_worker), id] { worker->remove(id); },
-        Qt::QueuedConnection);
+        m_worker, [worker = m_worker, id] { worker->remove(id); }, Qt::QueuedConnection);
 }
 
 void SketchStorage::retryFailedSaves()
 {
     QMetaObject::invokeMethod(
-        m_worker,
-        [worker = static_cast<SketchStorageWorker *>(m_worker)] { worker->retryFailedSaves(); },
-        Qt::QueuedConnection);
+        m_worker, [worker = m_worker] { worker->retryFailedSaves(); }, Qt::QueuedConnection);
 }
 
 void SketchStorage::onMutationFinished(const QString &id, const QString &sourceId,

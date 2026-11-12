@@ -46,14 +46,14 @@ bool SketchbookViewModel::hasUnsavedChanges() const
 
 void SketchbookViewModel::create()
 {
-    m_openRequestId = ++m_nextRequestId;
+    ++m_openRequestId;
     SketchEntry entry{
         .id = QUuid::createUuid().toString(QUuid::WithoutBraces),
         .name = tr("Sketch %1").arg(m_model.rowCount() + 1),
         .modified = QDateTime::currentDateTime(),
     };
     const auto id = entry.id;
-    save(id, { .name = entry.name.toStdString(), .strokes = {}, .page = {} });
+    m_storage.save(id, { .name = entry.name.toStdString(), .strokes = {}, .page = {} });
     qCDebug(lcSketchbook) << "Created sketch" << id;
     m_model.prepend(std::move(entry));
     activate(id, {});
@@ -64,8 +64,7 @@ void SketchbookViewModel::open(int row)
     if (row < 0 || row >= m_model.rowCount())
         return;
     const auto id = m_model.entry(row).id;
-    const auto name = m_model.entry(row).name;
-    m_openRequestId = ++m_nextRequestId;
+    ++m_openRequestId;
     m_storage.load(id, m_openRequestId);
 }
 
@@ -76,11 +75,8 @@ void SketchbookViewModel::rename(int row, const QString &name)
         return;
     auto entry = m_model.entry(row);
     const auto id = entry.id;
-    auto pending = m_pendingRenames.find(id);
-    if (pending == m_pendingRenames.end())
-        m_pendingRenames.insert(id, { entry.name, trimmed });
-    else
-        pending->currentName = trimmed;
+    if (!m_pendingRenames.contains(id))
+        m_pendingRenames.insert(id, entry.name);
     entry.name = trimmed;
     entry.modified = QDateTime::currentDateTime();
     m_model.update(row, std::move(entry));
@@ -116,11 +112,6 @@ void SketchbookViewModel::remove(int row)
 {
     if (row >= 0 && row < m_model.rowCount())
         m_storage.remove(m_model.entry(row).id);
-}
-
-void SketchbookViewModel::retryFailedSaves()
-{
-    m_storage.retryFailedSaves();
 }
 
 bool SketchbookViewModel::requestClose()
@@ -180,13 +171,12 @@ void SketchbookViewModel::onMutationFinished(const QString &id, const QString &s
                 if (error.isEmpty())
                     m_pendingRenames.erase(pending);
             } else {
-                const auto rollbackName = pending->originalName;
-                const auto currentName = pending->currentName;
+                auto rollbackName = std::move(pending.value());
                 m_pendingRenames.erase(pending);
                 const int row = m_model.rowOf(id);
-                if (row >= 0 && m_model.entry(row).name == currentName) {
+                if (row >= 0) {
                     auto entry = m_model.entry(row);
-                    entry.name = rollbackName;
+                    entry.name = std::move(rollbackName);
                     m_model.update(row, std::move(entry));
                     if (id == m_openId)
                         Q_EMIT openNameChanged();
@@ -255,11 +245,6 @@ void SketchbookViewModel::onRemoved(const QString &id, const QString &error)
     }
 }
 
-void SketchbookViewModel::save(const QString &id, SketchDocument document)
-{
-    m_storage.save(id, std::move(document));
-}
-
 void SketchbookViewModel::saveOpenSketch()
 {
     const int row = m_model.rowOf(m_openId);
@@ -271,7 +256,7 @@ void SketchbookViewModel::saveOpenSketch()
         .strokes = m_canvas.sketch().strokes,
         .page = m_canvas.sketch().page,
     };
-    save(entry.id, std::move(document));
+    m_storage.save(entry.id, std::move(document));
     entry.modified = QDateTime::currentDateTime();
     entry.strokeCount = static_cast<qsizetype>(m_canvas.sketch().strokes.size());
     m_model.update(row, std::move(entry));
@@ -323,7 +308,7 @@ void SketchbookViewModel::reportError(Operation operation, const QString &source
 void SketchbookViewModel::showSaveError()
 {
     QList<notify::Action> actions{
-        { .id = {}, .text = tr("Retry"), .triggered = [this] { retryFailedSaves(); } },
+        { .id = {}, .text = tr("Retry"), .triggered = [this] { m_storage.retryFailedSaves(); } },
     };
     if (m_closePending) {
         actions.append({ .id = {}, .text = tr("Discard"), .triggered = [this] {

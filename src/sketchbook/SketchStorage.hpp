@@ -68,8 +68,10 @@ private Q_SLOTS:
 private:
     friend class SketchStorageWorker;
 
+    [[nodiscard]] quint64 markDirty(const QString &id);
+
     QThread m_thread;
-    QObject *m_worker = nullptr;
+    SketchStorageWorker *m_worker = nullptr;
     QHash<QString, quint64> m_dirty;
     quint64 m_nextRevision = 0;
 };
