@@ -24,10 +24,11 @@ Dialog {
 
         Layout.fillWidth: true
         padding: Theme.spacing
-        topPadding: implicitLabelHeight + Theme.spacing * 1.5
+        topPadding: implicitLabelHeight + Theme.spacing / 2
 
         label: Label {
             x: (infoBox.width - width) / 2
+            z: 1
             text: infoBox.title
             font.weight: Font.DemiBold
             horizontalAlignment: Text.AlignHCenter
@@ -35,7 +36,8 @@ Dialog {
 
             background: Rectangle {
                 radius: Theme.radius
-                color: Theme.window
+                color: Theme.hover
+                border.color: Theme.border
             }
         }
 
@@ -46,7 +48,7 @@ Dialog {
         }
 
         background: Rectangle {
-            y: infoBox.implicitLabelHeight + Theme.spacing / 2
+            y: infoBox.implicitLabelHeight / 2
             height: infoBox.height - y
             radius: Theme.radius
             color: Theme.window
