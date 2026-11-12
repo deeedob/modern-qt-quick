@@ -105,9 +105,11 @@ private Q_SLOTS:
     void canvasSettingsMaintainAspectRatio()
     {
         Page page;
+#ifdef Q_OS_MACOS
         QTest::ignoreMessage(QtWarningMsg,
             QRegularExpression(
                 uR"(Populating font family aliases took .*Replace uses of missing font family "Sans Serif".*)"_s));
+#endif
         QVERIFY(load(page));
         auto *settings = page.root->findChild<QQuickItem *>(u"paperSettingsButton"_s);
         QVERIFY(settings);
