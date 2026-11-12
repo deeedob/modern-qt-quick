@@ -197,8 +197,12 @@ private Q_SLOTS:
         QSignalSpy opened(&viewModel, &SketchbookViewModel::opened);
         QTRY_VERIFY(viewModel.initialized());
 
-        viewModel.open(0);
-        viewModel.open(1);
+        QCOMPARE(viewModel.model()->rowCount(), 2);
+        const int rowA = data(viewModel, 0, SketchListModel::NameRole) == "A"_L1 ? 0 : 1;
+        QCOMPARE(data(viewModel, rowA, SketchListModel::NameRole), "A"_L1);
+        QCOMPARE(data(viewModel, 1 - rowA, SketchListModel::NameRole), "B"_L1);
+        viewModel.open(1 - rowA);
+        viewModel.open(rowA);
 
         QTRY_COMPARE(opened.count(), 1);
         QCOMPARE(viewModel.openName(), "A"_L1);
@@ -446,6 +450,8 @@ private Q_SLOTS:
             SketchbookViewModel viewModel(storage, canvas, notifications);
             viewModel.create();
             QTRY_VERIFY(!storage.hasUnsavedChanges());
+            QCOMPARE(saveResults.count(), 1);
+            saveResults.clear();
             const auto stored = entries(storage);
             QCOMPARE(stored.size(), 1);
             id = stored.front().id;
