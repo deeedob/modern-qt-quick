@@ -9,6 +9,56 @@
 include_guard(GLOBAL)
 include(GNUInstallDirs)
 
+function(app_set_icon target icon)
+    if(NOT APPLE AND NOT WIN32)
+        return()
+    endif()
+
+    cmake_path(ABSOLUTE_PATH icon BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+    if(CMAKE_CROSSCOMPILING)
+        find_program(APP_ICON_GENERATOR NAMES app_icon_generator NO_CMAKE_FIND_ROOT_PATH
+            DOC "Host executable for generating application icons")
+        if(NOT APP_ICON_GENERATOR)
+            message(FATAL_ERROR "Set APP_ICON_GENERATOR to a host-built app_icon_generator executable.")
+        endif()
+        set(generator "${APP_ICON_GENERATOR}")
+    else()
+        set(generator app_icon_generator)
+    endif()
+
+    if(APPLE)
+        set(appIcon "${CMAKE_CURRENT_BINARY_DIR}/app.icns")
+        add_custom_command(
+            OUTPUT "${appIcon}"
+            COMMAND "${generator}" "${icon}" "${CMAKE_CURRENT_BINARY_DIR}/app.iconset"
+            COMMAND iconutil -c icns "${CMAKE_CURRENT_BINARY_DIR}/app.iconset" -o "${appIcon}"
+            DEPENDS "${generator}" "${icon}"
+            VERBATIM
+        )
+        target_sources(${target} PRIVATE "${appIcon}")
+        set_source_files_properties("${appIcon}" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+        set_property(TARGET ${target} APPEND PROPERTY LINK_DEPENDS "${appIcon}")
+        # macOS caches bundle icons until the bundle directory changes.
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E touch "$<TARGET_BUNDLE_DIR:${target}>"
+            VERBATIM
+        )
+        set_target_properties(${target} PROPERTIES MACOSX_BUNDLE_ICON_FILE app.icns)
+    else()
+        set(appIcon "${CMAKE_CURRENT_BINARY_DIR}/app.ico")
+        add_custom_command(
+            OUTPUT "${appIcon}"
+            COMMAND "${generator}" "${icon}" "${appIcon}"
+            DEPENDS "${generator}" "${icon}"
+            VERBATIM
+        )
+        file(CONFIGURE OUTPUT app.rc CONTENT "IDI_ICON1 ICON \"${appIcon}\"\n")
+        set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/app.rc" PROPERTIES OBJECT_DEPENDS "${appIcon}")
+        set_source_files_properties("${appIcon}" PROPERTIES HEADER_FILE_ONLY TRUE)
+        target_sources(${target} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/app.rc" "${appIcon}")
+    endif()
+endfunction()
+
 if(APPLE)
     set(APP_LICENSES_DIR "${PROJECT_NAME}.app/Contents/Resources/licenses")
     set(APP_LICENSES_RELATIVE_TO_EXECUTABLE "../Resources/licenses")

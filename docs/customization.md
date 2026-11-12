@@ -12,7 +12,7 @@ It updates the project and application names. Review the resulting diff before b
 
 ## Replace the application icon
 
-Replace `src/app/icons/app.svg` with your artwork. Use a square SVG canvas and keep the
+Replace `src/app/app.svg` with your artwork. Use a square SVG canvas and keep the
 artwork readable at small sizes. Keep the filename so the existing build rules pick it up.
 If you use third-party artwork, record its license in `REUSE.toml` and include any required
 notice in the distributed application.

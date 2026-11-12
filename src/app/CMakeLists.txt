@@ -10,59 +10,17 @@ target_link_libraries(app_support
 )
 app_target_defaults(app_support)
 
-if(CMAKE_CROSSCOMPILING)
-    if(APPLE OR WIN32)
-        find_program(APP_ICON_GENERATOR NAMES app_icon_generator NO_CMAKE_FIND_ROOT_PATH
-            DOC "Host executable for generating application icons")
-        if(NOT APP_ICON_GENERATOR)
-            message(FATAL_ERROR "Set APP_ICON_GENERATOR to a host-built app_icon_generator executable.")
-        endif()
-        set(_icon_generator "${APP_ICON_GENERATOR}")
-    endif()
-else()
-    set(_icon_generator app_icon_generator)
-endif()
-
 qt_add_executable(app MACOSX_BUNDLE WIN32 main.cpp)
+app_set_icon(app app.svg)
+set_target_properties(app PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
 if(APPLE)
-    set(_app_icon "${CMAKE_CURRENT_BINARY_DIR}/app.icns")
-    add_custom_command(
-        OUTPUT "${_app_icon}"
-        COMMAND "${_icon_generator}" "${CMAKE_CURRENT_SOURCE_DIR}/icons/app.svg" "${CMAKE_CURRENT_BINARY_DIR}/app.iconset"
-        COMMAND iconutil -c icns "${CMAKE_CURRENT_BINARY_DIR}/app.iconset" -o "${_app_icon}"
-        DEPENDS "${_icon_generator}" icons/app.svg
-        VERBATIM
+    set_target_properties(app PROPERTIES
+        MACOSX_BUNDLE_GUI_IDENTIFIER "${APP_BUNDLE_ID}"
+        MACOSX_BUNDLE_BUNDLE_NAME "${APP_DISPLAY_NAME}"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
     )
-    target_sources(app PRIVATE "${_app_icon}")
-    set_source_files_properties("${_app_icon}" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-    set_property(TARGET app APPEND PROPERTY LINK_DEPENDS "${_app_icon}")
-    # macOS caches bundle icons until the bundle directory changes.
-    add_custom_command(TARGET app POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E touch "$<TARGET_BUNDLE_DIR:app>"
-        VERBATIM
-    )
-elseif(WIN32)
-    # Windows takes the executable's icon from a resource script.
-    set(_app_icon "${CMAKE_CURRENT_BINARY_DIR}/app.ico")
-    add_custom_command(
-        OUTPUT "${_app_icon}"
-        COMMAND "${_icon_generator}" "${CMAKE_CURRENT_SOURCE_DIR}/icons/app.svg" "${_app_icon}"
-        DEPENDS "${_icon_generator}" icons/app.svg
-        VERBATIM
-    )
-    file(CONFIGURE OUTPUT app.rc CONTENT "IDI_ICON1 ICON \"${_app_icon}\"\n")
-    set_source_files_properties("${CMAKE_CURRENT_BINARY_DIR}/app.rc" PROPERTIES OBJECT_DEPENDS "${_app_icon}")
-    set_source_files_properties("${_app_icon}" PROPERTIES HEADER_FILE_ONLY TRUE)
-    target_sources(app PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/app.rc" "${_app_icon}")
 endif()
-set_target_properties(app PROPERTIES
-    OUTPUT_NAME "${PROJECT_NAME}"
-    MACOSX_BUNDLE_ICON_FILE app.icns
-    MACOSX_BUNDLE_GUI_IDENTIFIER "${APP_BUNDLE_ID}"
-    MACOSX_BUNDLE_BUNDLE_NAME "${APP_DISPLAY_NAME}"
-    MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
-    MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
-)
 target_compile_definitions(app PRIVATE
     APP_LICENSES_RELATIVE_TO_EXECUTABLE="${APP_LICENSES_RELATIVE_TO_EXECUTABLE}"
 )
@@ -78,7 +36,7 @@ qt_add_qml_module(app_ui
         AppController.cpp AppController.hpp
         "${_build_info_header}"
     RESOURCES
-        icons/app.svg
+        app.svg
 )
 target_link_libraries(app_ui
     PUBLIC app_support Qt::Quick
