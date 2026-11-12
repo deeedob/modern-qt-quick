@@ -5,40 +5,14 @@ import QtQuick.Layouts
 import App.Controls
 import App.Canvas // demo
 import App.Sketchbook // demo
+import App.Notify
 
-// main() injects the dependencies as required properties; only AppController is a singleton.
 ApplicationWindow {
     id: window
 
     required property SketchbookViewModel sketchbook // demo
     required property CanvasStore canvas // demo
-
-    // demo:begin
-    property bool hasFailedChanges: false
-    property bool closeAfterSave: false
-    property bool discardUnsavedChanges: false
-    property int errorOperation: 0
-    property string errorSource: ""
-    property string errorMessage: ""
-    property string notification: ""
-
-    function operationTitle(operation: int): string {
-        switch (operation) {
-        case SketchbookViewModel.Operation.Open:
-            return qsTr("Open sketch");
-        case SketchbookViewModel.Operation.Rename:
-            return qsTr("Rename sketch");
-        case SketchbookViewModel.Operation.Duplicate:
-            return qsTr("Duplicate sketch");
-        case SketchbookViewModel.Operation.Save:
-            return qsTr("Save sketch");
-        case SketchbookViewModel.Operation.Remove:
-            return qsTr("Delete sketch");
-        default:
-            return qsTr("Error");
-        }
-    }
-    // demo:end
+    required property NotificationCenter notifications
 
     width: 960
     height: 680
@@ -47,12 +21,7 @@ ApplicationWindow {
 
     // demo:begin
     onClosing: function (close) {
-        if (!window.discardUnsavedChanges && window.sketchbook.hasUnsavedChanges) {
-            close.accepted = false;
-            window.closeAfterSave = true;
-            if (window.hasFailedChanges)
-                errorDialog.open();
-        }
+        close.accepted = window.sketchbook.requestClose();
     }
     // demo:end
 
@@ -66,13 +35,6 @@ ApplicationWindow {
         id: navigationLog
         name: "app.navigation"
     }
-
-    // demo:begin
-    LoggingCategory {
-        id: storageLog
-        name: "app.sketchbook"
-    }
-    // demo:end
 
     header: ToolBar {
         RowLayout {
@@ -172,86 +134,18 @@ ApplicationWindow {
         id: about
     }
 
+    NotificationHost {
+        anchors.fill: parent
+        center: window.notifications
+    }
+
     // demo:begin
     Connections {
         target: window.sketchbook
 
-        function onErrorOccurred(operation: int, source: string, message: string, retryable: bool):
-        void {
-            console.error(storageLog, "Sketchbook operation " + operation + " failed for " + source
-                          + ": " + message);
-            if (retryable) {
-                window.hasFailedChanges = true;
-                window.errorOperation = operation;
-                window.errorSource = source;
-                window.errorMessage = message;
-                errorDialog.open();
-            } else {
-                window.notification = message;
-                errorNotification.open();
-                notificationTimer.restart();
-            }
-        }
-
-        function onUnsavedChangesChanged(): void {
-            if (!window.sketchbook.hasUnsavedChanges) {
-                window.hasFailedChanges = false;
-                if (window.closeAfterSave)
-                    window.close();
-            }
-        }
-    }
-
-    ErrorDialog {
-        id: errorDialog
-        objectName: "storageErrorDialog"
-
-        title: window.operationTitle(window.errorOperation)
-        source: window.errorSource
-        message: window.errorMessage
-        standardButtons: window.closeAfterSave ? Dialog.Retry | Dialog.Discard | Dialog.Cancel :
-                                                 Dialog.Retry | Dialog.Cancel
-
-        onAccepted: window.sketchbook.retryFailedSaves()
-        onRejected: window.closeAfterSave = false
-        onDiscarded: {
-            window.closeAfterSave = false;
-            window.discardUnsavedChanges = true;
+        function onCloseReady(): void {
             window.close();
         }
-
-        onClosed: {
-            if (!window.closeAfterSave)
-                window.discardUnsavedChanges = false;
-        }
-    }
-
-    Popup {
-        id: errorNotification
-
-        x: (window.width - width) / 2
-        y: window.height - height - Theme.spacing * 2
-        width: Math.min(440, window.width - Theme.spacing * 2)
-        padding: Theme.spacing
-        closePolicy: Popup.NoAutoClose
-
-        contentItem: Label {
-            text: window.notification
-            wrapMode: Text.Wrap
-        }
-
-        background: Rectangle {
-            radius: Theme.radius
-            color: Theme.surface
-            border.color: Theme.border
-        }
-    }
-
-    Timer {
-        id: notificationTimer
-
-        interval: 5000
-        onTriggered: errorNotification.close()
     }
     // demo:end
 }

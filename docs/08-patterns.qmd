@@ -26,6 +26,33 @@ commands such as `create()` and `rename()`; validation and storage stay behind t
 A Qt Test can construct the view model, call a command, and inspect the resulting model without
 loading QML.
 
+## A notification center shares feedback {#sec-notification-flow}
+
+A user needs feedback when an action succeeds, fails, or needs a decision. Without a shared
+place for that feedback, each screen must decide where to show messages and what to do when
+several arrive at once. A notification center gives the application one place to present them.
+
+This is useful when C++ performs work on behalf of different screens. The code that detects
+an event can post a message without reaching into a QML object. The view can then show brief
+feedback without interrupting the user, or ask for a decision when the work cannot continue
+without one. Use notifications for events that matter to the user; routine background work
+usually needs no message.
+
+Sketchbook uses `app::notify::NotificationCenter` for feedback from C++. For example, moving
+through the drawing history posts a short message:
+
+::: {.snippet source="src/sketchbook/SketchbookViewModel.cpp"}
+
+```cpp
+    connect(&m_canvas, &canvas::CanvasStore::historyMoved
+    });\n    m_storage.list();
+```
+
+:::
+
+A shared center is helpful when messages come from several features or need consistent
+presentation. A simple label or dialog can be enough when feedback belongs to one screen.
+
 ## Flux makes edits explicit {#sec-flux}
 
 Use Flux when a stateful editor benefits from one direction of change: a view dispatches an

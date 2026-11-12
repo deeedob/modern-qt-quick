@@ -4,6 +4,7 @@
 #include "SketchStorage.hpp"
 
 #include <CanvasStore.hpp>
+#include <NotificationCenter.hpp>
 
 #include <QtCore/QHash>
 #include <QtCore/QObject>
@@ -22,11 +23,8 @@ class SketchbookViewModel : public QObject
     Q_PROPERTY(bool initialized READ initialized NOTIFY initializedChanged FINAL)
 
 public:
-    enum class Operation { Open, Rename, Duplicate, Save, Remove };
-    Q_ENUM(Operation)
-
     SketchbookViewModel(SketchStorage &storage, canvas::CanvasStore &canvas,
-        QObject *parent = nullptr);
+        notify::NotificationCenter &notifications, QObject *parent = nullptr);
 
     [[nodiscard]] SketchListModel *model();
     [[nodiscard]] QString openName() const;
@@ -40,14 +38,14 @@ public:
     Q_INVOKABLE void duplicate(int row);
     Q_INVOKABLE void remove(int row);
     Q_INVOKABLE void retryFailedSaves();
+    Q_INVOKABLE bool requestClose();
 
 Q_SIGNALS:
     void openNameChanged();
     void unsavedChangesChanged();
     void initializedChanged();
     void opened();
-    void errorOccurred(app::sketchbook::SketchbookViewModel::Operation operation,
-        const QString &source, const QString &message, bool retryable);
+    void closeReady();
 
 private Q_SLOTS:
     void onListed(std::vector<app::sketchbook::SketchEntry> entries);
@@ -56,8 +54,11 @@ private Q_SLOTS:
     void onMutationFinished(const QString &id, const QString &sourceId,
         app::sketchbook::SketchStorage::Mutation mutation, const QString &error, bool retryable);
     void onRemoved(const QString &id, const QString &error);
+    void onUnsavedChangesChanged();
 
 private:
+    enum class Operation { Open, Rename, Duplicate, Save, Remove };
+
     struct PendingRename
     {
         QString originalName;
@@ -69,16 +70,24 @@ private:
     void activate(const QString &id, SketchDocument document);
     void reportError(Operation operation, const QString &source, const QString &message,
         bool retryable);
+    void clearRecovery();
+    void showSaveError();
+    void keepEditing();
     [[nodiscard]] QString copyName(const QString &name) const;
 
     SketchStorage &m_storage;
     canvas::CanvasStore &m_canvas;
+    notify::NotificationCenter &m_notifications;
+    QPointer<notify::Message> m_recovery;
     SketchListModel m_model{ this };
     QString m_openId;
     QHash<QString, PendingRename> m_pendingRenames;
     quint64 m_nextRequestId = 0;
     quint64 m_openRequestId = 0;
     bool m_initialized = false;
+    bool m_closePending = false;
+    bool m_discardApproved = false;
+    QString m_recoveryMessage;
 };
 
 } // namespace app::sketchbook

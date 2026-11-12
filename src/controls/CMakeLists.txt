@@ -21,7 +21,6 @@ qt_add_qml_module(app_controls
     STATIC
     IMPORTS QtQuick.Controls.Basic
     QML_FILES
-        ErrorDialog.qml
         style/ApplicationWindow.qml
         style/Button.qml
         style/ComboBox.qml

@@ -4,7 +4,7 @@
 <context>
     <name>Main</name>
     <message numerus="yes">
-        <location filename="../src/app/Main.qml" line="115"/>
+        <location filename="../src/app/Main.qml" line="77"/>
         <source>%n stroke(s)</source>
         <translation>
             <numerusform>%n stroke</numerusform>
@@ -12,7 +12,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/Main.qml" line="115"/>
+        <location filename="../src/app/Main.qml" line="77"/>
         <source>%n point(s)</source>
         <translation>
             <numerusform>%n point</numerusform>

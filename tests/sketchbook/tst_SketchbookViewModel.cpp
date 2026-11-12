@@ -1,5 +1,7 @@
 #include "SketchbookViewModel.hpp"
 
+#include <NotificationCenter.hpp>
+
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QRegularExpression>
@@ -41,6 +43,12 @@ std::vector<app::sketchbook::SketchEntry> entries(SketchStorage &storage)
     return listed.front().front().value<std::vector<app::sketchbook::SketchEntry>>();
 }
 
+void ignoreSaveFailure()
+{
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Cannot save.*"_s));
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Save sketch failed.*"_s));
+}
+
 app::sketchbook::SketchDocument load(SketchStorage &storage, const QString &id,
     quint64 requestId = 1)
 {
@@ -72,7 +80,8 @@ private Q_SLOTS:
         QTRY_COMPARE(saved.count(), 2);
         CanvasStore canvas;
 
-        SketchbookViewModel viewModel(storage, canvas);
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
         QAbstractItemModelTester tester(viewModel.model(),
             QAbstractItemModelTester::FailureReportingMode::QtTest);
 
@@ -87,7 +96,8 @@ private Q_SLOTS:
         SketchStorage storage(dir.path());
         CanvasStore canvas;
         canvas.load({ .strokes = { std::make_shared<const Stroke>() }, .page = {} });
-        SketchbookViewModel viewModel(storage, canvas);
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
         QSignalSpy opened(&viewModel, &SketchbookViewModel::opened);
 
         viewModel.create();
@@ -109,22 +119,23 @@ private Q_SLOTS:
         blocker.close();
         SketchStorage storage(dir.filePath("blocker/child"_L1));
         CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
-        QSignalSpy errors(&viewModel, &SketchbookViewModel::errorOccurred);
-        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Cannot save.*"_s));
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
+        ignoreSaveFailure();
         viewModel.create();
 
-        QTRY_COMPARE(errors.count(), 1);
+        QTRY_COMPARE(notifications.count(), 1);
         QVERIFY(viewModel.hasUnsavedChanges());
         QCOMPARE(viewModel.model()->rowCount(), 1);
         QCOMPARE(viewModel.openName(), "Sketch 1"_L1);
-        QCOMPARE(errors.front().at(0).value<SketchbookViewModel::Operation>(),
-            SketchbookViewModel::Operation::Save);
-        QVERIFY(!errors.front().at(2).toString().isEmpty());
+        auto *notice = qvariant_cast<app::notify::Message *>(notifications.data(
+            notifications.index(0), app::notify::NotificationCenter::NotificationRole));
+        QVERIFY(notice);
+        QVERIFY(!notice->message().isEmpty());
 
-        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Cannot save.*"_s));
+        ignoreSaveFailure();
         canvas.addStroke(zigzag(), Qt::black);
-        QTRY_COMPARE(errors.count(), 2);
+        QTRY_COMPARE(notifications.count(), 1);
         QVERIFY(QFile::remove(dir.filePath("blocker"_L1)));
         viewModel.retryFailedSaves();
         QTRY_VERIFY(!viewModel.hasUnsavedChanges());
@@ -138,7 +149,8 @@ private Q_SLOTS:
         QTemporaryDir dir;
         SketchStorage storage(dir.path());
         CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
         viewModel.create();
 
         canvas.addStroke(zigzag(), Qt::black);
@@ -155,7 +167,8 @@ private Q_SLOTS:
         storage.save("a"_L1,
             { .name = "A", .strokes = { std::make_shared<const Stroke>() }, .page = {} });
         CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
         QSignalSpy opened(&viewModel, &SketchbookViewModel::opened);
         QTRY_VERIFY(viewModel.initialized());
 
@@ -179,7 +192,8 @@ private Q_SLOTS:
                 .page = {}
         });
         CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
         QSignalSpy opened(&viewModel, &SketchbookViewModel::opened);
         QTRY_VERIFY(viewModel.initialized());
 
@@ -198,7 +212,8 @@ private Q_SLOTS:
         storage.save("a"_L1,
             { .name = "A", .strokes = { std::make_shared<const Stroke>() }, .page = {} });
         CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
         QTRY_VERIFY(viewModel.initialized());
 
         viewModel.open(0);
@@ -214,7 +229,8 @@ private Q_SLOTS:
         QTemporaryDir dir;
         SketchStorage storage(dir.path());
         CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
         viewModel.create();
 
         viewModel.rename(0, "  Garden  "_L1);
@@ -231,7 +247,8 @@ private Q_SLOTS:
         QTemporaryDir dir;
         SketchStorage storage(dir.path());
         CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
         viewModel.create();
         viewModel.renameOpen("Canvas title"_L1);
         canvas.addStroke(zigzag(), Qt::black);
@@ -250,18 +267,20 @@ private Q_SLOTS:
         blocker.close();
         SketchStorage storage(dir.filePath("blocker/child"_L1));
         CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
-        QSignalSpy errors(&viewModel, &SketchbookViewModel::errorOccurred);
-        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Cannot save.*"_s));
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
+        ignoreSaveFailure();
         viewModel.create();
-        QTRY_COMPARE(errors.count(), 1);
+        QTRY_COMPARE(notifications.count(), 1);
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Cannot save.*"_s));
         canvas.addStroke(zigzag(), Qt::black);
-        QTRY_COMPARE(errors.count(), 2);
+        QTRY_COMPARE(notifications.count(), 1);
 
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Cannot save.*"_s));
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Rename sketch failed.*"_s));
         viewModel.rename(0, "Latest"_L1);
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Cannot save.*"_s));
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Duplicate sketch failed.*"_s));
         viewModel.duplicate(0);
         QVERIFY(QFile::remove(dir.filePath("blocker"_L1)));
         viewModel.retryFailedSaves();
@@ -283,7 +302,8 @@ private Q_SLOTS:
         QTemporaryDir dir;
         SketchStorage storage(dir.path());
         CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
         viewModel.create();
         canvas.addStroke(zigzag(), Qt::black, 7.0);
         QTRY_VERIFY(!storage.hasUnsavedChanges());
@@ -295,6 +315,12 @@ private Q_SLOTS:
         QCOMPARE(data(viewModel, 0, SketchListModel::StrokeCountRole), 1);
         QCOMPARE(viewModel.openName(), "Sketch 1"_L1);
         QTRY_VERIFY(!storage.hasUnsavedChanges());
+        QTRY_COMPARE(notifications.count(), 1);
+        auto *notice = qvariant_cast<app::notify::Message *>(notifications.data(
+            notifications.index(0), app::notify::NotificationCenter::NotificationRole));
+        QVERIFY(notice);
+        QCOMPARE(notice->severity(), app::notify::Message::Severity::Success);
+        QVERIFY(notice->message().contains("Sketch 1 copy"_L1));
 
         QSignalSpy opened(&viewModel, &SketchbookViewModel::opened);
         viewModel.open(0);
@@ -308,7 +334,8 @@ private Q_SLOTS:
         QTemporaryDir dir;
         SketchStorage storage(dir.path());
         CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
         viewModel.create();
         canvas.addStroke(zigzag(), Qt::black);
 
@@ -318,6 +345,12 @@ private Q_SLOTS:
         QVERIFY(entries(storage).empty());
         QVERIFY(canvas.isEmpty());
         QVERIFY(viewModel.openName().isEmpty());
+        QTRY_COMPARE(notifications.count(), 1);
+        auto *notice = qvariant_cast<app::notify::Message *>(notifications.data(
+            notifications.index(0), app::notify::NotificationCenter::NotificationRole));
+        QVERIFY(notice);
+        QCOMPARE(notice->severity(), app::notify::Message::Severity::Success);
+        QVERIFY(notice->message().contains("Sketch 1"_L1));
     }
 
     void failedDeleteKeepsTheSketch()
@@ -325,7 +358,8 @@ private Q_SLOTS:
         QTemporaryDir dir;
         SketchStorage storage(dir.path());
         CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
         viewModel.create();
         QTRY_VERIFY(!storage.hasUnsavedChanges());
         const auto stored = entries(storage);
@@ -333,12 +367,11 @@ private Q_SLOTS:
         const QString path = QDir(dir.path()).filePath(stored.front().id + ".json"_L1);
         QVERIFY(QFile::remove(path));
         QVERIFY(QDir().mkpath(path));
-        QSignalSpy errors(&viewModel, &SketchbookViewModel::errorOccurred);
-
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Cannot remove.*"_s));
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Delete sketch failed.*"_s));
         viewModel.remove(0);
 
-        QTRY_COMPARE(errors.count(), 1);
+        QTRY_COMPARE(notifications.count(), 1);
         QCOMPARE(viewModel.model()->rowCount(), 1);
         QCOMPARE(viewModel.openName(), "Sketch 1"_L1);
     }
@@ -351,16 +384,20 @@ private Q_SLOTS:
         blocker.close();
         SketchStorage storage(dir.filePath("blocker/child"_L1));
         CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
-        QSignalSpy errors(&viewModel, &SketchbookViewModel::errorOccurred);
-        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Cannot save.*"_s));
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
+        ignoreSaveFailure();
         viewModel.create();
-        QTRY_COMPARE(errors.count(), 1);
+        QTRY_COMPARE(notifications.count(), 1);
 
         viewModel.remove(0);
 
         QTRY_COMPARE(viewModel.model()->rowCount(), 0);
-        QCOMPARE(errors.count(), 1);
+        QCOMPARE(notifications.count(), 1);
+        auto *notice = qvariant_cast<app::notify::Message *>(notifications.data(
+            notifications.index(0), app::notify::NotificationCenter::NotificationRole));
+        QVERIFY(notice);
+        QCOMPARE(notice->severity(), app::notify::Message::Severity::Success);
     }
 
     void externallyRemovedSketchCanBeDiscarded()
@@ -368,7 +405,8 @@ private Q_SLOTS:
         QTemporaryDir dir;
         SketchStorage storage(dir.path());
         CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
         viewModel.create();
         QTRY_VERIFY(!storage.hasUnsavedChanges());
         const auto stored = entries(storage);
@@ -385,7 +423,8 @@ private Q_SLOTS:
         QTemporaryDir dir;
         SketchStorage storage(dir.path());
         CanvasStore canvas;
-        SketchbookViewModel viewModel(storage, canvas);
+        app::notify::NotificationCenter notifications;
+        SketchbookViewModel viewModel(storage, canvas, notifications);
         viewModel.create();
         viewModel.remove(0);
         viewModel.create();
@@ -401,8 +440,10 @@ private Q_SLOTS:
         SketchStorage storage(dir.path());
         CanvasStore canvas;
         QString id;
+        QSignalSpy saveResults(&storage, &SketchStorage::mutationFinished);
         {
-            SketchbookViewModel viewModel(storage, canvas);
+            app::notify::NotificationCenter notifications;
+            SketchbookViewModel viewModel(storage, canvas, notifications);
             viewModel.create();
             QTRY_VERIFY(!storage.hasUnsavedChanges());
             const auto stored = entries(storage);
@@ -416,6 +457,7 @@ private Q_SLOTS:
             QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Cannot save.*"_s));
             canvas.addStroke(zigzag(), Qt::black);
         }
+        QTRY_COMPARE(saveResults.count(), 1);
         QVERIFY(QDir().rmdir(QDir(dir.path()).filePath(id + ".json"_L1)));
         storage.retryFailedSaves();
         QTRY_VERIFY(!storage.hasUnsavedChanges());
@@ -430,7 +472,8 @@ private Q_SLOTS:
         CanvasStore canvas;
         QString id;
         {
-            SketchbookViewModel viewModel(storage, canvas);
+            app::notify::NotificationCenter notifications;
+            SketchbookViewModel viewModel(storage, canvas, notifications);
             viewModel.create();
             QTRY_VERIFY(!storage.hasUnsavedChanges());
             const auto stored = entries(storage);

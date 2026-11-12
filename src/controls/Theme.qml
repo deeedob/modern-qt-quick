@@ -13,6 +13,10 @@ QtObject {
     readonly property color text: dark ? "#d3c6aa" : "#5c6a72"
     readonly property color mutedText: dark ? "#859289" : "#708089"
     readonly property color accent: dark ? "#7fbbb3" : "#3a94c5"
+    readonly property color information: dark ? "#7fbbb3" : "#3a94c5"
+    readonly property color success: dark ? "#a7c080" : "#8da101"
+    readonly property color warning: dark ? "#dbbc7f" : "#dfa000"
+    readonly property color error: dark ? "#e67e80" : "#f85552"
     readonly property color accentPressed: Qt.darker(accent, 1.15)
     readonly property color accentText: "#1e2326"
     readonly property color overlay: dark ? "#1e2326" : "#5c6a72"

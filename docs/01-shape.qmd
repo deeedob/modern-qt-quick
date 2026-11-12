@@ -125,7 +125,7 @@ the important part is keeping the wiring and ownership explicit.
 
 ```cpp
     const auto sketchDirectory
-        { "canvas"_L1,     QVariant::fromValue(&canvas)     },\n    });
+    });
 ```
 
 :::

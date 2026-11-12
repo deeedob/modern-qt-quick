@@ -5,6 +5,7 @@
 #include "Logging.hpp"
 
 #include <CanvasStore.hpp>         // demo
+#include <NotificationCenter.hpp>
 #include <SketchStorage.hpp>       // demo
 #include <SketchbookViewModel.hpp> // demo
 
@@ -51,7 +52,8 @@ int main(int argc, char *argv[])
     qCInfo(lcMain) << "Sketchbook directory:" << sketchDirectory;     // demo
     app::sketchbook::SketchStorage storage(sketchDirectory);           // demo
     app::canvas::CanvasStore canvas;                                  // demo
-    app::sketchbook::SketchbookViewModel sketchbook(storage, canvas); // demo
+    app::notify::NotificationCenter notifications;
+    app::sketchbook::SketchbookViewModel sketchbook(storage, canvas, notifications); // demo
     QSettings settings;
     app::AppController controller({ .logs = logsDirectory, .licenses = licensesDirectory },
         settings);
@@ -63,12 +65,13 @@ int main(int argc, char *argv[])
         qCCritical(lcMain) << "Cannot register application controller";
         return EXIT_FAILURE;
     }
-    // demo:begin
     engine.setInitialProperties({
-        { "sketchbook"_L1, QVariant::fromValue(&sketchbook) },
-        { "canvas"_L1,     QVariant::fromValue(&canvas)     },
+        { "notifications"_L1, QVariant::fromValue(&notifications) },
+        // demo:begin
+        { "sketchbook"_L1,    QVariant::fromValue(&sketchbook)    },
+        { "canvas"_L1,        QVariant::fromValue(&canvas)        },
+        // demo:end
     });
-    // demo:end
     QObject::connect(
         &engine, &QQmlApplicationEngine::objectCreationFailed, &application,
         [] {

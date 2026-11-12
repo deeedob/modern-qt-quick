@@ -85,6 +85,7 @@ target_link_libraries(app_ui
     PRIVATE app_controls
     app_canvas # demo
     app_sketchbook # demo
+    app_notify
 )
 app_target_defaults(app_ui)
 
@@ -105,6 +106,8 @@ target_link_libraries(app PRIVATE
     app_uiplugin
     # Static QML modules are registered by linking their plugins.
     app_controlsplugin
+    app_notify
+    app_notifyplugin
     app_canvas # demo
     app_canvasplugin # demo
     app_sketchbook # demo

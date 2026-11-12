@@ -2,6 +2,7 @@
 
 #include <QtCore/QLoggingCategory>
 #include <QtCore/QUuid>
+#include <Message.hpp>
 
 using namespace Qt::StringLiterals;
 
@@ -10,8 +11,8 @@ Q_STATIC_LOGGING_CATEGORY(lcSketchbook, "app.sketchbook")
 namespace app::sketchbook {
 
 SketchbookViewModel::SketchbookViewModel(SketchStorage &storage, canvas::CanvasStore &canvas,
-    QObject *parent)
-    : QObject(parent), m_storage(storage), m_canvas(canvas)
+    notify::NotificationCenter &notifications, QObject *parent)
+    : QObject(parent), m_storage(storage), m_canvas(canvas), m_notifications(notifications)
 {
     connect(&m_storage, &SketchStorage::listed, this, &SketchbookViewModel::onListed);
     connect(&m_storage, &SketchStorage::loaded, this, &SketchbookViewModel::onLoaded);
@@ -19,8 +20,11 @@ SketchbookViewModel::SketchbookViewModel(SketchStorage &storage, canvas::CanvasS
         &SketchbookViewModel::onMutationFinished);
     connect(&m_storage, &SketchStorage::removed, this, &SketchbookViewModel::onRemoved);
     connect(&m_storage, &SketchStorage::unsavedChangesChanged, this,
-        &SketchbookViewModel::unsavedChangesChanged);
+        &SketchbookViewModel::onUnsavedChangesChanged);
     connect(&m_canvas, &canvas::CanvasStore::edited, this, &SketchbookViewModel::saveOpenSketch);
+    connect(&m_canvas, &canvas::CanvasStore::historyMoved, this, [this](bool redo) {
+        m_notifications.postMessage(redo ? tr("Redone") : tr("Undone"), this);
+    });
     m_storage.list();
 }
 
@@ -60,6 +64,7 @@ void SketchbookViewModel::open(int row)
     if (row < 0 || row >= m_model.rowCount())
         return;
     const auto id = m_model.entry(row).id;
+    const auto name = m_model.entry(row).name;
     m_openRequestId = ++m_nextRequestId;
     m_storage.load(id, m_openRequestId);
 }
@@ -116,6 +121,20 @@ void SketchbookViewModel::remove(int row)
 void SketchbookViewModel::retryFailedSaves()
 {
     m_storage.retryFailedSaves();
+}
+
+bool SketchbookViewModel::requestClose()
+{
+    if (m_discardApproved) {
+        m_discardApproved = false;
+        return true;
+    }
+    if (!m_storage.hasUnsavedChanges())
+        return true;
+    m_closePending = true;
+    if (!m_recoveryMessage.isEmpty())
+        showSaveError();
+    return false;
 }
 
 void SketchbookViewModel::onListed(std::vector<SketchEntry> entries)
@@ -177,8 +196,19 @@ void SketchbookViewModel::onMutationFinished(const QString &id, const QString &s
     } else if (mutation == SketchStorage::Mutation::Save && error.isEmpty()) {
         m_pendingRenames.remove(id);
     }
-    if (error.isEmpty())
+    if (error.isEmpty()) {
+        if (mutation == SketchStorage::Mutation::Duplicate) {
+            const int row = m_model.rowOf(id);
+            if (row >= 0) {
+                m_notifications.post({ .message = tr("Duplicated %1").arg(m_model.entry(row).name),
+                                         .severity = notify::Message::Severity::Success },
+                    this);
+            }
+        }
+        if (mutation == SketchStorage::Mutation::Save && !m_storage.hasUnsavedChanges())
+            clearRecovery();
         return;
+    }
     const int sourceRow = m_model.rowOf(sourceId);
     const auto source = sourceRow < 0 ? sourceId : m_model.entry(sourceRow).name;
     switch (mutation) {
@@ -210,8 +240,12 @@ void SketchbookViewModel::onRemoved(const QString &id, const QString &error)
         return;
     }
     const int row = m_model.rowOf(id);
-    if (row >= 0)
+    if (row >= 0) {
+        m_notifications.post({ .message = tr("Deleted %1").arg(m_model.entry(row).name),
+                                 .severity = notify::Message::Severity::Success },
+            this);
         m_model.removeAt(row);
+    }
     if (id == m_openId) {
         m_openId.clear();
         m_canvas.load({});
@@ -253,7 +287,99 @@ void SketchbookViewModel::activate(const QString &id, SketchDocument document)
 void SketchbookViewModel::reportError(Operation operation, const QString &source,
     const QString &message, bool retryable)
 {
-    Q_EMIT errorOccurred(operation, source, message, retryable);
+    QString title;
+    switch (operation) {
+    case Operation::Open:
+        title = tr("Open sketch");
+        break;
+    case Operation::Rename:
+        title = tr("Rename sketch");
+        break;
+    case Operation::Duplicate:
+        title = tr("Duplicate sketch");
+        break;
+    case Operation::Save:
+        title = tr("Save sketch");
+        break;
+    case Operation::Remove:
+        title = tr("Delete sketch");
+        break;
+    }
+    qCWarning(lcSketchbook).noquote() << title << "failed for" << source << ':' << message;
+    if (retryable) {
+        m_recoveryMessage = tr("%1: %2").arg(source, message);
+        showSaveError();
+        return;
+    }
+    notify::Options options{
+        .title = std::move(title),
+        .message = tr("%1: %2").arg(source, message),
+        .severity = notify::Message::Severity::Error,
+    };
+    m_notifications.post(options, this);
+}
+
+void SketchbookViewModel::showSaveError()
+{
+    QList<notify::Action> actions{
+        { .text = tr("Retry"), .triggered = [this] { retryFailedSaves(); } },
+    };
+    if (m_closePending) {
+        actions.append({ .text = tr("Discard"), .triggered = [this] {
+                            m_closePending = false;
+                            m_discardApproved = true;
+                            Q_EMIT closeReady();
+                        } });
+        actions.append({ .text = tr("Keep editing"), .triggered = [this] { keepEditing(); } });
+    }
+    notify::Options options{
+        .title = tr("Could not save sketch"),
+        .message = m_recoveryMessage,
+        .severity = notify::Message::Severity::Error,
+        .presentation = m_closePending
+            ? notify::Message::Presentation::Decision
+            : notify::Message::Presentation::Persistent,
+        .actions = actions,
+        .finished =
+            [this](notify::Message::FinishReason reason) {
+                m_recovery = nullptr;
+                if (reason == notify::Message::FinishReason::Dismissed)
+                    keepEditing();
+            },
+    };
+    if (m_recovery) {
+        m_recovery->setMessage(options.message);
+        m_recovery->setActions(options.actions);
+        m_recovery->setPresentation(options.presentation);
+        return;
+    }
+    m_recovery = m_notifications.post(options, this);
+}
+
+void SketchbookViewModel::keepEditing()
+{
+    m_closePending = false;
+    if (!m_recoveryMessage.isEmpty())
+        showSaveError();
+}
+
+void SketchbookViewModel::onUnsavedChangesChanged()
+{
+    Q_EMIT unsavedChangesChanged();
+    if (m_storage.hasUnsavedChanges())
+        return;
+    clearRecovery();
+}
+
+void SketchbookViewModel::clearRecovery()
+{
+    m_recoveryMessage.clear();
+    if (m_recovery)
+        m_recovery->cancel();
+    if (m_closePending) {
+        m_closePending = false;
+        Q_EMIT closeReady();
+    }
 }
 
 QString SketchbookViewModel::copyName(const QString &name) const

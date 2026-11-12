@@ -360,11 +360,6 @@ Page {
             }
             fade.restart();
         }
-
-        function onHistoryMoved(redo: bool): void {
-            snapHint.text = redo ? qsTr("Redone") : qsTr("Undone");
-            fade.restart();
-        }
     }
 
     Shortcut {

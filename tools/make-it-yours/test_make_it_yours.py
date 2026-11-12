@@ -80,6 +80,19 @@ class TemplateSetupTest(unittest.TestCase):
         self.assertNotIn("SketchbookViewModel", text)
         self.assertNotIn("hasFailedChanges", text)
         self.assertNotIn("storageLog", text)
+        self.assertIn('required property NotificationCenter notifications', text)
+        self.assertIn('NotificationHost {', text)
+
+    def test_demo_removal_keeps_notification_injection_and_dependencies(self):
+        main = self.copy("src/app/Main.qml")
+        composition = self.copy("src/app/main.cpp")
+        cmake = self.copy("src/app/CMakeLists.txt")
+        self.copy("vcpkg.json")
+        setup.remove_demo()
+        self.assertIn('required property NotificationCenter notifications', main.read_text())
+        self.assertIn('"notifications"_L1', composition.read_text())
+        self.assertIn("app_notifyplugin", cmake.read_text())
+        self.assertNotIn("SketchbookViewModel", main.read_text())
 
     def test_customization_removes_template_about_links(self):
         for path in ("CMakeLists.txt", "LICENSE", "REUSE.toml"):

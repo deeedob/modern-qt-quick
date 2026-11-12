@@ -33,11 +33,12 @@ Each page can pass a dependency on to a child using another required property. T
 `main()` can declare `QML_UNCREATABLE`, so QML can use their type information but cannot create
 an unconnected second instance. This also makes a page straightforward to construct in a test.
 
-The other side of the contract is in `Main.qml`: its root window requires the same two typed
+The other side of the contract is in `Main.qml`: its root window requires the same typed
 properties that `main()` supplies. This adapted excerpt omits the window's visual content:
 
 ```qml
 ApplicationWindow {
+    required property NotificationCenter notifications
     required property SketchbookViewModel sketchbook
     required property CanvasStore canvas
 }
@@ -117,6 +118,15 @@ controller. Most state belongs to the view model or store supplied to one screen
 QML can hold a reference to a C++ object without owning it. An object passed from `main()`
 must outlive the QML engine and its views. A QObject returned from an invokable can instead
 become QML-owned unless it has a parent, so make ownership explicit when exposing one.
+
+A notification request separates ownership from relevance. The notification center owns
+the request object, while its explicit QObject context determines how long the request is
+useful. Destroying that context cancels the request, even if a card or dialog is open.
+A request that must survive navigation uses a context that survives the page.
+
+Notification actions carry callbacks bound to that same context. Choosing an action finishes
+the message once and invokes its callback while the context remains alive. Ordinary callers
+do not allocate request objects, connect completion signals or dispatch action IDs.
 
 ## Custom rendering has a thread boundary {#sec-custom-items}
 
