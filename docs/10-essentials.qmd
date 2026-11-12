@@ -63,7 +63,7 @@ clear privacy policy and a user choice.
 :::
 
 ::: {.more}
-**Template:** `src/app/Logging.cpp` and `src/sketchbook/SketchStorage.cpp`
+**Template:** `src/app/LogSession.cpp` and `src/sketchbook/SketchStorage.cpp`
 
 **Read more:** [QSaveFile](https://doc.qt.io/qt-6/qsavefile.html) and
 [QStandardPaths](https://doc.qt.io/qt-6/qstandardpaths.html).

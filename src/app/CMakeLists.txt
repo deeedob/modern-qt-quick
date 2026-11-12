@@ -1,6 +1,6 @@
 # Logging, crash handling and build info, as a library so tests can link them.
 qt_add_library(app_support STATIC
-    Logging.cpp Logging.hpp
+    LogSession.cpp LogSession.hpp
 )
 app_add_build_info(app_support)
 target_include_directories(app_support PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

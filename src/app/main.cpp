@@ -2,7 +2,7 @@
 
 #include "AppController.hpp"
 #include "BuildInfo.hpp"
-#include "Logging.hpp"
+#include "LogSession.hpp"
 
 #include <CanvasStore.hpp>         // demo
 #include <NotificationCenter.hpp>
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     const QDir dataDirectory(
         QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation));
     const QDir logsDirectory(dataDirectory.filePath("logs"_L1));
-    app::installLogging(logsDirectory);
+    const app::LogSession logging(logsDirectory);
     const QDir installedLicensesDirectory(QDir(QCoreApplication::applicationDirPath())
             .filePath(QString::fromUtf8(APP_LICENSES_RELATIVE_TO_EXECUTABLE)));
     const QDir licensesDirectory = installedLicensesDirectory.exists()

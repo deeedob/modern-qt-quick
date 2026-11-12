@@ -1,4 +1,4 @@
-app_add_qt_test(tst_Logging SOURCES tst_Logging.cpp LIBRARIES app_support)
+app_add_qt_test(tst_LogSession SOURCES tst_LogSession.cpp LIBRARIES app_support)
 
 app_add_qt_test(tst_CloseRecovery SOURCES tst_CloseRecovery.cpp
     LIBRARIES app_support app_sketchbook app_canvas app_uiplugin app_controlsplugin

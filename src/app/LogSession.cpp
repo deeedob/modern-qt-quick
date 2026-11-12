@@ -1,4 +1,4 @@
-#include "Logging.hpp"
+#include "LogSession.hpp"
 
 #include "BuildInfo.hpp"
 
@@ -14,6 +14,7 @@
 
 #include <cstdlib>
 #include <exception>
+#include <type_traits>
 
 using namespace Qt::StringLiterals;
 
@@ -53,35 +54,37 @@ namespace {
         std::abort();
     }
 
-    struct LogSink
+    struct HandlerBridge
     {
-        QMutex mutex;
-        QFile file;
+        QBasicMutex mutex;
+        QFile *file = nullptr;
         QtMessageHandler previous = nullptr;
     };
+    static_assert(std::is_trivially_destructible_v<HandlerBridge>);
 
-    LogSink &sink()
+    HandlerBridge &bridge()
     {
-        // Never destroyed: Qt may still log from static destructors after main() returns.
-        static auto *const instance = new LogSink;
-        return *instance;
+        static constinit HandlerBridge instance;
+        return instance;
     }
 
     void handleMessage(QtMsgType type, const QMessageLogContext &context, const QString &message)
     {
-        auto &s = sink();
+        QtMessageHandler previous = nullptr;
         {
-            const QMutexLocker lock(&s.mutex);
-            if (s.file.isOpen()) {
+            auto &state = bridge();
+            const QMutexLocker lock(&state.mutex);
+            if (state.file && state.file->isOpen()) {
                 auto line = qFormatLogMessage(type, context, message);
                 if (type == QtFatalMsg)
                     line += '\n'_L1 + stackTrace();
-                s.file.write(line.toUtf8().append('\n'));
-                s.file.flush();
+                state.file->write(line.toUtf8().append('\n'));
+                state.file->flush();
             }
+            previous = state.previous;
         }
-        if (s.previous)
-            s.previous(type, context, message);
+        if (previous)
+            previous(type, context, message);
     }
 
     void removeOldSessions(QDir directory, qsizetype keep)
@@ -103,7 +106,7 @@ namespace {
 
 } // namespace
 
-void installLogging(const QDir &directory, qsizetype keepSessions)
+LogSession::LogSession(const QDir &directory, qsizetype keepSessions)
 {
     Q_ASSERT(keepSessions > 0);
     std::set_terminate(onTerminate);
@@ -117,21 +120,27 @@ void installLogging(const QDir &directory, qsizetype keepSessions)
     removeOldSessions(directory, keepSessions - 1);
 
     const auto fileName = QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss"_L1) + ".log"_L1;
-    auto &s = sink();
-    bool opened = false;
+    m_file.setFileName(directory.filePath(fileName));
+    const bool opened = m_file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
     {
-        const QMutexLocker lock(&s.mutex);
-        s.file.close();
-        s.file.setFileName(directory.filePath(fileName));
-        opened = s.file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
+        auto &state = bridge();
+        const QMutexLocker lock(&state.mutex);
+        Q_ASSERT(!state.file);
+        state.file = &m_file;
+        m_previous = qInstallMessageHandler(handleMessage);
+        state.previous = m_previous;
     }
-    // Chain to the previous handler so the console keeps working.
-    if (const auto previous = qInstallMessageHandler(handleMessage); previous != handleMessage)
-        s.previous = previous;
-    // Outside the lock: the warning itself passes through handleMessage.
     if (!opened)
-        qWarning("Cannot open log file %ls", qUtf16Printable(s.file.fileName()));
+        qWarning("Cannot open log file %ls", qUtf16Printable(m_file.fileName()));
     logStartupInfo();
+}
+
+LogSession::~LogSession()
+{
+    auto &state = bridge();
+    const QMutexLocker lock(&state.mutex);
+    qInstallMessageHandler(m_previous);
+    state.file = nullptr;
 }
 
 } // namespace app
