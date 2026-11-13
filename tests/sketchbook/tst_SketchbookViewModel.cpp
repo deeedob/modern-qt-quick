@@ -121,6 +121,7 @@ private Q_SLOTS:
         CanvasStore canvas;
         app::notify::NotificationCenter notifications;
         SketchbookViewModel viewModel(storage, canvas, notifications);
+        QSignalSpy mutations(&storage, &SketchStorage::mutationFinished);
         ignoreSaveFailure();
         viewModel.create();
 
@@ -133,9 +134,13 @@ private Q_SLOTS:
         QVERIFY(notice);
         QVERIFY(!notice->message().isEmpty());
 
+        mutations.clear();
         ignoreSaveFailure();
         canvas.addStroke(zigzag(), Qt::black);
-        QTRY_COMPARE(notifications.count(), 1);
+        QTRY_COMPARE(mutations.count(), 1);
+        QCOMPARE(mutations.front().at(2).value<SketchStorage::Mutation>(),
+            SketchStorage::Mutation::Save);
+        QVERIFY(!mutations.front().at(3).toString().isEmpty());
         QVERIFY(QFile::remove(dir.filePath("blocker"_L1)));
         auto *recovery = qvariant_cast<app::notify::Message *>(notifications.data(
             notifications.index(0), app::notify::NotificationCenter::NotificationRole));
@@ -322,19 +327,34 @@ private Q_SLOTS:
         CanvasStore canvas;
         app::notify::NotificationCenter notifications;
         SketchbookViewModel viewModel(storage, canvas, notifications);
+        QSignalSpy mutations(&storage, &SketchStorage::mutationFinished);
         ignoreSaveFailure();
         viewModel.create();
         QTRY_COMPARE(notifications.count(), 1);
-        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Cannot save.*"_s));
+        mutations.clear();
+        ignoreSaveFailure();
         canvas.addStroke(zigzag(), Qt::black);
-        QTRY_COMPARE(notifications.count(), 1);
+        QTRY_COMPARE(mutations.count(), 1);
+        QCOMPARE(mutations.front().at(2).value<SketchStorage::Mutation>(),
+            SketchStorage::Mutation::Save);
+        QVERIFY(!mutations.front().at(3).toString().isEmpty());
+        mutations.clear();
 
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Cannot save.*"_s));
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Rename sketch failed.*"_s));
         viewModel.rename(0, "Latest"_L1);
+        QTRY_COMPARE(mutations.count(), 1);
+        QCOMPARE(mutations.front().at(2).value<SketchStorage::Mutation>(),
+            SketchStorage::Mutation::Rename);
+        QVERIFY(!mutations.front().at(3).toString().isEmpty());
+        mutations.clear();
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Cannot save.*"_s));
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u".*Duplicate sketch failed.*"_s));
         viewModel.duplicate(0);
+        QTRY_COMPARE(mutations.count(), 1);
+        QCOMPARE(mutations.front().at(2).value<SketchStorage::Mutation>(),
+            SketchStorage::Mutation::Duplicate);
+        QVERIFY(!mutations.front().at(3).toString().isEmpty());
         QVERIFY(QFile::remove(dir.filePath("blocker"_L1)));
         auto *recovery = qvariant_cast<app::notify::Message *>(notifications.data(
             notifications.index(0), app::notify::NotificationCenter::NotificationRole));
